@@ -85,8 +85,9 @@ rule, the transit shading and both legends are untouched.
 
 ## 6. Later changes, web page only so far
 
-**Reorderable legs and hotels.** Each card has a six dot grip at the left of
-its header. Dragging reorders the list, which reorders the trip, since a leg's
+**Reorderable legs and hotels.** Each card has a three line grip at the left
+of its header. Not a dot grid: dots are the drawing's own vocabulary,
+one per hour, and a dot handle competes with that. Dragging reorders the list, which reorders the trip, since a leg's
 position is data. Cards renumber after a drag and after a delete; before this,
 deleting Flight 1 left Flight 2 and Flight 3 with no Flight 1.
 
