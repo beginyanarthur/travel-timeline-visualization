@@ -899,7 +899,7 @@ select.f-input,
         </g>
         </svg>
         <p class="se-title" id="se-title">Your journey starts here</p>
-        <p class="se-body" id="se-body">Add a flight and press Generate to see every hour of it.</p>
+        <p class="se-body" id="se-body">Add your transport and hotels, then press Generate.</p>
       </div>
     </div>
   </section>
@@ -1916,7 +1916,7 @@ function promptReady() {
   var hotels = document.querySelectorAll('#hotels-list .entry-card').length;
   if (!legs && !hotels) { stageEmpty(true); return; }
   stageEmpty(true, 'Ready to draw',
-    legs + ' flight' + (legs === 1 ? '' : 's') + ' and ' +
+    legs + (legs === 1 ? ' leg' : ' legs') + ' and ' +
     hotels + ' hotel' + (hotels === 1 ? '' : 's') + ' loaded. Press Generate to draw the trip.');
 }
 
@@ -1927,7 +1927,7 @@ function stageEmpty(on, title, body) {
   artboard.innerHTML = '';
   $('stage-dims').textContent = '';
   $('se-title').textContent = title || 'Your journey starts here';
-  $('se-body').textContent = body || 'Add a flight and press Generate to see every hour of it.';
+  $('se-body').textContent = body || 'Add your transport and hotels, then press Generate.';
 }
 var scale = 1, fitMode = false, lastSize = { w: 900, h: 820 };
 
