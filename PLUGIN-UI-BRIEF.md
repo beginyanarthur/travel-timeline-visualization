@@ -113,3 +113,45 @@ than its departure says so rather than writing a negative duration.
 have train numbers, buses have routes, ferries have names. Car, bike and walk
 have none, so the field is hidden and its value cleared, which stops a walk
 carrying a flight number into the exported JSON.
+
+## 7. Card layout, web page only so far
+
+The card was drawn for a 340px panel and then stretched to the width of a
+tablet, where a date field grew to 369px to hold ten characters. It read as
+dense stacked rows and wasted space at once. Four changes, all worth copying
+if the plugin panel ever gets a wider layout.
+
+**The form has a maximum width.** 660px, centred, head and footer included.
+A panel does not get better by being wider, only emptier. Irrelevant at 340px
+in Figma, but it is why the web card stopped sprawling.
+
+**Departure, duration and arrival are three named groups.** They were nine
+loose fields separated by two hairlines. They stack chronologically when the
+card is narrow and sit side by side once it is wider than about 470px, which
+is where most of the height went. Hotels get the same shape for check in and
+check out.
+
+**Section headings outrank their field labels.** They were 8px uppercase
+tertiary, the smallest and faintest text on a card, while labelling the
+largest groups. They are now 11px semibold in the primary text colour. This
+one is worth copying to the plugin as is: it costs nothing and the card stops
+reading as one undifferentiated block.
+
+**Duration has a heading of its own.** It used to sit unlabelled between
+Departure and Arrival and read as part of Departure. Its two fields are now
+`[4] h [50] min`, sized to two digits, rather than two more shouted labels
+over two stretched inputs.
+
+**The arrival note says only what the fields cannot.** It used to read
+`→ 2026-09-04 at 9:20 AM (-2h tz)`, restating the arrival date and time from
+the two fields directly above it. It now reads `Arrives the same day, 2 hours
+behind.`, which is the part you cannot see anywhere else.
+
+**Smaller things.** The colour swatch has a `Colour` label instead of being an
+unexplained coloured block. The rule under the route plane is gone. Date and
+time columns are sized to what they hold rather than split evenly, because
+`06:30` needs far less room than `04.09.2026` and the year was disappearing
+behind the calendar button in the narrow rail.
+
+Copy note: the hotel headings read `Check in` and `Check out` rather than
+`Check-in` and `Check-out`, in line with the no dashes rule.
