@@ -98,7 +98,7 @@ def main():
 
     s = swap(s,
              '<button class="io-btn" id="copy-btn">Copy JSON</button>',
-             '<button class="io-btn" id="download-btn">Download</button>',
+             '<button class="io-btn" id="download-btn">↓ Export JSON</button>',
              "the export button")
 
     s = swap(s, COPY_HANDLER, DOWNLOAD_HANDLER, "the copy handler")
