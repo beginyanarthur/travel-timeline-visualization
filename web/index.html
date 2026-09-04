@@ -1013,7 +1013,7 @@ input[type="time"].f-input::-webkit-date-and-time-value {
      the longest value, gets whatever the other two do not need, and the row
      may wrap rather than squeezing it until the year disappears. */
   .f-row { flex-wrap: wrap; gap: 6px; }
-  .f-row > * { flex: 1 1 120px; }
+  .f-row > * { flex: 1 1 132px; }
   .f-row > .time-col { flex: 0 0 88px; }
   .f-row > .zone-col { flex: 0 0 96px; }
   .f-row > .swatch-field { flex: 0 0 auto; }
@@ -1042,7 +1042,7 @@ input[type="time"].f-input::-webkit-date-and-time-value {
 /* Two 16px date fields and an arrow will not fit across the smallest phones,
    and squeezing them hid the year behind the calendar button. They stack
    instead, and the collapsed sheet grows to keep showing both. */
-@media (max-width: 380px) {
+@media (max-width: 340px) {
   :root { --sheet-h: 214px; }
   .trip-dates { flex-wrap: wrap; row-gap: 8px; }
   .trip-dates .date-field { flex: 1 1 100%; }
