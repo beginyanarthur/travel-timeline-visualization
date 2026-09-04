@@ -551,7 +551,7 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 .tab-panel.active { display: block; }
 
 .trip-dates {
-  display: flex; gap: 6px; align-items: flex-end;
+  display: flex; gap: 8px; align-items: flex-end;
   padding: 8px 10px; margin: 0;
   background: var(--figma-color-bg-secondary);
   border-radius: 8px;
@@ -567,8 +567,8 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
    by a margin that only matched one label height. */
 .trip-dates .arrow {
   font-size: 14px; color: var(--figma-color-text-tertiary);
-  flex: 0 0 auto; height: 28px;
-  display: flex; align-items: center;
+  flex: 0 0 14px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
 }
 
 .entry-card {
@@ -641,6 +641,10 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 }
 .f-input {
   width: 100%; box-sizing: border-box;
+  /* A date input's intrinsic minimum width on iOS is wider than the column
+     it sits in, and width:100% cannot push it below min-width:auto, so it
+     overflowed and slid under the arrow between the fields. */
+  min-width: 0;
   height: 28px;   /* a select renders 2px taller than a text input; pin both */
   padding: 4px 7px; border: 1px solid var(--figma-color-border);
   border-radius: 6px; background: var(--figma-color-bg);
