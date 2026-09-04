@@ -503,7 +503,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   dotNight.x = PAD_LEFT - 2
   dotNight.y = tlLegY + 57
   dotNight.fills = [spRgb(0.12)]
-  const nightLabel = await txt('Black = Night (6pm - 5am)', LEG_TEXT_X, tlLegY + 59, 12, 'Regular', '#333333')
+  const nightLabel = await txt('Black = Night (9pm - 5am)', LEG_TEXT_X, tlLegY + 59, 12, 'Regular', '#333333')
   nightLabel.setRangeFontName('Black = '.length, 'Black = Night'.length, { family: 'Inter', style: 'Bold' })
 
   const dotDay = figma.createEllipse()
@@ -512,7 +512,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   dotDay.x = PAD_LEFT - 2
   dotDay.y = tlLegY + 81
   dotDay.fills = [spRgb(0.75)]
-  const dayLabel2 = await txt('Gray = Day (6am - 5pm)', LEG_TEXT_X, tlLegY + 83, 12, 'Regular', '#333333')
+  const dayLabel2 = await txt('Gray = Day (6am - 8pm)', LEG_TEXT_X, tlLegY + 83, 12, 'Regular', '#333333')
   dayLabel2.setRangeFontName('Gray = '.length, 'Gray = Day'.length, { family: 'Inter', style: 'Bold' })
 
   // Colored segments legend (solid = city stay)
@@ -741,7 +741,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   await txt('How to read', PAD_LEFT - 1, clLegY, 16, 'Bold', '#333333')
 
   // Descriptive paragraph with mixed bold formatting
-  const clockLegendText = `Each of the 24 pie slices is one hour:  Dark slices for nighttime (6 pm–5 am), light Gray for daytime (6 am–5 pm). Colored slices overlay the hours you're staying in a city, so you can see at a glance how much of each day is spent in transit versus on the ground.   Sun-cycle icons (moon → sunrise → sun → sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.`
+  const clockLegendText = `Each of the 24 pie slices is one hour:  Dark slices for nighttime (9 pm–5 am), light Gray for daytime (6 am–8 pm). Colored slices overlay the hours you're staying in a city, so you can see at a glance how much of each day is spent in transit versus on the ground.   Sun-cycle icons (moon → sunrise → sun → sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.`
   const clPara = figma.createText()
   clPara.fontName = { family: 'Inter', style: 'Regular' }
   clPara.characters = clockLegendText

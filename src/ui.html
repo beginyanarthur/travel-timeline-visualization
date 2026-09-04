@@ -77,14 +77,24 @@
 
     /* ── Cards ── */
     .entry-card {
-      background: var(--figma-color-bg);
+      background: #F5FBFE;
       border-radius: var(--radius);
       margin-bottom: 6px; position: relative;
       border: 1px solid var(--figma-color-border);
-      transition: box-shadow 0.15s ease;
+      transition: box-shadow 0.15s ease, opacity 0.15s ease;
       overflow: hidden;
     }
     .entry-card:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .entry-card.dragging { opacity: 0.4; }
+    .entry-card.drag-over { border-top: 2px solid var(--figma-color-bg-brand, #0D99FF); margin-top: -1px; }
+    .drag-handle {
+      cursor: grab; flex-shrink: 0; padding: 0 2px;
+      color: var(--figma-color-text-tertiary); font-size: 10px;
+      display: flex; align-items: center; user-select: none;
+      opacity: 0; transition: opacity 0.15s ease;
+    }
+    .drag-handle:active { cursor: grabbing; }
+    .entry-card:hover .drag-handle { opacity: 1; }
     .card-header {
       display: flex; align-items: center; gap: 6px;
       padding: 8px 10px; cursor: pointer; user-select: none;
@@ -138,7 +148,7 @@
     .f-input {
       width: 100%; box-sizing: border-box;
       padding: 5px 7px; border: 1px solid var(--figma-color-border);
-      border-radius: var(--radius-sm); background: var(--figma-color-bg-secondary);
+      border-radius: var(--radius-sm); background: #FFFFFF;
       color: var(--figma-color-text); font-size: 11px; font-family: var(--font);
       transition: border-color 0.12s ease;
     }
@@ -298,15 +308,30 @@
     // Every way of getting between two places. 'flight' and 'train' keep
     // their ids so trips exported before the others existed still import.
     var TRANSPORT = {
-      flight: { label: 'Flight', icon: '\u2708\ufe0f' },
-      train:  { label: 'Train',  icon: '\ud83d\ude86' },
-      bus:    { label: 'Bus',    icon: '\ud83d\ude8c' },
-      boat:   { label: 'Boat',   icon: '\ud83d\udea2' },
-      car:    { label: 'Car',    icon: '\ud83d\ude97' },
-      bike:   { label: 'Bike',   icon: '\ud83d\udeb2' },
-      walk:   { label: 'Walk',   icon: '\ud83d\udeb6' }
+      flight: { label: 'Flight', icon: '\u2708\ufe0f', ref: { label: 'Flight no.', ph: 'W67805' } },
+      train:  { label: 'Train',  icon: '\ud83d\ude86', ref: { label: 'Train no.',  ph: 'ICE 573' } },
+      bus:    { label: 'Bus',    icon: '\ud83d\ude8c', ref: { label: 'Route',      ph: 'FlixBus 006' } },
+      boat:   { label: 'Boat',   icon: '\ud83d\udea2', ref: { label: 'Ferry',      ph: 'Color Line' } },
+      // A car, a bike and a pair of legs do not have a number.
+      car:    { label: 'Car',    icon: '\ud83d\ude97', ref: null },
+      bike:   { label: 'Bike',   icon: '\ud83d\udeb2', ref: null },
+      walk:   { label: 'Walk',   icon: '\ud83d\udeb6', ref: null }
     }
     function mode(t) { return TRANSPORT[t] || TRANSPORT.flight }
+
+    // Flights and trains have numbers, buses have routes, ferries have
+    // names. A car, a bike and a walk have none, so the field goes away.
+    function setRefField(card) {
+      var type = card.querySelector('[data-field="type"]')
+      var wrap = card.querySelector('.ref-field')
+      if (!type || !wrap) return
+      var input = card.querySelector('[data-field="flightNumber"]')
+      var ref = mode(type.value).ref
+      if (!ref) { wrap.style.display = 'none'; input.value = ''; return }
+      wrap.style.display = ''
+      card.querySelector('.ref-label').textContent = ref.label
+      input.placeholder = ref.ph
+    }
 
     // A leg can be any of the six, so the card header says which.
     function setLegLabel(card) {
@@ -453,6 +478,7 @@
 
       card.innerHTML =
         '<div class="card-header">' +
+          '<span class="drag-handle" draggable="true" title="Drag to reorder">⠿</span>' +
           '<span class="leg-dot" style="background:' + color + '"></span>' +
           '<span class="header-label">Flight ' + (idx + 1) + '</span>' +
           '<span class="header-meta"></span>' +
@@ -485,7 +511,7 @@
                 return '<option value="' + k + '">' + mode(k).icon + ' ' + mode(k).label + '</option>'
               }).join('') +
             '</select></div>' +
-          '<div style="flex:1"><div class="f-label">Number</div>' +
+          '<div style="flex:1" class="ref-field"><div class="f-label ref-label">Flight no.</div>' +
             '<input class="f-input" data-field="flightNumber" placeholder="W67805"></div>' +
           '<input type="color" class="color-swatch" data-field="color" value="' + color + '">' +
         '</div>' +
@@ -525,7 +551,7 @@
 
       // Collapse/expand toggle
       card.querySelector('.card-header').addEventListener('click', function(e) {
-        if (e.target.closest('.remove-btn')) return
+        if (e.target.closest('.remove-btn') || e.target.closest('.drag-handle')) return
         card.classList.toggle('expanded')
       })
 
@@ -572,6 +598,7 @@
         var icon = card.querySelector('.flight-icon')
         if (icon) icon.textContent = mode(this.value).icon
         setLegLabel(card)
+        setRefField(card)
         computeArrival(card)
       })
 
@@ -602,6 +629,7 @@
 
       card.innerHTML =
         '<div class="card-header">' +
+          '<span class="drag-handle" draggable="true" title="Drag to reorder">⠿</span>' +
           '<span style="font-size:12px">🏨</span>' +
           '<span class="header-label">Hotel ' + (idx + 1) + '</span>' +
           '<span class="header-meta"></span>' +
@@ -632,7 +660,7 @@
         '</div></div>'
 
       card.querySelector('.card-header').addEventListener('click', function(e) {
-        if (e.target.closest('.remove-btn')) return
+        if (e.target.closest('.remove-btn') || e.target.closest('.drag-handle')) return
         card.classList.toggle('expanded')
       })
 
@@ -736,6 +764,57 @@
         hotels: hotels,
       }
     }
+
+    // ── Drag to reorder. A leg's position in the list is its position
+    // in the trip, and collectData reads the DOM, so nothing else needs
+    // to know the order changed. ──
+    var dragSrc = null
+    function renumber(list) {
+      list.querySelectorAll('.entry-card').forEach(function(c, i) {
+        c.dataset.n = String(i + 1)
+        var label = c.querySelector('.header-label')
+        if (!label) return
+        if (c.querySelector('[data-field="type"]')) setLegLabel(c)
+        else label.textContent = 'Hotel ' + (i + 1)
+      })
+    }
+    function setupDrag(listId) {
+      var list = document.getElementById(listId)
+      list.addEventListener('dragstart', function(e) {
+        var handle = e.target.closest('.drag-handle')
+        if (!handle) { e.preventDefault(); return }
+        dragSrc = handle.closest('.entry-card')
+        if (!dragSrc) { e.preventDefault(); return }
+        dragSrc.classList.add('dragging')
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', '')
+      })
+      list.addEventListener('dragover', function(e) {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        list.querySelectorAll('.entry-card.drag-over').forEach(function(c) { c.classList.remove('drag-over') })
+        var card = e.target.closest('.entry-card')
+        if (card && card !== dragSrc && card.parentNode === list) card.classList.add('drag-over')
+      })
+      list.addEventListener('drop', function(e) {
+        e.preventDefault()
+        var target = e.target.closest('.entry-card')
+        if (target && dragSrc && target !== dragSrc && target.parentNode === list) {
+          var cards = Array.prototype.slice.call(list.querySelectorAll('.entry-card'))
+          if (cards.indexOf(dragSrc) < cards.indexOf(target)) list.insertBefore(dragSrc, target.nextSibling)
+          else list.insertBefore(dragSrc, target)
+          renumber(list)
+        }
+        list.querySelectorAll('.entry-card.drag-over').forEach(function(c) { c.classList.remove('drag-over') })
+      })
+      list.addEventListener('dragend', function() {
+        if (dragSrc) dragSrc.classList.remove('dragging')
+        list.querySelectorAll('.entry-card.drag-over').forEach(function(c) { c.classList.remove('drag-over') })
+        dragSrc = null
+      })
+    }
+    setupDrag('legs-list')
+    setupDrag('hotels-list')
 
     document.getElementById('add-leg').addEventListener('click', createLegCard)
     document.getElementById('add-hotel').addEventListener('click', createHotelCard)
@@ -867,6 +946,7 @@
           var icon = card.querySelector('.flight-icon')
           if (icon) icon.textContent = mode(leg.type).icon
           setLegLabel(card)
+          setRefField(card)
 
           // Update color dot
           var dot = card.querySelector('.leg-dot')

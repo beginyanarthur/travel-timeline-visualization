@@ -1250,10 +1250,10 @@ function renderItinerary(data) {
   txtMixed('Each circle represents <tspan font-weight="700">1 hour</tspan>',
            LEG_TEXT_X, tlLegY + 35, 12, 400, '#333333');
   circle(PAD_LEFT - 2, tlLegY + 57, 18, gr(0.12));
-  txtMixed('Black = <tspan font-weight="700">Night</tspan> (6pm - 5am)',
+  txtMixed('Black = <tspan font-weight="700">Night</tspan> (9pm - 5am)',
            LEG_TEXT_X, tlLegY + 59, 12, 400, '#333333');
   circle(PAD_LEFT - 2, tlLegY + 81, 18, gr(0.75));
-  txtMixed('Gray = <tspan font-weight="700">Day</tspan> (6am - 5pm)',
+  txtMixed('Gray = <tspan font-weight="700">Day</tspan> (6am - 8pm)',
            LEG_TEXT_X, tlLegY + 83, 12, 400, '#333333');
   rect(PAD_LEFT, tlLegY + 112, 40, 4, '#E53935');
   txtMixed('Colored segments = <tspan font-weight="700">Staying in the city</tspan>',
@@ -1376,7 +1376,7 @@ function renderItinerary(data) {
   var clLegY = CLOCK_TOP + 30 + CLOCK_D + 114;
   txt('How to read', PAD_LEFT - 1, clLegY, 16, 700, '#333333');
   paragraph(
-    "Each of the 24 pie slices is one hour:  Dark slices for nighttime (6 pm\u20135 am), light Gray for daytime (6 am\u20135 pm). Colored slices overlay the hours you're staying in a city, so you can see at a glance how much of each day is spent in transit versus on the ground.   Sun-cycle icons (moon \u2192 sunrise \u2192 sun \u2192 sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.",
+    "Each of the 24 pie slices is one hour:  Dark slices for nighttime (9 pm\u20135 am), light Gray for daytime (6 am\u20138 pm). Colored slices overlay the hours you're staying in a city, so you can see at a glance how much of each day is spent in transit versus on the ground.   Sun-cycle icons (moon \u2192 sunrise \u2192 sun \u2192 sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.",
     ['Dark slices', 'light', 'Gray', 'Colored slices', 'Sun-cycle'],
     PAD_LEFT - 1, clLegY + 33, 351, 12, '#000000');
 
