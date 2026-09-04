@@ -845,7 +845,7 @@ select.f-input,
         </div>
 
         <div class="io-bar" style="margin-top:8px;">
-          <button class="io-btn" id="download-btn">↓ Export JSON</button>
+          <button class="io-btn export" id="download-btn">↓ Export JSON</button>
           <button class="io-btn" id="file-btn">↑ Import JSON</button>
           <button class="io-btn danger" id="clear-trip" type="button" disabled>Clear</button>
           <input type="file" id="import-file" accept=".json" style="display:none;">
@@ -1652,6 +1652,8 @@ function updateStatus() {
   var anyCards = legCards.length ||
     document.querySelectorAll('#hotels-list .entry-card').length;
   $('clear-trip').disabled = !anyCards;
+  /* Nothing to export until there is something in the panel. */
+  document.querySelector('.io-btn.export').disabled = !anyCards;
   var btn = $('generate'), status = $('status');
   status.classList.remove('warn');
   if (!$('tripStart').value || !$('tripEnd').value) {

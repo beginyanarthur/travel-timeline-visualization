@@ -280,7 +280,7 @@
 
       <!-- IO bar -->
       <div class="io-bar" style="margin-top:8px;">
-        <button class="io-btn" id="export-btn">↓ Export JSON</button>
+        <button class="io-btn export" id="export-btn">↓ Export JSON</button>
         <button class="io-btn" id="import-btn">↑ Import JSON</button>
         <input type="file" id="import-file" accept=".json" style="display:none;">
       </div>
@@ -650,10 +650,12 @@
       }
       if (legCards.length === 0) {
         btn.setAttribute('disabled', '')
+        document.querySelector('.io-btn.export').disabled = true
         status.textContent = 'Add at least one flight'
         return
       }
       btn.removeAttribute('disabled')
+      document.querySelector('.io-btn.export').disabled = false
       var hotelCards = document.querySelectorAll('#hotels-list .entry-card')
       status.textContent =
         legCards.length + (legCards.length === 1 ? ' leg, ' : ' legs, ') +

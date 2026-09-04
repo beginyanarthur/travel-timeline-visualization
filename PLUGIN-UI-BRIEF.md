@@ -99,3 +99,7 @@ and hotel cards, with the input fills staying white so a field still reads as
 a field. Do not hardcode that value in the plugin: the panel follows Figma's
 own theme, and a fixed light blue would be wrong in dark mode. Use the
 equivalent Figma surface token instead, one step off the panel background.
+
+**Export is disabled while the panel is empty.** Exporting nothing produces a
+file with an empty `legs` array, which imports as nothing. Import stays
+enabled, since importing is how data gets in.
