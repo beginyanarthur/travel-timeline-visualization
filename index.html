@@ -776,6 +776,15 @@ input[type="time"].f-input::-webkit-date-and-time-value {
   text-align: left;
   margin: 0;
 }
+/* The browser draws the calendar and clock almost black, while the chevron
+   we draw ourselves is grey, so a row of three fields carried two different
+   weights of icon. These are hints beside the value, not the value, so they
+   come back to match. */
+input[type="date"].f-input::-webkit-calendar-picker-indicator,
+input[type="time"].f-input::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+}
 
 .route-indicator { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 10px; }
 .route-city { flex: 1; min-width: 0; display: flex; flex-direction: column; }
