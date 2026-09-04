@@ -1998,7 +1998,8 @@ grip.addEventListener('pointerdown', function (e) {
   dragFrom = e.clientY;
   dragH = rail.getBoundingClientRect().height;
   rail.classList.add('dragging');
-  grip.setPointerCapture(e.pointerId);
+  /* Capture can throw if the pointer is already gone; the drag still works. */
+  try { grip.setPointerCapture(e.pointerId); } catch (err) {}
 });
 
 grip.addEventListener('pointermove', function (e) {
