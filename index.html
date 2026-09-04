@@ -2465,6 +2465,15 @@ wrap.addEventListener('pointerdown', function () {
 
 sheetMQ.addEventListener('change', function () { sheetOpen(false); rail.style.height = ''; });
 
+/* The dates are the only fields reachable while the sheet is collapsed.
+   Touching one opens it, so Generate comes into view and the rule that
+   nothing is drawn until you press it is visible rather than implied. */
+['tripStart', 'tripEnd'].forEach(function (id) {
+  $(id).addEventListener('focus', function () {
+    if (sheetMQ.matches && !isOpen()) sheetOpen(true);
+  });
+});
+
 /* Open exactly as the plugin opens: today to a week out, nothing added yet. */
 var boot = new Date();
 $('tripStart').value = boot.toISOString().slice(0, 10);
