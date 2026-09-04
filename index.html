@@ -776,21 +776,25 @@ select.f-input,
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 22px;
+    height: 26px;
     flex: 0 0 auto;
     cursor: grab;
-    touch-action: none;
   }
   .sheet-grip i {
     display: block;
-    width: 38px; height: 4px;
-    border-radius: 2px;
+    width: 44px; height: 5px;
+    border-radius: 3px;
     background: var(--rule-firm);
   }
+  /* The grip alone is a 26px target. The header above the form is dead
+     space, so it drags too, and both refuse the browser's own gestures. */
+  .sheet-grip, .rail-head { touch-action: none; }
+  .rail-head { cursor: grab; }
+  .rail.dragging .sheet-grip, .rail.dragging .rail-head { cursor: grabbing; }
   .rail.dragging .sheet-grip { cursor: grabbing; }
 
   .rail-head { min-height: 42px; }
-  .rail-scroll { overflow-y: auto; }
+  .rail-scroll { overflow-y: auto; overscroll-behavior: contain; }
 
   /* Collapsed, the sheet shows the dates and nothing below them. */
   .rail:not([data-open="true"]) .rail-scroll { overflow: hidden; }
@@ -2314,27 +2318,37 @@ function isOpen() { return rail.getAttribute('data-open') === 'true'; }
 
 var dragFrom = 0, dragH = 0, dragging = false, moved = 0;
 
-grip.addEventListener('pointerdown', function (e) {
+rail.addEventListener('pointerdown', function (e) {
   if (!sheetMQ.matches) return;
+  /* Anywhere on the grip or the header, but not on the Clear button. */
+  if (!e.target.closest('.sheet-grip, .rail-head') || e.target.closest('button')) return;
+  e.preventDefault();   /* without this the browser scrolls the page instead */
   dragging = true;
   moved = 0;
   dragFrom = e.clientY;
   dragH = rail.getBoundingClientRect().height;
   rail.classList.add('dragging');
   /* Capture can throw if the pointer is already gone; the drag still works. */
-  try { grip.setPointerCapture(e.pointerId); } catch (err) {}
+  try { rail.setPointerCapture(e.pointerId); } catch (err) {}
 });
 
-grip.addEventListener('pointermove', function (e) {
+rail.addEventListener('pointermove', function (e) {
   if (!dragging) return;
+  e.preventDefault();
   var dy = dragFrom - e.clientY;
   moved = Math.abs(dy);
   var h = Math.min(window.innerHeight * 0.92, Math.max(96, dragH + dy));
   rail.style.height = h + 'px';
 });
 
+/* Safari still tries to scroll mid-drag unless the touch stream is
+   refused as well as the pointer stream. */
+rail.addEventListener('touchmove', function (e) {
+  if (dragging) e.preventDefault();
+}, { passive: false });
+
 ['pointerup', 'pointercancel'].forEach(function (ev) {
-  grip.addEventListener(ev, function () {
+  rail.addEventListener(ev, function () {
     if (!dragging) return;
     dragging = false;
     rail.classList.remove('dragging');
