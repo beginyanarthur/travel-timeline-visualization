@@ -1975,31 +1975,76 @@ function render() {
   $('stage-dims').textContent = res.w.toLocaleString() + ' × ' + res.h + ' px';
 }
 
-function applyScale() {
+var CANVAS_PAD = 22;
+var zoomAnim = 0;
+var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function clampScale(v) { return Math.min(3, Math.max(0.08, v)); }
+
+/* An anchor is a point on the drawing plus the place in the viewport it
+   should stay at, so zooming pivots around it instead of throwing the
+   drawing sideways. That lurch is most of what makes zoom feel violent. */
+function anchorAt(vx, vy) {
+  return {
+    x: (wrap.scrollLeft + vx - CANVAS_PAD) / scale,
+    y: (wrap.scrollTop + vy - CANVAS_PAD) / scale,
+    vx: vx, vy: vy
+  };
+}
+function centreAnchor() { return anchorAt(wrap.clientWidth / 2, wrap.clientHeight / 2); }
+function pointerAnchor(e) {
+  var r = wrap.getBoundingClientRect();
+  return anchorAt(e.clientX - r.left, e.clientY - r.top);
+}
+
+function applyScale(anchor) {
   var svg = artboard.querySelector('svg');
   if (!svg) return;
   svg.setAttribute('width', Math.round(lastSize.w * scale));
   svg.setAttribute('height', Math.round(lastSize.h * scale));
+  if (anchor) {
+    wrap.scrollLeft = anchor.x * scale + CANVAS_PAD - anchor.vx;
+    wrap.scrollTop = anchor.y * scale + CANVAS_PAD - anchor.vy;
+  }
   $('zoom-readout').textContent = Math.round(scale * 100) + '%';
   $('view-fit').setAttribute('aria-pressed', String(fitMode));
   $('view-actual').setAttribute('aria-pressed', String(!fitMode && Math.abs(scale - 1) < 0.001));
 }
 
-function setScale(next, keepFit) {
-  scale = Math.min(3, Math.max(0.08, next));
+/* Immediate. For the wheel and pinch, where the hand supplies the easing. */
+function setScale(next, keepFit, anchor) {
+  cancelAnimationFrame(zoomAnim);
+  scale = clampScale(next);
   if (!keepFit) fitMode = false;
-  applyScale();
+  applyScale(anchor);
+}
+
+/* Eased. For the buttons, where a jump has nothing behind it. */
+function zoomTo(next, keepFit) {
+  next = clampScale(next);
+  if (!keepFit) fitMode = false;
+  var anchor = centreAnchor();
+  cancelAnimationFrame(zoomAnim);
+  if (reduceMotion.matches) { scale = next; applyScale(anchor); return; }
+  var from = scale, t0 = performance.now(), dur = 300;
+  function step(now) {
+    var t = Math.min(1, (now - t0) / dur);
+    scale = from + (next - from) * (1 - Math.pow(1 - t, 3));  /* easeOutCubic */
+    applyScale(anchor);
+    if (t < 1) zoomAnim = requestAnimationFrame(step);
+  }
+  step(performance.now());
 }
 
 function fitWidth() {
   fitMode = true;
-  var avail = wrap.clientWidth - 44;
-  setScale(avail / lastSize.w, true);
+  zoomTo((wrap.clientWidth - 44) / lastSize.w, true);
 }
 
-$('zoom-in').addEventListener('click', function () { setScale(scale * 1.25); });
-$('zoom-out').addEventListener('click', function () { setScale(scale / 1.25); });
-$('view-actual').addEventListener('click', function () { setScale(1); wrap.scrollTo({ left: 0 }); });
+/* 1.18 rather than 1.25: more presses, each of them gentler. */
+$('zoom-in').addEventListener('click', function () { zoomTo(scale * 1.18); });
+$('zoom-out').addEventListener('click', function () { zoomTo(scale / 1.18); });
+$('view-actual').addEventListener('click', function () { zoomTo(1); });
 $('view-fit').addEventListener('click', fitWidth);
 
 $('generate').addEventListener('click', function () {
@@ -2029,7 +2074,10 @@ wrap.addEventListener('pointermove', function (e) {
 wrap.addEventListener('wheel', function (e) {
   if (!e.ctrlKey && !e.metaKey) return;
   e.preventDefault();
-  setScale(scale * (e.deltaY < 0 ? 1.1 : 1 / 1.1));
+  /* Proportional to how hard the wheel was turned, and pivoting on the
+     cursor, rather than a fixed 10% jump per event. A trackpad fires
+     these in bursts, which is what made it feel like it lunged. */
+  setScale(scale * Math.exp(-e.deltaY * 0.0016), false, pointerAnchor(e));
 }, { passive: false });
 
 /* Two finger pinch on touch */
@@ -2044,7 +2092,10 @@ wrap.addEventListener('touchstart', function (e) {
 wrap.addEventListener('touchmove', function (e) {
   if (e.touches.length === 2 && pinchStart) {
     e.preventDefault();
-    setScale(pinchScale * (touchDist(e.touches) / pinchStart));
+    var r = wrap.getBoundingClientRect();
+    var mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left;
+    var my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top;
+    setScale(pinchScale * (touchDist(e.touches) / pinchStart), false, anchorAt(mx, my));
   }
 }, { passive: false });
 wrap.addEventListener('touchend', function () { pinchStart = 0; }, { passive: true });
