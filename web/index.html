@@ -625,6 +625,11 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
   width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
 }
+/* Hotels already carried their icon here. Legs only had the colour, so you
+   could not tell a train from a ferry without opening the card. The dot
+   stays: it is the one thing tying this card to its line in the drawing,
+   and the icon cannot carry that because the icons are full colour. */
+.header-icon { font-size: 12px; line-height: 1; flex-shrink: 0; }
 .header-label {
   font-size: 11px; font-weight: 600; color: var(--figma-color-text);
   flex-shrink: 0; white-space: nowrap;
@@ -1993,6 +1998,16 @@ function makeLabelEditable(card) {
   });
 }
 
+/* The route row and the card header show the same icon, so they are set
+   together and neither can be forgotten. */
+function setModeIcons(card, type) {
+  var icon = mode(type).icon;
+  var route = card.querySelector('.flight-icon');
+  if (route) route.textContent = icon;
+  var head = card.querySelector('.header-icon');
+  if (head) head.textContent = icon;
+}
+
 function setLegLabel(card) {
   /* A name the traveller typed outranks anything we would generate. */
   if (card.dataset.named) return;
@@ -2033,6 +2048,7 @@ function createLegCard(skipCompute) {
     '<div class="card-header">' +
       '<span class="drag-handle" aria-hidden="true"><svg width="12" height="14" viewBox="0 0 12 14"><g fill="currentColor"><rect x="1" y="3" width="10" height="1.5" rx="0.75"/><rect x="1" y="6.25" width="10" height="1.5" rx="0.75"/><rect x="1" y="9.5" width="10" height="1.5" rx="0.75"/></g></svg></span>' +
       '<span class="leg-dot" style="background:' + color + '"></span>' +
+      '<span class="header-icon">' + mode('flight').icon + '</span>' +
       '<span class="header-label">Flight ' + (idx + 1) + '</span>' +
       '<span class="header-meta"></span>' +
       '<span class="chevron"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.9l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
@@ -2132,8 +2148,7 @@ function createLegCard(skipCompute) {
       card.querySelector('[data-field="arrivalUtc"]').value =
         card.querySelector('[data-field="departureUtc"]').value;
     }
-    var icon = card.querySelector('.flight-icon');
-    if (icon) icon.textContent = mode(this.value).icon;
+    setModeIcons(card, this.value);
     setLegLabel(card);
     setRefField(card);
     computeArrival(card);
@@ -2161,7 +2176,7 @@ function createHotelCard() {
   card.innerHTML =
     '<div class="card-header">' +
       '<span class="drag-handle" aria-hidden="true"><svg width="12" height="14" viewBox="0 0 12 14"><g fill="currentColor"><rect x="1" y="3" width="10" height="1.5" rx="0.75"/><rect x="1" y="6.25" width="10" height="1.5" rx="0.75"/><rect x="1" y="9.5" width="10" height="1.5" rx="0.75"/></g></svg></span>' +
-      '<span style="font-size:12px">🏨</span>' +
+      '<span class="header-icon">🏨</span>' +
       '<span class="header-label">Hotel ' + (idx + 1) + '</span>' +
       '<span class="header-meta"></span>' +
       '<span class="chevron"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.9l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
@@ -2438,8 +2453,7 @@ function loadTripData(data) {
        'departureTime','durationHours','durationMinutes','arrivalCity','arrivalUtc']
         .forEach(function (f) { setField(card, f, leg[f]); });
 
-      var icon = card.querySelector('.flight-icon');
-      if (icon) icon.textContent = mode(leg.type).icon;
+      setModeIcons(card, leg.type);
       if (leg.label) {
         card.dataset.named = '1';
         card.querySelector('.header-label').textContent = leg.label;
