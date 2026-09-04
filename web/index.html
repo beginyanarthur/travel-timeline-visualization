@@ -273,6 +273,10 @@ h1 {
     var(--surface-2);
   cursor: grab;
   overscroll-behavior: contain;
+  /* Dragging the canvas was sweeping a text selection across the drawing.
+     Nothing in a picture is worth selecting. */
+  user-select: none;
+  -webkit-user-select: none;
 }
 .canvas-wrap.dragging { cursor: grabbing; }
 .canvas-pad { padding: 22px; width: max-content; }
@@ -2071,10 +2075,11 @@ $('generate').addEventListener('click', function () {
 var panning = false, panX = 0, panY = 0, startL = 0, startT = 0;
 wrap.addEventListener('pointerdown', function (e) {
   if (e.pointerType === 'touch') return;
+  e.preventDefault();   /* stops the browser starting a selection drag */
   panning = true; panX = e.clientX; panY = e.clientY;
   startL = wrap.scrollLeft; startT = wrap.scrollTop;
   wrap.classList.add('dragging');
-  wrap.setPointerCapture(e.pointerId);
+  try { wrap.setPointerCapture(e.pointerId); } catch (err) {}
 });
 wrap.addEventListener('pointermove', function (e) {
   if (!panning) return;
