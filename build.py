@@ -29,12 +29,12 @@ HEAD = '''<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="author" content="Arthur Beginyan">
-<meta name="description" content="See how little of a trip survives the airports, the night flights and the hours lost to time zones. A journey drawn to scale, one circle per hour.">
+<meta name="description" content="See your whole trip on one timeline. Every hour is one circle, dark through the night and pale through the day. A Figma plugin, rebuilt to run in the browser.">
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Travel Timeline Visualization">
 <meta property="og:title" content="Travel Timeline Visualization">
-<meta property="og:description" content="An itinerary tells you when the flights leave. It does not show how little of a trip survives the airports, the night flights and the hours lost to time zones.">
+<meta property="og:description" content="See your whole trip on one timeline. Every hour is one circle, dark through the night and pale through the day.">
 <meta property="og:image" content="%(url)sog.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -43,7 +43,7 @@ HEAD = '''<!doctype html>
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Travel Timeline Visualization">
-<meta name="twitter:description" content="An itinerary tells you when the flights leave. This shows how much of the trip is actually travel.">
+<meta name="twitter:description" content="See your whole trip on one timeline. Every hour is one circle.">
 <meta name="twitter:image" content="%(url)sog.png">
 
 <link rel="icon" href="data:image/svg+xml,%%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%%3E%%3Ccircle cx='17' cy='16' r='13' fill='%%23FF5630'/%%3E%%3Ccircle cx='4.5' cy='16' r='3.5' fill='%%23000'/%%3E%%3C/svg%%3E">
