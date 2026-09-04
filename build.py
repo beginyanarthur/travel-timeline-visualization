@@ -16,7 +16,7 @@ OUT = os.path.join(ROOT, "index.html")
 
 # Set this to your Pages URL, with the trailing slash. Social previews need an
 # absolute URL, so LinkedIn cannot resolve a relative one.
-PAGES_URL = "__PAGES_URL__"
+PAGES_URL = "https://beginyanarthur.github.io/travel-timeline-visualization/"
 
 HEAD = '''<!doctype html>
 <html lang="en">
@@ -28,7 +28,7 @@ HEAD = '''<!doctype html>
 <meta name="description" content="A travel itinerary drawn as its own duration: one circle per hour, dark through the night and pale through the day. A Figma plugin, rebuilt to run in the browser.">
 
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="One dot per hour">
+<meta property="og:site_name" content="Travel Timeline Visualization">
 <meta property="og:title" content="One dot per hour">
 <meta property="og:description" content="A trip drawn as its own duration. Every hour of the journey is a circle. A Figma plugin, rebuilt to run in the browser so you can try it without installing anything.">
 <meta property="og:image" content="%(url)sog.png">

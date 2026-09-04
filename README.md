@@ -1,4 +1,6 @@
-# One dot per hour
+# Travel Timeline Visualization
+
+*One dot per hour.*
 
 A travel itinerary drawn as its own duration. Every hour of a trip is one
 circle, dark through the night and pale through the day, with a coloured bar
@@ -12,7 +14,7 @@ so distance across the page is literally time: an eight day trip is about
 This started as a Figma plugin. The page here is that plugin rebuilt to run in
 a browser, so anyone can try it without installing anything.
 
-**Live:** `__PAGES_URL__`
+**Live:** <https://beginyanarthur.github.io/travel-timeline-visualization/>
 
 ## Repo layout
 
