@@ -370,16 +370,20 @@ h1 {
 .free::placeholder { color: var(--ink-3); }
 .free:focus { outline: none; border-color: var(--accent); }
 .fb-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 2px; }
+/* Secondary: the primary's colour, carried by the border and the label
+   rather than a fill, so Generate stays the only filled action. */
 .fb-send {
   appearance: none;
   font-family: var(--body); font-size: 13.5px; font-weight: 600;
   padding: 9px 20px;
   border: 1px solid var(--accent);
   border-radius: 8px;
-  background: var(--accent);
-  color: var(--accent-ink);
+  background: transparent;
+  color: var(--accent);
   cursor: pointer;
+  transition: background 0.12s ease;
 }
+.fb-send:hover:not(:disabled) { background: var(--accent-soft); }
 .fb-send:disabled { opacity: 0.55; cursor: default; }
 .fb-note { font-size: 12.5px; color: var(--ink-3); }
 .fb-done {
