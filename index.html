@@ -1397,10 +1397,11 @@ function renderItinerary(data) {
     out.push('<circle cx="' + n2(x + d / 2) + '" cy="' + n2(y + d / 2) +
              '" r="' + n2(d / 2) + '" fill="' + fill + '"/>');
   }
-  function rect(x, y, w, h, fill, op) {
+  function rect(x, y, w, h, fill, op, rx) {
     out.push('<rect x="' + n2(x) + '" y="' + n2(y) + '" width="' + n2(Math.max(1, w)) +
              '" height="' + n2(Math.max(1, h)) + '" fill="' + fill + '"' +
-             (op ? ' fill-opacity="' + op + '"' : '') + '/>');
+             (op ? ' fill-opacity="' + op + '"' : '') +
+             (rx ? ' rx="' + n2(rx) + '"' : '') + '/>');
   }
   /* Figma sets the clock legend as one text node with bold ranges and a
      fixed 351px width. foreignObject gives real wrapping and real bold
@@ -1451,7 +1452,7 @@ function renderItinerary(data) {
   });
 
   /* Section 1: Timeline */
-  rect(91, TIMELINE_TITLE_Y - 46, 1274, 201, '#F5FBFE');
+  rect(91, TIMELINE_TITLE_Y - 46, 1274, 201, '#F5FBFE', 0, 24);
   txt('Timeline', PAD_LEFT - 1, TIMELINE_TITLE_Y, 48, 700, '#000000');
   txt('A linear hour-by-hour strip spanning the entire trip.', PAD_LEFT - 1, TIMELINE_DESC_Y, 24, 400, '#000000');
 
@@ -1582,7 +1583,7 @@ function renderItinerary(data) {
            LEG_TEXT_X, tlLegY + 127, 12, 400, '#333333');
 
   /* Section 2: Clock Day */
-  rect(91, CLOCK_DAY_TITLE_Y - 56, 1274, 201, '#F5FBFE');
+  rect(91, CLOCK_DAY_TITLE_Y - 56, 1274, 201, '#F5FBFE', 0, 24);
   txt('Clock Day', PAD_LEFT - 1, CLOCK_DAY_TITLE_Y, 48, 700, '#000000');
   txt('A 24-hour donut chart representing one calendar day.', PAD_LEFT - 1, CLOCK_DAY_DESC_Y, 24, 400, '#000000');
 

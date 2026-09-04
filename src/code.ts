@@ -176,13 +176,14 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
     return t
   }
 
-  function rect(x: number, y: number, w: number, h: number, fill: string): RectangleNode {
+  function rect(x: number, y: number, w: number, h: number, fill: string, cornerRadius?: number): RectangleNode {
     const r = figma.createRectangle()
     r.resize(Math.max(1, w), Math.max(1, h))
     root.appendChild(r)
     r.x = x
     r.y = y
     r.fills = [sp(fill)]
+    if (cornerRadius !== undefined) r.cornerRadius = cornerRadius
     return r
   }
 
@@ -191,7 +192,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   // ═══════════════════════════════════════════════════════════════════════
 
   // Section title background
-  rect(91, TIMELINE_TITLE_Y - 46, 1274, 201, '#F5FBFE')
+  rect(91, TIMELINE_TITLE_Y - 46, 1274, 201, '#F5FBFE', 24)
 
   // Section title and description
   await txt('Timeline', PAD_LEFT - 1, TIMELINE_TITLE_Y, 48, 'Bold', '#000000')
@@ -535,7 +536,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   // ═══════════════════════════════════════════════════════════════════════
 
   // Section title background
-  rect(91, CLOCK_DAY_TITLE_Y - 56, 1274, 201, '#F5FBFE')
+  rect(91, CLOCK_DAY_TITLE_Y - 56, 1274, 201, '#F5FBFE', 24)
 
   // Section title and description
   await txt('Clock Day', PAD_LEFT - 1, CLOCK_DAY_TITLE_Y, 48, 'Bold', '#000000')
