@@ -723,6 +723,19 @@ input[type="time"].f-input::-webkit-date-and-time-value {
   }
 }
 
+/* Check in and check out are the hotel's matched pair, the same shape the
+   leg card uses for departure and arrival. Without this the check in date
+   took every pixel the row had left and stretched to 470px. */
+.pair-grid {
+  display: grid; gap: 14px 16px; grid-template-columns: 1fr;
+  margin-top: 14px; padding-top: 14px;
+  border-top: 1px solid var(--figma-color-border);
+}
+.pair-grid .f-row { margin-bottom: 0; }
+@container (min-width: 440px) {
+  .pair-grid { grid-template-columns: 1fr 1fr; align-items: start; }
+}
+
 /* Two numbers and their units, rather than two more shouted labels. */
 .dur-row { display: flex; gap: 14px; align-items: center; }
 .dur-unit { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
@@ -1837,13 +1850,21 @@ function createHotelCard() {
     '<div class="card-body"><div class="card-body-inner">' +
     '<div class="f-row"><div><div class="f-label">Hotel name</div>' +
       '<input class="f-input" data-field="name" placeholder="Novotel Hamburg"></div></div>' +
-    '<div class="f-row">' +
-      '<div><div class="f-label">Check-in</div><input type="date" class="f-input" data-field="checkInDate" value="' + tripStart + '"></div>' +
-      '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="checkInTime" value="14:00"></div>' +
-    '</div>' +
-    '<div class="f-row">' +
-      '<div><div class="f-label">Check-out</div><input type="date" class="f-input" data-field="checkOutDate"></div>' +
-      '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="checkOutTime" value="11:00"></div>' +
+    '<div class="pair-grid">' +
+      '<div>' +
+        '<div class="section-label">Check in</div>' +
+        '<div class="f-row">' +
+          '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="checkInDate" value="' + tripStart + '"></div>' +
+          '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="checkInTime" value="14:00"></div>' +
+        '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div class="section-label">Check out</div>' +
+        '<div class="f-row">' +
+          '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="checkOutDate"></div>' +
+          '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="checkOutTime" value="11:00"></div>' +
+        '</div>' +
+      '</div>' +
     '</div>' +
     '</div></div>';
 
