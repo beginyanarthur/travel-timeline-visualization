@@ -658,10 +658,14 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right;
 }
 .chevron {
-  font-size: var(--fs-micro); color: var(--figma-color-text-tertiary);
-  transition: transform 0.2s ease; flex-shrink: 0;
+  color: var(--figma-color-text-tertiary);
+  display: flex; align-items: center; flex-shrink: 0;
+  /* Points right while the card is shut, down while it is open, which is
+     the same chevron and the same motion the dropdowns use. */
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
 }
-.entry-card.expanded .chevron { transform: rotate(90deg); }
+.entry-card.expanded .chevron { transform: rotate(0deg); }
 .remove-btn {
   background: none; border: none; cursor: pointer; padding: 0;
   color: var(--figma-color-text-tertiary); font-size: 14px;
@@ -703,7 +707,20 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
   background: var(--figma-color-bg);
 }
 .f-input::placeholder { color: var(--figma-color-text-tertiary); }
-select.f-input { cursor: pointer; }
+/* Chrome draws its own arrow with its own margin, which left it sitting
+   further from the right edge than the text sits from the left. This is the
+   same chevron the cards use for their headers, set 8px in to match the
+   padding on the other side. One grey for both themes: it is an icon, not
+   text, and it holds up on either ground. */
+select.f-input {
+  cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+  padding-right: 26px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2 3.9l3 3 3-3' fill='none' stroke='%238A8A8A' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 10px 10px;
+}
 /* Digits and codes are data, so they get the data face. */
 input[type="date"].f-input,
 input[type="time"].f-input,
@@ -2006,7 +2023,7 @@ function createLegCard(skipCompute) {
       '<span class="leg-dot" style="background:' + color + '"></span>' +
       '<span class="header-label">Flight ' + (idx + 1) + '</span>' +
       '<span class="header-meta"></span>' +
-      '<span class="chevron">▶</span>' +
+      '<span class="chevron"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.9l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
       '<button class="remove-btn" title="Remove" aria-label="Remove flight">×</button>' +
     '</div>' +
     '<div class="card-body"><div class="card-body-inner">' +
@@ -2135,7 +2152,7 @@ function createHotelCard() {
       '<span style="font-size:12px">🏨</span>' +
       '<span class="header-label">Hotel ' + (idx + 1) + '</span>' +
       '<span class="header-meta"></span>' +
-      '<span class="chevron">▶</span>' +
+      '<span class="chevron"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.9l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
       '<button class="remove-btn" title="Remove" aria-label="Remove hotel">×</button>' +
     '</div>' +
     '<div class="card-body"><div class="card-body-inner">' +
