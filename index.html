@@ -841,7 +841,7 @@ select.f-input,
           <i style="background:#262626"></i><i style="background:#262626"></i><i style="background:#BFBFBF"></i>
         </div>
         <p class="se-title" id="se-title">Nothing to draw yet</p>
-        <p class="se-body" id="se-body">Add a flight on the left, then press Generate.</p>
+        <p class="se-body" id="se-body">Add a flight, then press Generate.</p>
       </div>
     </div>
   </section>
@@ -1635,7 +1635,7 @@ function stageEmpty(on, title, body) {
   artboard.innerHTML = '';
   $('stage-dims').textContent = '';
   $('se-title').textContent = title || 'Nothing to draw yet';
-  $('se-body').textContent = body || 'Add a flight on the left, then press Generate.';
+  $('se-body').textContent = body || 'Add a flight, then press Generate.';
 }
 var scale = 1, fitMode = false, lastSize = { w: 900, h: 820 };
 var renderTimer = 0;
