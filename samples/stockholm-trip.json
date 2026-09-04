@@ -1,0 +1,67 @@
+{
+  "startDate": "2026-10-03",
+  "endDate": "2026-10-10",
+  "legs": [
+    {
+      "type": "flight",
+      "departureCity": "Yerevan",
+      "departureDate": "2026-10-03",
+      "departureTime": "04:45",
+      "departureUtc": 4,
+      "flightNumber": "",
+      "durationHours": 3,
+      "durationMinutes": 45,
+      "arrivalCity": "Vienna",
+      "arrivalDate": "2026-10-03",
+      "arrivalTime": "06:30",
+      "arrivalUtc": 2,
+      "color": "#34e578"
+    },
+    {
+      "type": "flight",
+      "departureCity": "Vienna",
+      "departureDate": "2026-10-03",
+      "departureTime": "17:05",
+      "departureUtc": 2,
+      "flightNumber": "",
+      "durationHours": 2,
+      "durationMinutes": 10,
+      "arrivalCity": "Stockholm",
+      "arrivalDate": "2026-10-03",
+      "arrivalTime": "19:15",
+      "arrivalUtc": 2,
+      "color": "#ff9800"
+    },
+    {
+      "type": "flight",
+      "departureCity": "Stockholm",
+      "departureDate": "2026-10-10",
+      "departureTime": "15:10",
+      "departureUtc": 2,
+      "flightNumber": "",
+      "durationHours": 2,
+      "durationMinutes": 10,
+      "arrivalCity": "Vienna",
+      "arrivalDate": "2026-10-10",
+      "arrivalTime": "17:20",
+      "arrivalUtc": -2,
+      "color": "#9c27b0"
+    },
+    {
+      "type": "flight",
+      "departureCity": "Vienna",
+      "departureDate": "2026-10-10",
+      "departureTime": "22:35",
+      "departureUtc": 2,
+      "flightNumber": "",
+      "durationHours": 3,
+      "durationMinutes": 20,
+      "arrivalCity": "Yerevan",
+      "arrivalDate": "2026-10-11",
+      "arrivalTime": "03:55",
+      "arrivalUtc": -4,
+      "color": "#4caf50"
+    }
+  ],
+  "hotels": []
+}

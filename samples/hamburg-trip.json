@@ -1,0 +1,111 @@
+{
+  "startDate": "2027-07-06",
+  "endDate": "2027-07-13",
+  "legs": [
+    {
+      "type": "flight",
+      "departureCity": "Yerevan",
+      "departureDate": "2027-07-06",
+      "departureTime": "06:30",
+      "departureUtc": 4,
+      "flightNumber": "W67805",
+      "durationHours": 4,
+      "durationMinutes": 50,
+      "arrivalCity": "Hamburg",
+      "arrivalDate": "2027-07-06",
+      "arrivalTime": "09:20",
+      "arrivalUtc": 2,
+      "color": "#ff5630"
+    },
+    {
+      "type": "flight",
+      "departureCity": "Hamburg Hbf",
+      "departureDate": "2027-07-07",
+      "departureTime": "09:51",
+      "departureUtc": -2,
+      "flightNumber": "",
+      "durationHours": 2,
+      "durationMinutes": 0,
+      "arrivalCity": "Berlin Hbf",
+      "arrivalDate": "2027-07-07",
+      "arrivalTime": "15:51",
+      "arrivalUtc": 2,
+      "color": "#ffcb11"
+    },
+    {
+      "type": "train",
+      "departureCity": "Berlin Hbf",
+      "departureDate": "2027-07-09",
+      "departureTime": "12:37",
+      "departureUtc": 2,
+      "flightNumber": "",
+      "durationHours": 2,
+      "durationMinutes": 35,
+      "arrivalCity": "Nuremberg Hbf",
+      "arrivalDate": "2027-07-09",
+      "arrivalTime": "15:12",
+      "arrivalUtc": 2,
+      "color": "#e86ef3"
+    },
+    {
+      "type": "train",
+      "departureCity": "Nuremberg Hbf",
+      "departureDate": "2027-07-11",
+      "departureTime": "17:00",
+      "departureUtc": 2,
+      "flightNumber": "",
+      "durationHours": 4,
+      "durationMinutes": 28,
+      "arrivalCity": "Dortmund Hbf",
+      "arrivalDate": "2027-07-11",
+      "arrivalTime": "21:28",
+      "arrivalUtc": 2,
+      "color": "#4caf50"
+    },
+    {
+      "type": "flight",
+      "departureCity": "Dortmund",
+      "departureDate": "2027-07-12",
+      "departureTime": "17:30",
+      "departureUtc": 4,
+      "flightNumber": "",
+      "durationHours": 4,
+      "durationMinutes": 20,
+      "arrivalCity": "Yerevan",
+      "arrivalDate": "2027-07-12",
+      "arrivalTime": "19:50",
+      "arrivalUtc": 2,
+      "color": "#2196f3"
+    }
+  ],
+  "hotels": [
+    {
+      "name": "Novotel Hamburg City Alster",
+      "checkInDate": "2027-07-06",
+      "checkInTime": "14:00",
+      "checkOutDate": "2027-07-07",
+      "checkOutTime": "08:00"
+    },
+    {
+      "name": "Hotel NH Collection Berlin Mitte Friedrichstrasse",
+      "checkInDate": "2027-07-07",
+      "checkInTime": "12:00",
+      "checkOutDate": "2027-07-09",
+      "checkOutTime": "11:00"
+    },
+    {
+      "name": "Leonardo Royal Hotel Nürnberg",
+      "checkInDate": "2027-07-09",
+      "checkInTime": "14:00",
+      "checkOutDate": "2027-07-11",
+      "checkOutTime": "14:00"
+    },
+    {
+      "name": "Hotel NH Dortmund",
+      "checkInDate": "2027-07-11",
+      "checkInTime": "22:00",
+      "checkOutDate": "2027-07-12",
+      "checkOutTime": "12:00"
+    }
+  ]
+}

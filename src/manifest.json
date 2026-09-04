@@ -1,0 +1,13 @@
+{
+  "name": "Travel itinerary",
+  "id": "235a1040-2c07-4d29-8fc2-de65d0af8173",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "documentAccess": "dynamic-page",
+  "editorType": ["figma"],
+  "isTool": true,
+  "relaunchButtons": [
+    { "command": "235a1040-2c07-4d29-8fc2-de65d0af8173", "name": "Travel itinerary" }
+  ]
+}

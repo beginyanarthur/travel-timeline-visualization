@@ -1,0 +1,848 @@
+<!doctype html>
+<html>
+<head>
+  <script>
+    try { window.localStorage.getItem('x') } catch (e) {
+      const store = new Map()
+      const shim = {
+        getItem: (k) => store.has(k) ? store.get(k) : null,
+        setItem: (k, v) => { store.set(k, String(v)) },
+        removeItem: (k) => { store.delete(k) },
+        clear: () => { store.clear() },
+        key: (i) => Array.from(store.keys())[i] ?? null,
+        get length() { return store.size },
+      }
+      Object.defineProperty(window, 'localStorage', { value: shim, configurable: true })
+    }
+  </script>
+  <style>
+    html, body { margin: 0; padding: 0; height: auto; min-height: 0; }
+    #plugin-root { height: auto; padding: 0 10px; }
+    body { display: block; }
+    dialog.fig-fill-picker-dialog { width: 300px; max-width: 300px; min-width: 300px; max-height: none; height: max-content; }
+
+    :root {
+      --radius: 8px;
+      --radius-sm: 6px;
+      --gap: 6px;
+      --font: var(--font-family, 'Inter', system-ui, sans-serif);
+    }
+
+    /* ── Tab bar ── */
+    .tab-bar {
+      display: flex; gap: 0; margin: 0 0 2px;
+      border-bottom: 1px solid var(--figma-color-border);
+    }
+    .tab-btn {
+      flex: 1; padding: 8px 4px 7px; border: none; background: none;
+      cursor: pointer; font-size: 11px; font-family: var(--font);
+      font-weight: 600; color: var(--figma-color-text-tertiary);
+      border-bottom: 2px solid transparent; transition: all 0.15s ease;
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+    }
+    .tab-btn:hover { color: var(--figma-color-text-secondary); }
+    .tab-btn.active {
+      color: var(--figma-color-text);
+      border-bottom-color: var(--figma-color-bg-brand, #0D99FF);
+    }
+    .tab-btn .badge {
+      background: var(--figma-color-bg-secondary); border-radius: 10px;
+      padding: 1px 5px; font-size: 10px; font-weight: 700;
+      color: var(--figma-color-text-secondary); min-width: 14px; text-align: center;
+    }
+    .tab-btn.active .badge {
+      background: var(--figma-color-bg-brand-tertiary, rgba(13,153,255,0.12));
+      color: var(--figma-color-bg-brand, #0D99FF);
+    }
+    .tab-panel { display: none; padding: 8px 0 0; }
+    .tab-panel.active { display: block; }
+
+    /* ── Trip dates (compact inline) ── */
+    .trip-dates {
+      display: flex; gap: var(--gap); align-items: center;
+      padding: 8px 10px; margin: 0;
+      background: var(--figma-color-bg-secondary);
+      border-radius: var(--radius);
+      border: 1px solid var(--figma-color-border);
+    }
+    .trip-dates .date-field { flex: 1; }
+    .trip-dates .date-label {
+      font-size: 9px; font-weight: 600; color: var(--figma-color-text-tertiary);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; font-family: var(--font);
+    }
+    .trip-dates .arrow {
+      font-size: 14px; color: var(--figma-color-text-tertiary);
+      margin-top: 12px; flex-shrink: 0;
+    }
+
+    /* ── Cards ── */
+    .entry-card {
+      background: var(--figma-color-bg);
+      border-radius: var(--radius);
+      margin-bottom: 6px; position: relative;
+      border: 1px solid var(--figma-color-border);
+      transition: box-shadow 0.15s ease;
+      overflow: hidden;
+    }
+    .entry-card:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .card-header {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 10px; cursor: pointer; user-select: none;
+      font-family: var(--font);
+    }
+    .card-header:hover { background: var(--figma-color-bg-hover); }
+    .leg-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+    }
+    .header-label {
+      font-size: 11px; font-weight: 600; color: var(--figma-color-text);
+      flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .header-meta {
+      font-size: 10px; color: var(--figma-color-text-tertiary);
+      flex-shrink: 0; font-family: var(--font);
+    }
+    .chevron {
+      font-size: 9px; color: var(--figma-color-text-tertiary);
+      transition: transform 0.2s ease; flex-shrink: 0;
+    }
+    .entry-card.expanded .chevron { transform: rotate(90deg); }
+    .remove-btn {
+      background: none; border: none; cursor: pointer; padding: 0;
+      color: var(--figma-color-text-tertiary); font-size: 14px;
+      width: 20px; height: 20px; display: flex; align-items: center;
+      justify-content: center; border-radius: 4px; flex-shrink: 0;
+      transition: all 0.1s ease;
+    }
+    .remove-btn:hover {
+      background: var(--figma-color-bg-danger, #FFEBEE);
+      color: var(--figma-color-text-danger, #D32F2F);
+    }
+
+    .card-body {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.25s ease;
+    }
+    .entry-card.expanded .card-body { max-height: 700px; }
+    .card-body-inner { padding: 0 10px 10px; }
+
+    /* ── Field rows ── */
+    .f-row { display: flex; gap: var(--gap); margin-bottom: var(--gap); }
+    .f-row > * { flex: 1; min-width: 0; }
+    .f-label {
+      font-size: 9px; font-weight: 600; color: var(--figma-color-text-tertiary);
+      margin-bottom: 2px; font-family: var(--font);
+      text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .f-input {
+      width: 100%; box-sizing: border-box;
+      padding: 5px 7px; border: 1px solid var(--figma-color-border);
+      border-radius: var(--radius-sm); background: var(--figma-color-bg-secondary);
+      color: var(--figma-color-text); font-size: 11px; font-family: var(--font);
+      transition: border-color 0.12s ease;
+    }
+    .f-input:focus {
+      outline: none;
+      border-color: var(--figma-color-bg-brand);
+      background: var(--figma-color-bg);
+    }
+    .f-input::placeholder { color: var(--figma-color-text-tertiary); }
+    select.f-input { cursor: pointer; }
+
+    /* ── Route indicator (DEP → ARR) ── */
+    .route-indicator {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 0; margin-bottom: var(--gap);
+    }
+    .route-city {
+      flex: 1; display: flex; flex-direction: column; gap: 2px;
+    }
+    .route-arrow {
+      flex-shrink: 0; font-size: 12px; color: var(--figma-color-text-tertiary);
+      display: flex; flex-direction: column; align-items: center; gap: 1px;
+    }
+    .route-arrow .flight-line {
+      width: 40px; height: 1px; background: var(--figma-color-border);
+      position: relative;
+    }
+    .route-arrow .flight-icon {
+      font-size: 11px; line-height: 1;
+    }
+
+    /* ── Section divider (thin) ── */
+    .section-label {
+      font-size: 8px; font-weight: 700; color: var(--figma-color-text-tertiary);
+      text-transform: uppercase; letter-spacing: 0.8px; font-family: var(--font);
+      margin: 4px 0 var(--gap); padding-top: 4px;
+      border-top: 1px solid var(--figma-color-border);
+    }
+
+    .arrival-info {
+      font-size: 10px; color: var(--figma-color-text-secondary);
+      font-family: var(--font); font-style: italic; padding: 2px 0 0;
+    }
+
+    /* ── Color swatch ── */
+    .color-swatch {
+      width: 22px; height: 22px; border: 1px solid var(--figma-color-border);
+      border-radius: 4px; cursor: pointer; padding: 0;
+      flex-shrink: 0; margin-top: 12px;
+    }
+
+    /* ── Add button ── */
+    .add-btn {
+      width: 100%; padding: 7px; border: 1px dashed var(--figma-color-border);
+      border-radius: var(--radius); background: none; cursor: pointer;
+      color: var(--figma-color-text-tertiary); font-size: 11px;
+      font-family: var(--font); font-weight: 500;
+      transition: all 0.12s ease; margin-top: 2px;
+    }
+    .add-btn:hover {
+      background: var(--figma-color-bg-secondary);
+      color: var(--figma-color-text);
+      border-color: var(--figma-color-text-tertiary);
+    }
+
+    /* ── IO bar (bottom) ── */
+    .io-bar {
+      display: flex; gap: var(--gap); padding: 0 0 2px;
+    }
+    .io-btn {
+      flex: 1; padding: 6px; border: 1px solid var(--figma-color-border);
+      border-radius: var(--radius-sm); background: var(--figma-color-bg-secondary);
+      cursor: pointer; color: var(--figma-color-text-secondary);
+      font-size: 10px; font-family: var(--font); font-weight: 500;
+      transition: all 0.1s ease;
+      display: flex; align-items: center; justify-content: center; gap: 3px;
+    }
+    .io-btn:hover {
+      background: var(--figma-color-bg-hover);
+      color: var(--figma-color-text);
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center; padding: 16px 10px;
+      color: var(--figma-color-text-tertiary);
+      font-size: 11px; font-family: var(--font);
+    }
+    .empty-state .empty-icon { font-size: 20px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div id="plugin-root">
+    <fig-content>
+      <!-- Trip dates - compact inline -->
+      <div class="trip-dates" style="margin-bottom:8px;">
+        <div class="date-field">
+          <div class="date-label">Start</div>
+          <input type="date" class="f-input" id="tripStart">
+        </div>
+        <span class="arrow">→</span>
+        <div class="date-field">
+          <div class="date-label">End</div>
+          <input type="date" class="f-input" id="tripEnd">
+        </div>
+      </div>
+
+      <!-- Tab bar -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="legs">
+          ✈ Flights <span class="badge" id="legs-badge">0</span>
+        </button>
+        <button class="tab-btn" data-tab="hotels">
+          🏨 Hotels <span class="badge" id="hotels-badge">0</span>
+        </button>
+      </div>
+
+      <!-- Flights tab -->
+      <div class="tab-panel active" id="tab-legs">
+        <div id="legs-list">
+          <div class="empty-state" id="legs-empty">
+            <div class="empty-icon">✈️</div>
+            Add your first flight or transport
+          </div>
+        </div>
+        <button class="add-btn" id="add-leg">+ Add flight / transport</button>
+      </div>
+
+      <!-- Hotels tab -->
+      <div class="tab-panel" id="tab-hotels">
+        <div id="hotels-list">
+          <div class="empty-state" id="hotels-empty">
+            <div class="empty-icon">🏨</div>
+            Add hotel stays
+          </div>
+        </div>
+        <button class="add-btn" id="add-hotel">+ Add hotel</button>
+      </div>
+
+      <!-- IO bar -->
+      <div class="io-bar" style="margin-top:8px;">
+        <button class="io-btn" id="export-btn">↓ Export JSON</button>
+        <button class="io-btn" id="import-btn">↑ Import JSON</button>
+        <input type="file" id="import-file" accept=".json" style="display:none;">
+      </div>
+    </fig-content>
+
+    <fig-footer>
+      <label id="status">Add flights to get started</label>
+      <fig-button id="generate" type="submit" disabled>Generate</fig-button>
+    </fig-footer>
+  </div>
+
+  <script>
+    var COLORS = ['#E53935','#FF9800','#9C27B0','#4CAF50','#2196F3','#795548','#00BCD4','#FF5722']
+    var legCounter = 0
+    var hotelCounter = 0
+
+    var today = new Date()
+    var todayStr = today.toISOString().slice(0, 10)
+    var nextWeek = new Date(today.getTime() + 7 * 86400000)
+    document.getElementById('tripStart').value = todayStr
+    document.getElementById('tripEnd').value = nextWeek.toISOString().slice(0, 10)
+
+    // ── Tabs ──
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active') })
+        document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active') })
+        btn.classList.add('active')
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active')
+      })
+    })
+
+    function utcSelectHtml(fieldName, defaultVal) {
+      var html = '<select class="f-input" data-field="' + fieldName + '">'
+      for (var tz = -12; tz <= 14; tz++) {
+        var sign = tz >= 0 ? '+' : ''
+        var sel = tz === defaultVal ? ' selected' : ''
+        html += '<option value="' + tz + '"' + sel + '>UTC' + sign + tz + '</option>'
+      }
+      html += '</select>'
+      return html
+    }
+
+    function computeArrival(card) {
+      var departDate = card.querySelector('[data-field="departureDate"]').value
+      var departTime = card.querySelector('[data-field="departureTime"]').value
+      var depUtc = parseInt(card.querySelector('[data-field="departureUtc"]').value) || 0
+      var arrUtc = parseInt(card.querySelector('[data-field="arrivalUtc"]').value) || 0
+      var durH = parseInt(card.querySelector('[data-field="durationHours"]').value) || 0
+      var durM = parseInt(card.querySelector('[data-field="durationMinutes"]').value) || 0
+      var arrivalInfo = card.querySelector('.arrival-info')
+
+      if (departDate && departTime && (durH > 0 || durM > 0)) {
+        var parts = departTime.split(':')
+        var depHour = parseInt(parts[0])
+        var depMin = parseInt(parts[1])
+        var depTotalMinUtc = depHour * 60 + depMin - depUtc * 60
+        var arrTotalMinUtc = depTotalMinUtc + durH * 60 + durM
+        var arrTotalMinLocal = arrTotalMinUtc + arrUtc * 60
+        var dayOffset = Math.floor(arrTotalMinLocal / (24 * 60))
+        var arrMinOfDay = ((arrTotalMinLocal % (24 * 60)) + (24 * 60)) % (24 * 60)
+        var arrH = Math.floor(arrMinOfDay / 60)
+        var arrMi = arrMinOfDay % 60
+
+        var depDateObj = new Date(departDate + 'T00:00:00Z')
+        depDateObj.setUTCDate(depDateObj.getUTCDate() + dayOffset)
+        var arriveDate = depDateObj.toISOString().slice(0, 10)
+        var arriveTime = String(arrH).padStart(2, '0') + ':' + String(arrMi).padStart(2, '0')
+
+        card.querySelector('[data-field="arrivalDate"]').value = arriveDate
+        card.querySelector('[data-field="arrivalTime"]').value = arriveTime
+
+        var ampm = arrH >= 12 ? 'PM' : 'AM'
+        var h12 = arrH > 12 ? arrH - 12 : (arrH === 0 ? 12 : arrH)
+        var tzDiff = arrUtc - depUtc
+        var tzNote = tzDiff !== 0 ? ' (' + (tzDiff > 0 ? '+' : '') + tzDiff + 'h tz)' : ''
+        arrivalInfo.textContent = '→ ' + arriveDate + ' at ' + h12 + ':' + String(arrMi).padStart(2, '0') + ' ' + ampm + tzNote
+        arrivalInfo.style.color = ''
+      } else {
+        arrivalInfo.textContent = 'Set departure + duration'
+        arrivalInfo.style.color = 'var(--figma-color-text-tertiary)'
+      }
+      updateHeaderMeta(card)
+    }
+
+    function updateHeaderMeta(card) {
+      var meta = card.querySelector('.header-meta')
+      if (!meta) return
+      var depCity = card.querySelector('[data-field="departureCity"]')
+      if (depCity) {
+        var dep = depCity.value || ''
+        var arr = (card.querySelector('[data-field="arrivalCity"]').value) || ''
+        var depTime = card.querySelector('[data-field="departureTime"]').value || ''
+        if (dep && arr) {
+          meta.textContent = dep + ' → ' + arr + (depTime ? '  ' + depTime : '')
+        } else {
+          meta.textContent = ''
+        }
+      } else {
+        var name = (card.querySelector('[data-field="name"]').value) || ''
+        var ci = card.querySelector('[data-field="checkInDate"]').value || ''
+        var co = card.querySelector('[data-field="checkOutDate"]').value || ''
+        if (name) {
+          meta.textContent = name + (ci && co ? '  ' + ci + ' → ' + co : '')
+        } else {
+          meta.textContent = ''
+        }
+      }
+    }
+
+    function createLegCard(skipCompute) {
+      var idx = legCounter++
+      var color = COLORS[idx % COLORS.length]
+      var tripStart = document.getElementById('tripStart').value || todayStr
+
+      // Hide empty state
+      var empty = document.getElementById('legs-empty')
+      if (empty) empty.style.display = 'none'
+
+      var card = document.createElement('div')
+      card.className = 'entry-card expanded'
+      card.dataset.idx = String(idx)
+
+      card.innerHTML =
+        '<div class="card-header">' +
+          '<span class="leg-dot" style="background:' + color + '"></span>' +
+          '<span class="header-label">Flight ' + (idx + 1) + '</span>' +
+          '<span class="header-meta"></span>' +
+          '<span class="chevron">▶</span>' +
+          '<button class="remove-btn" title="Remove">×</button>' +
+        '</div>' +
+        '<div class="card-body"><div class="card-body-inner">' +
+
+        // Route: cities + type/number inline
+        '<div class="route-indicator">' +
+          '<div class="route-city">' +
+            '<div class="f-label">From</div>' +
+            '<input class="f-input" data-field="departureCity" placeholder="City">' +
+          '</div>' +
+          '<div class="route-arrow">' +
+            '<span class="flight-icon">✈</span>' +
+            '<div class="flight-line"></div>' +
+          '</div>' +
+          '<div class="route-city">' +
+            '<div class="f-label">To</div>' +
+            '<input class="f-input" data-field="arrivalCity" placeholder="City">' +
+          '</div>' +
+        '</div>' +
+
+        // Type, number, color
+        '<div class="f-row">' +
+          '<div style="flex:1"><div class="f-label">Type</div>' +
+            '<select class="f-input" data-field="type">' +
+              '<option value="flight">✈ Flight</option>' +
+              '<option value="train">🚌 Train / bus</option>' +
+            '</select></div>' +
+          '<div style="flex:1"><div class="f-label">Number</div>' +
+            '<input class="f-input" data-field="flightNumber" placeholder="W67805"></div>' +
+          '<input type="color" class="color-swatch" data-field="color" value="' + color + '">' +
+        '</div>' +
+
+        // Departure
+        '<div class="section-label">Departure</div>' +
+        '<div class="f-row">' +
+          '<div><div class="f-label">Date</div>' +
+            '<input type="date" class="f-input" data-field="departureDate" value="' + tripStart + '"></div>' +
+          '<div><div class="f-label">Time</div>' +
+            '<input type="time" class="f-input" data-field="departureTime" value="06:30"></div>' +
+          '<div style="flex:0 0 80px"><div class="f-label">Zone</div>' +
+            utcSelectHtml('departureUtc', 4) + '</div>' +
+        '</div>' +
+
+        // Duration
+        '<div class="f-row">' +
+          '<div><div class="f-label">Hours</div>' +
+            '<input type="number" class="f-input" data-field="durationHours" value="4" min="0" max="48"></div>' +
+          '<div><div class="f-label">Minutes</div>' +
+            '<input type="number" class="f-input" data-field="durationMinutes" value="50" min="0" max="59"></div>' +
+        '</div>' +
+
+        // Arrival (auto-computed, read-only feel)
+        '<div class="section-label">Arrival (auto)</div>' +
+        '<div class="f-row">' +
+          '<div><div class="f-label">Date</div>' +
+            '<input type="date" class="f-input" data-field="arrivalDate"></div>' +
+          '<div><div class="f-label">Time</div>' +
+            '<input type="time" class="f-input" data-field="arrivalTime"></div>' +
+          '<div style="flex:0 0 80px"><div class="f-label">Zone</div>' +
+            utcSelectHtml('arrivalUtc', 2) + '</div>' +
+        '</div>' +
+        '<div class="arrival-info">Set departure + duration</div>' +
+
+        '</div></div>'
+
+      // Collapse/expand toggle
+      card.querySelector('.card-header').addEventListener('click', function(e) {
+        if (e.target.closest('.remove-btn')) return
+        card.classList.toggle('expanded')
+      })
+
+      card.querySelector('.remove-btn').addEventListener('click', function() {
+        card.remove()
+        updateBadges()
+        updateStatus()
+        // Show empty state if no legs
+        if (document.querySelectorAll('#legs-list .entry-card').length === 0) {
+          var el = document.getElementById('legs-empty')
+          if (el) el.style.display = ''
+        }
+      })
+
+      // Auto-compute arrival when relevant fields change
+      var autoFields = ['departureDate', 'departureTime', 'durationHours', 'durationMinutes', 'departureUtc', 'arrivalUtc']
+      autoFields.forEach(function(f) {
+        card.querySelector('[data-field="' + f + '"]').addEventListener('change', function() {
+          computeArrival(card)
+        })
+      })
+
+      // Update header meta on city changes
+      ;['departureCity', 'arrivalCity', 'departureTime'].forEach(function(f) {
+        card.querySelector('[data-field="' + f + '"]').addEventListener('input', function() {
+          updateHeaderMeta(card)
+        })
+      })
+
+      // Train/bus → sync arrival UTC to departure UTC
+      card.querySelector('[data-field="type"]').addEventListener('change', function() {
+        if (this.value === 'train') {
+          var depUtcVal = card.querySelector('[data-field="departureUtc"]').value
+          card.querySelector('[data-field="arrivalUtc"]').value = depUtcVal
+        }
+        // Update flight icon in route indicator
+        var icon = card.querySelector('.flight-icon')
+        if (icon) icon.textContent = this.value === 'train' ? '🚌' : '✈'
+        computeArrival(card)
+      })
+
+      card.querySelector('[data-field="departureUtc"]').addEventListener('change', function() {
+        if (card.querySelector('[data-field="type"]').value === 'train') {
+          card.querySelector('[data-field="arrivalUtc"]').value = this.value
+        }
+        computeArrival(card)
+      })
+
+      document.getElementById('legs-list').appendChild(card)
+      if (!skipCompute) computeArrival(card)
+      updateBadges()
+      updateStatus()
+    }
+
+    function createHotelCard() {
+      var idx = hotelCounter++
+      var tripStart = document.getElementById('tripStart').value || todayStr
+
+      // Hide empty state
+      var empty = document.getElementById('hotels-empty')
+      if (empty) empty.style.display = 'none'
+
+      var card = document.createElement('div')
+      card.className = 'entry-card expanded'
+      card.dataset.idx = String(idx)
+
+      card.innerHTML =
+        '<div class="card-header">' +
+          '<span style="font-size:12px">🏨</span>' +
+          '<span class="header-label">Hotel ' + (idx + 1) + '</span>' +
+          '<span class="header-meta"></span>' +
+          '<span class="chevron">▶</span>' +
+          '<button class="remove-btn" title="Remove">×</button>' +
+        '</div>' +
+        '<div class="card-body"><div class="card-body-inner">' +
+
+        '<div class="f-row">' +
+          '<div><div class="f-label">Hotel name</div>' +
+            '<input class="f-input" data-field="name" placeholder="Novotel Hamburg"></div>' +
+        '</div>' +
+
+        '<div class="f-row">' +
+          '<div><div class="f-label">Check-in</div>' +
+            '<input type="date" class="f-input" data-field="checkInDate" value="' + tripStart + '"></div>' +
+          '<div><div class="f-label">Time</div>' +
+            '<input type="time" class="f-input" data-field="checkInTime" value="14:00"></div>' +
+        '</div>' +
+
+        '<div class="f-row">' +
+          '<div><div class="f-label">Check-out</div>' +
+            '<input type="date" class="f-input" data-field="checkOutDate"></div>' +
+          '<div><div class="f-label">Time</div>' +
+            '<input type="time" class="f-input" data-field="checkOutTime" value="11:00"></div>' +
+        '</div>' +
+
+        '</div></div>'
+
+      card.querySelector('.card-header').addEventListener('click', function(e) {
+        if (e.target.closest('.remove-btn')) return
+        card.classList.toggle('expanded')
+      })
+
+      card.querySelector('.remove-btn').addEventListener('click', function() {
+        card.remove()
+        updateBadges()
+        updateStatus()
+        if (document.querySelectorAll('#hotels-list .entry-card').length === 0) {
+          var el = document.getElementById('hotels-empty')
+          if (el) el.style.display = ''
+        }
+      })
+
+      // Update header meta on name/date changes
+      ;['name', 'checkInDate', 'checkOutDate'].forEach(function(f) {
+        card.querySelector('[data-field="' + f + '"]').addEventListener('input', function() {
+          updateHeaderMeta(card)
+        })
+        card.querySelector('[data-field="' + f + '"]').addEventListener('change', function() {
+          updateHeaderMeta(card)
+        })
+      })
+
+      document.getElementById('hotels-list').appendChild(card)
+      updateBadges()
+      updateStatus()
+    }
+
+    function updateBadges() {
+      var legCount = document.querySelectorAll('#legs-list .entry-card').length
+      var hotelCount = document.querySelectorAll('#hotels-list .entry-card').length
+      document.getElementById('legs-badge').textContent = String(legCount)
+      document.getElementById('hotels-badge').textContent = String(hotelCount)
+    }
+
+    function updateStatus() {
+      var tripStart = document.getElementById('tripStart').value
+      var tripEnd = document.getElementById('tripEnd').value
+      var legCards = document.querySelectorAll('#legs-list .entry-card')
+      var btn = document.getElementById('generate')
+      var status = document.getElementById('status')
+
+      if (!tripStart || !tripEnd) {
+        btn.setAttribute('disabled', '')
+        status.textContent = 'Set trip dates'
+        return
+      }
+      if (legCards.length === 0) {
+        btn.setAttribute('disabled', '')
+        status.textContent = 'Add at least one flight'
+        return
+      }
+      btn.removeAttribute('disabled')
+      var hotelCards = document.querySelectorAll('#hotels-list .entry-card')
+      status.textContent = legCards.length + ' flight(s), ' + hotelCards.length + ' hotel(s)'
+    }
+
+    document.getElementById('tripStart').addEventListener('change', updateStatus)
+    document.getElementById('tripEnd').addEventListener('change', updateStatus)
+
+    function collectData() {
+      var legs = []
+      document.querySelectorAll('#legs-list .entry-card').forEach(function(card) {
+        var get = function(f) { return card.querySelector('[data-field="' + f + '"]').value || '' }
+        var getInt = function(f) { var v = parseInt(get(f)); return isNaN(v) ? 0 : v }
+        legs.push({
+          type: get('type') || 'flight',
+          departureCity: get('departureCity') || 'City A',
+          departureDate: get('departureDate'),
+          departureTime: get('departureTime') || '06:30',
+          departureUtc: getInt('departureUtc'),
+          flightNumber: get('flightNumber'),
+          durationHours: getInt('durationHours'),
+          durationMinutes: getInt('durationMinutes'),
+          arrivalCity: get('arrivalCity') || 'City B',
+          arrivalDate: get('arrivalDate'),
+          arrivalTime: get('arrivalTime') || '12:00',
+          arrivalUtc: getInt('arrivalUtc'),
+          color: get('color'),
+        })
+      })
+      var hotels = []
+      document.querySelectorAll('#hotels-list .entry-card').forEach(function(card) {
+        var get = function(f) { return card.querySelector('[data-field="' + f + '"]').value || '' }
+        hotels.push({
+          name: get('name') || 'Hotel',
+          checkInDate: get('checkInDate'),
+          checkInTime: get('checkInTime') || '14:00',
+          checkOutDate: get('checkOutDate'),
+          checkOutTime: get('checkOutTime') || '11:00',
+        })
+      })
+      return {
+        startDate: document.getElementById('tripStart').value,
+        endDate: document.getElementById('tripEnd').value,
+        legs: legs,
+        hotels: hotels,
+      }
+    }
+
+    document.getElementById('add-leg').addEventListener('click', createLegCard)
+    document.getElementById('add-hotel').addEventListener('click', createHotelCard)
+
+    document.getElementById('generate').addEventListener('click', function() {
+      var data = collectData()
+      if (!data.startDate || !data.endDate) {
+        alert('Please set trip start and end dates')
+        return
+      }
+      for (var i = 0; i < data.legs.length; i++) {
+        var leg = data.legs[i]
+        if (!leg.departureDate || !leg.arrivalDate) {
+          alert('Flight ' + (i + 1) + ' needs departure and arrival dates. Make sure duration is filled to auto-calculate arrival.')
+          return
+        }
+      }
+      for (var j = 0; j < data.hotels.length; j++) {
+        var h = data.hotels[j]
+        if (!h.checkInDate || !h.checkOutDate) {
+          alert('Hotel ' + (j + 1) + ' needs check-in and check-out dates')
+          return
+        }
+      }
+      parent.postMessage({ pluginMessage: { type: 'generate', data: data } }, '*')
+    })
+
+    // ── Resize reporting ──
+    var lastReportedHeight = 0
+    var resizeRaf = 0
+    function measurePanelHeight() {
+      var root = document.getElementById('plugin-root')
+      if (!root) return 0
+      var h = Math.ceil(root.getBoundingClientRect().height)
+      var openDialog = document.querySelector('dialog.fig-fill-picker-dialog[open]')
+      if (openDialog) h = Math.max(h, Math.ceil(openDialog.getBoundingClientRect().bottom))
+      return h
+    }
+    function reportHeight() {
+      var h = measurePanelHeight()
+      if (h && h !== lastReportedHeight) {
+        lastReportedHeight = h
+        parent.postMessage({ pluginMessage: { type: 'resize', height: h } }, '*')
+      }
+    }
+    var pluginRoot = document.getElementById('plugin-root')
+    if (pluginRoot && typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(function() {
+        if (resizeRaf) cancelAnimationFrame(resizeRaf)
+        resizeRaf = requestAnimationFrame(reportHeight)
+      }).observe(pluginRoot)
+    }
+    new MutationObserver(function() {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf)
+      resizeRaf = requestAnimationFrame(reportHeight)
+    }).observe(document.body, { childList: true, attributes: true, attributeFilter: ['open'], subtree: true })
+
+    // ── Export ──
+    document.getElementById('export-btn').addEventListener('click', function() {
+      var data = collectData()
+      var json = JSON.stringify(data, null, 2)
+      var blob = new Blob([json], { type: 'application/json' })
+      var url = URL.createObjectURL(blob)
+      var a = document.createElement('a')
+      a.href = url
+      var tripName = (data.legs.length > 0 ? data.legs[0].departureCity : 'trip')
+      a.download = 'itinerary-' + tripName.toLowerCase().replace(/\s+/g, '-') + '.json'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    })
+
+    // ── Import ──
+    document.getElementById('import-btn').addEventListener('click', function() {
+      document.getElementById('import-file').click()
+    })
+
+    document.getElementById('import-file').addEventListener('change', function(e) {
+      var file = e.target.files[0]
+      if (!file) return
+      var reader = new FileReader()
+      reader.onload = function(ev) {
+        try {
+          var data = JSON.parse(ev.target.result)
+          loadTripData(data)
+        } catch (err) {
+          alert('Invalid JSON file: ' + err.message)
+        }
+      }
+      reader.readAsText(file)
+      e.target.value = ''
+    })
+
+    function loadTripData(data) {
+      if (data.startDate) document.getElementById('tripStart').value = data.startDate
+      if (data.endDate) document.getElementById('tripEnd').value = data.endDate
+
+      // Clear existing
+      document.getElementById('legs-list').innerHTML = '<div class="empty-state" id="legs-empty" style="display:none"><div class="empty-icon">✈️</div>Add your first flight or transport</div>'
+      legCounter = 0
+      document.getElementById('hotels-list').innerHTML = '<div class="empty-state" id="hotels-empty" style="display:none"><div class="empty-icon">🏨</div>Add hotel stays</div>'
+      hotelCounter = 0
+
+      function setField(card, f, v) {
+        var el = card.querySelector('[data-field="' + f + '"]')
+        if (el && v !== undefined && v !== null) el.value = String(v)
+      }
+
+      if (data.legs && data.legs.length > 0) {
+        data.legs.forEach(function(leg) {
+          createLegCard(true)
+          var cards = document.querySelectorAll('#legs-list .entry-card')
+          var card = cards[cards.length - 1]
+
+          setField(card, 'type', leg.type)
+          setField(card, 'flightNumber', leg.flightNumber)
+          setField(card, 'color', leg.color)
+          setField(card, 'departureCity', leg.departureCity)
+          setField(card, 'departureUtc', leg.departureUtc)
+          setField(card, 'departureDate', leg.departureDate)
+          setField(card, 'departureTime', leg.departureTime)
+          setField(card, 'durationHours', leg.durationHours)
+          setField(card, 'durationMinutes', leg.durationMinutes)
+          setField(card, 'arrivalCity', leg.arrivalCity)
+          setField(card, 'arrivalUtc', leg.arrivalUtc)
+
+          // Update flight icon
+          var icon = card.querySelector('.flight-icon')
+          if (icon && leg.type === 'train') icon.textContent = '🚌'
+
+          // Update color dot
+          var dot = card.querySelector('.leg-dot')
+          if (dot && leg.color) dot.style.background = leg.color
+
+          computeArrival(card)
+          if (leg.arrivalDate) setField(card, 'arrivalDate', leg.arrivalDate)
+          if (leg.arrivalTime) setField(card, 'arrivalTime', leg.arrivalTime)
+
+          card.classList.remove('expanded')
+          updateHeaderMeta(card)
+        })
+      } else {
+        document.getElementById('legs-empty').style.display = ''
+      }
+
+      if (data.hotels && data.hotels.length > 0) {
+        data.hotels.forEach(function(hotel) {
+          createHotelCard()
+          var cards = document.querySelectorAll('#hotels-list .entry-card')
+          var card = cards[cards.length - 1]
+          setField(card, 'name', hotel.name)
+          setField(card, 'checkInDate', hotel.checkInDate)
+          setField(card, 'checkInTime', hotel.checkInTime)
+          setField(card, 'checkOutDate', hotel.checkOutDate)
+          setField(card, 'checkOutTime', hotel.checkOutTime)
+
+          card.classList.remove('expanded')
+          updateHeaderMeta(card)
+        })
+      } else {
+        document.getElementById('hotels-empty').style.display = ''
+      }
+
+      updateBadges()
+      updateStatus()
+    }
+  </script>
+</body>
+</html>
