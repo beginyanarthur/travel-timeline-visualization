@@ -215,7 +215,10 @@ h1 {
   text-transform: uppercase;
   color: var(--ink-2);
 }
-.rail-scroll { flex: 1; overflow-y: auto; min-height: 0; padding: 12px 6px 4px; }
+/* 4px left the last button sitting on the footer's rule. The panel needs a
+   gap there so the scrolling list and the fixed Generate row read as two
+   separate things. */
+.rail-scroll { flex: 1; overflow-y: auto; min-height: 0; padding: 12px 6px 18px; }
 
 /* ── Stage ──────────────────────────────────────────────────── */
 .stage {
