@@ -2112,6 +2112,11 @@ $('view-fit').addEventListener('click', fitWidth);
 
 $('generate').addEventListener('click', function () {
   render();
+  /* Get out of the way once there is something to look at. Only on a
+     success: render() reports a problem in the footer, which lives inside
+     the sheet, so closing on a failure would hide the explanation. */
+  var drew = $('stage-empty').hidden;
+  if (drew && sheetMQ.matches) sheetOpen(false);
   wrap.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
 });
 
