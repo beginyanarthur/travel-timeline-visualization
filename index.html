@@ -194,9 +194,10 @@ h1 {
 }
 .rail-head {
   display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 10px 14px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px 10px;
   border-bottom: 1px solid var(--rule);
 }
 .rail-title {
@@ -250,7 +251,8 @@ h1 {
 }
 .tool + .tool { border-left: 1px solid var(--rule); }
 .tool:hover { background: var(--surface-2); color: var(--ink); }
-.tool[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+/* Selected, not shouting: this is a view preference, not the main action. */
+.tool[aria-pressed="true"] { background: var(--surface-3); color: var(--ink); font-weight: 600; }
 .tool.icon { font-family: var(--mono); font-size: 13px; min-width: 30px; }
 .zoom-readout {
   font-family: var(--mono);
@@ -299,8 +301,6 @@ h1 {
   margin: 0; color: var(--ink);
 }
 .se-body { margin: 0; font-size: 14px; color: var(--ink-2); max-width: 34ch; }
-.se-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
-.se-actions .tool { border: 1px solid var(--rule-firm); border-radius: 7px; }
 .artboard {
   background: var(--canvas);
   box-shadow: 0 1px 2px rgba(10, 14, 20, 0.10), 0 10px 30px rgba(10, 14, 20, 0.09);
@@ -498,48 +498,6 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 }
 .tab-panel { display: none; padding: 8px 0 0; }
 .tab-panel.active { display: block; }
-
-/* Several trips live in the panel; one is drawn at a time. */
-.trip-chips {
-  display: flex; gap: 5px; flex: 1; min-width: 0;
-  overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin;
-}
-.trip-chip {
-  display: flex; align-items: center; gap: 2px; flex: 0 0 auto;
-  max-width: 196px; padding: 3px 4px 3px 10px;
-  border: 1px solid var(--rule-firm); border-radius: 999px;
-  background: var(--surface); color: var(--ink-2);
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
-}
-.trip-chip:hover { border-color: var(--accent); }
-.trip-chip[aria-current="true"] {
-  background: var(--accent); border-color: var(--accent); color: var(--accent-ink);
-}
-.trip-chip .nm {
-  border: 0; background: none; color: inherit; cursor: pointer;
-  font-family: var(--font-family); font-size: 11px; font-weight: 500;
-  padding: 2px 2px; max-width: 132px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.trip-chip .nm-edit {
-  border: 1px solid var(--accent); border-radius: 999px;
-  background: var(--surface); color: var(--ink);
-  font-family: var(--font-family); font-size: 11px; font-weight: 500;
-  padding: 2px 8px; width: 150px; outline: none;
-}
-.trip-chip .x {
-  border: 0; background: none; color: inherit; cursor: pointer;
-  font-size: 13px; line-height: 1; padding: 0 4px; opacity: 0.5;
-}
-.trip-chip .x:hover { opacity: 1; }
-.trip-new {
-  flex: 0 0 auto; width: 26px; height: 26px; padding: 0;
-  border: 1px dashed var(--rule-firm); border-radius: 999px;
-  background: none; color: var(--figma-color-text-secondary);
-  font-size: 15px; line-height: 1; cursor: pointer;
-  display: grid; place-items: center;
-}
-.trip-new:hover { border-color: var(--accent); color: var(--accent); }
 
 .trip-dates {
   display: flex; gap: 6px; align-items: center;
@@ -749,10 +707,7 @@ select.f-input,
 <main class="workbench">
   <aside class="rail">
     <div class="rail-head">
-      <span class="rail-title">Trips</span>
-      <div class="trip-chips" id="trip-chips" role="tablist" aria-label="Saved trips"></div>
-      <button class="trip-new" id="trip-new" type="button"
-              title="Start another trip" aria-label="Start another trip">+</button>
+      <span class="rail-title">Trip</span>
     </div>
     <div class="rail-scroll">
       <div id="plugin-root">
@@ -812,10 +767,6 @@ select.f-input,
 
   <section class="stage">
     <div class="toolbar">
-      <div class="tool-group" role="group" aria-label="Sample trips">
-        <button class="tool" data-sample="hamburg" aria-pressed="false">Yerevan &rarr; Hamburg</button>
-        <button class="tool" data-sample="stockholm" aria-pressed="false">Yerevan &rarr; Stockholm</button>
-      </div>
       <div class="tool-group" role="group" aria-label="Zoom">
         <button class="tool icon" id="zoom-out" title="Zoom out" aria-label="Zoom out">&minus;</button>
         <span class="zoom-readout" id="zoom-readout" aria-live="polite">100%</span>
@@ -837,10 +788,7 @@ select.f-input,
           <i style="background:#262626"></i><i style="background:#262626"></i><i style="background:#BFBFBF"></i>
         </div>
         <p class="se-title" id="se-title">Nothing to draw yet</p>
-        <p class="se-body" id="se-body">Add a flight on the left, or start from a trip that already exists.</p>
-        <div class="se-actions" id="se-actions">
-          <button class="tool" type="button" data-sample="hamburg">Yerevan to Hamburg, 8 days</button>
-        </div>
+        <p class="se-body" id="se-body">Add a flight on the left, then press Generate.</p>
       </div>
     </div>
   </section>
@@ -910,30 +858,6 @@ select.f-input,
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════════
-   SAMPLE TRIPS
-   ═══════════════════════════════════════════════════════════════ */
-var SAMPLES = {
-  hamburg: {"startDate":"2027-07-06","endDate":"2027-07-13","legs":[
-    {"type":"flight","departureCity":"Yerevan","departureDate":"2027-07-06","departureTime":"06:30","departureUtc":4,"flightNumber":"W67805","durationHours":4,"durationMinutes":50,"arrivalCity":"Hamburg","arrivalDate":"2027-07-06","arrivalTime":"09:20","arrivalUtc":2,"color":"#ff5630"},
-    {"type":"train","departureCity":"Hamburg Hbf","departureDate":"2027-07-07","departureTime":"09:51","departureUtc":2,"flightNumber":"","durationHours":2,"durationMinutes":0,"arrivalCity":"Berlin Hbf","arrivalDate":"2027-07-07","arrivalTime":"11:51","arrivalUtc":2,"color":"#ffcb11"},
-    {"type":"train","departureCity":"Berlin Hbf","departureDate":"2027-07-09","departureTime":"12:37","departureUtc":2,"flightNumber":"","durationHours":2,"durationMinutes":35,"arrivalCity":"Nuremberg Hbf","arrivalDate":"2027-07-09","arrivalTime":"15:12","arrivalUtc":2,"color":"#e86ef3"},
-    {"type":"train","departureCity":"Nuremberg Hbf","departureDate":"2027-07-11","departureTime":"17:00","departureUtc":2,"flightNumber":"","durationHours":4,"durationMinutes":28,"arrivalCity":"Dortmund Hbf","arrivalDate":"2027-07-11","arrivalTime":"21:28","arrivalUtc":2,"color":"#4caf50"},
-    {"type":"flight","departureCity":"Dortmund","departureDate":"2027-07-12","departureTime":"17:30","departureUtc":2,"flightNumber":"","durationHours":4,"durationMinutes":20,"arrivalCity":"Yerevan","arrivalDate":"2027-07-12","arrivalTime":"23:50","arrivalUtc":4,"color":"#2196f3"}],
-    "hotels":[
-    {"name":"Novotel Hamburg City Alster","checkInDate":"2027-07-06","checkInTime":"14:00","checkOutDate":"2027-07-07","checkOutTime":"08:00"},
-    {"name":"NH Collection Berlin Mitte","checkInDate":"2027-07-07","checkInTime":"12:00","checkOutDate":"2027-07-09","checkOutTime":"11:00"},
-    {"name":"Leonardo Royal Nurnberg","checkInDate":"2027-07-09","checkInTime":"14:00","checkOutDate":"2027-07-11","checkOutTime":"14:00"},
-    {"name":"NH Dortmund","checkInDate":"2027-07-11","checkInTime":"22:00","checkOutDate":"2027-07-12","checkOutTime":"12:00"}]},
-
-  stockholm: {"startDate":"2026-10-03","endDate":"2026-10-10","legs":[
-    {"type":"flight","departureCity":"Yerevan","departureDate":"2026-10-03","departureTime":"04:45","departureUtc":4,"flightNumber":"","durationHours":3,"durationMinutes":45,"arrivalCity":"Vienna","arrivalDate":"2026-10-03","arrivalTime":"06:30","arrivalUtc":2,"color":"#34e578"},
-    {"type":"flight","departureCity":"Vienna","departureDate":"2026-10-03","departureTime":"17:05","departureUtc":2,"flightNumber":"","durationHours":2,"durationMinutes":10,"arrivalCity":"Stockholm","arrivalDate":"2026-10-03","arrivalTime":"19:15","arrivalUtc":2,"color":"#ff9800"},
-    {"type":"flight","departureCity":"Stockholm","departureDate":"2026-10-10","departureTime":"15:10","departureUtc":2,"flightNumber":"","durationHours":2,"durationMinutes":10,"arrivalCity":"Vienna","arrivalDate":"2026-10-10","arrivalTime":"17:20","arrivalUtc":2,"color":"#9c27b0"},
-    {"type":"flight","departureCity":"Vienna","departureDate":"2026-10-10","departureTime":"22:35","departureUtc":2,"flightNumber":"","durationHours":3,"durationMinutes":20,"arrivalCity":"Yerevan","arrivalDate":"2026-10-11","arrivalTime":"03:55","arrivalUtc":4,"color":"#4caf50"}],
-    "hotels":[]}
-};
-
 /* ═══════════════════════════════════════════════════════════════
    RENDERER
    Ported from code.ts. Figma node calls become SVG elements:
@@ -1644,22 +1568,14 @@ function stageEmpty(on, title, body) {
   artboard.innerHTML = '';
   $('stage-dims').textContent = '';
   $('se-title').textContent = title || 'Nothing to draw yet';
-  $('se-body').textContent = body ||
-    'Add a flight on the left, or start from a trip that already exists.';
-  /* The sample shortcut is only useful while there is nothing loaded. */
-  $('se-actions').hidden = !!title;
+  $('se-body').textContent = body || 'Add a flight on the left, then press Generate.';
 }
 var scale = 1, fitMode = false, lastSize = { w: 900, h: 820 };
 var renderTimer = 0;
 
 function scheduleRender() {
   clearTimeout(renderTimer);
-  renderTimer = setTimeout(function () {
-    captureActive();
-    renderTripBar();
-    saveTrips();
-    render();
-  }, 180);
+  renderTimer = setTimeout(render, 180);
 }
 
 function render() {
@@ -1736,20 +1652,6 @@ $('view-fit').addEventListener('click', fitWidth);
 $('generate').addEventListener('click', function () {
   render();
   wrap.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
-});
-
-document.querySelectorAll('[data-sample]').forEach(function (btn) {
-  btn.addEventListener('click', function () {
-    document.querySelectorAll('[data-sample]').forEach(function (b) {
-      b.setAttribute('aria-pressed', String(b === btn));
-    });
-    loadTripData(clone(SAMPLES[btn.dataset.sample]));
-    captureActive();
-    renderTripBar();
-    saveTrips();
-    render();
-    wrap.scrollTo({ left: 0, top: 0 });
-  });
 });
 
 /* Drag to pan */
@@ -1858,10 +1760,11 @@ $('import-file').addEventListener('change', function (e) {
   reader.onload = function (ev) {
     try {
       loadTripData(JSON.parse(ev.target.result));
-      captureActive();
-      renderTripBar();
-      saveTrips();
-      showTripState();
+      var legs = document.querySelectorAll('#legs-list .entry-card').length;
+      var hotels = document.querySelectorAll('#hotels-list .entry-card').length;
+      stageEmpty(true, 'Ready to draw',
+        legs + ' flight' + (legs === 1 ? '' : 's') + ' and ' +
+        hotels + ' hotel' + (hotels === 1 ? '' : 's') + ' loaded. Press Generate to draw the trip.');
       toast('Loaded ' + file.name);
     } catch (err) { toast('Could not read that file: ' + err.message); }
   };
@@ -1951,230 +1854,13 @@ $('fb-send').addEventListener('click', function () {
   });
 });
 
-
-/* ═══════════════════════════════════════════════════════════════
-   SAVED TRIPS
-   The panel holds several trips and draws one at a time. They live in
-   this browser's localStorage, so a plan survives a reload without
-   anything leaving the machine. Storage can throw (private windows,
-   blocked site data), so every access is guarded and the session still
-   works when it fails.
-   ═══════════════════════════════════════════════════════════════ */
-var STORE_KEY = 'ttv.trips.v1';
-var trips = [];
-var activeId = null;
-
-function blankTrip() {
-  var d = new Date();
-  return {
-    id: 't' + Date.now() + Math.random().toString(36).slice(2, 7),
-    data: {
-      startDate: d.toISOString().slice(0, 10),
-      endDate: new Date(d.getTime() + 7 * 86400000).toISOString().slice(0, 10),
-      legs: [],
-      hotels: []
-    }
-  };
-}
-
-function clone(o) { return JSON.parse(JSON.stringify(o)); }
-
-function shortDate(iso) {
-  var d = new Date(iso + 'T00:00:00');
-  var m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return d.getDate() + ' ' + m[d.getMonth()];
-}
-
-/* "Yerevan to Yerevan" names every round trip identically, which is the
-   common case and useless. So a round trip is named for where it actually
-   went: the longest stay, which skips layovers the way a traveller does. */
-function autoLabel(data) {
-  var legs = (data && data.legs) || [];
-  if (!legs.length) return 'Untitled trip';
-  var first = legs[0].departureCity || 'Trip';
-  var last = legs[legs.length - 1].arrivalCity || '';
-  var name;
-  if (last && legs.length > 1 && first.toLowerCase() === last.toLowerCase()) {
-    var best = '', bestMs = -1;
-    for (var i = 0; i < legs.length - 1; i++) {
-      var arr = localToAbsoluteMs(legs[i].arrivalDate, legs[i].arrivalTime, 0);
-      var dep = localToAbsoluteMs(legs[i + 1].departureDate, legs[i + 1].departureTime, 0);
-      if (isFinite(dep - arr) && dep - arr > bestMs) {
-        bestMs = dep - arr;
-        best = legs[i].arrivalCity || '';
-      }
-    }
-    name = best || first;
-  } else {
-    name = last ? first + ' → ' + last : first;
-  }
-  return data.startDate ? name + ' · ' + shortDate(data.startDate) : name;
-}
-
-function tripLabel(t) {
-  /* t may be a trip or, from older calls, just its data. */
-  if (t && t.data) return t.name || autoLabel(t.data);
-  return autoLabel(t);
-}
-
-function byId(id) {
-  for (var i = 0; i < trips.length; i++) if (trips[i].id === id) return trips[i];
-  return null;
-}
-
-function saveTrips() {
-  try {
-    window.localStorage.setItem(STORE_KEY, JSON.stringify({ trips: trips, activeId: activeId }));
-  } catch (e) { /* nothing to do; the trips still work for this session */ }
-}
-
-function readStore() {
-  try {
-    var parsed = JSON.parse(window.localStorage.getItem(STORE_KEY));
-    if (parsed && parsed.trips && parsed.trips.length) return parsed;
-  } catch (e) {}
-  return null;
-}
-
-function captureActive() {
-  var t = byId(activeId);
-  if (t) t.data = collectData();
-}
-
-function startRename(t, btn) {
-  var input = document.createElement('input');
-  input.className = 'nm-edit';
-  input.value = tripLabel(t);
-  input.setAttribute('aria-label', 'Trip name');
-  btn.parentNode.replaceChild(input, btn);
-  input.focus();
-  input.select();
-  var finished = false;
-  function done(commit) {
-    if (finished) return;
-    finished = true;
-    if (commit) {
-      var v = input.value.trim();
-      /* Clearing the name, or retyping the automatic one, hands it back. */
-      t.name = (v && v !== autoLabel(t.data)) ? v : '';
-    }
-    renderTripBar();
-    saveTrips();
-  }
-  input.addEventListener('blur', function () { done(true); });
-  input.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); done(true); }
-    else if (e.key === 'Escape') { e.preventDefault(); done(false); }
-  });
-}
-
-function renderTripBar() {
-  var bar = $('trip-chips');
-  bar.innerHTML = '';
-  trips.forEach(function (t) {
-    var chip = document.createElement('div');
-    chip.className = 'trip-chip';
-    chip.setAttribute('aria-current', String(t.id === activeId));
-
-    var nm = document.createElement('button');
-    nm.type = 'button';
-    nm.className = 'nm';
-    nm.textContent = tripLabel(t);
-    nm.title = t.id === activeId
-      ? 'Click to rename'
-      : 'Switch to ' + tripLabel(t) + '  (' + t.data.startDate + ' to ' + t.data.endDate + ')';
-    nm.addEventListener('click', function () {
-      if (t.id === activeId) startRename(t, nm);
-      else switchTrip(t.id);
-    });
-    chip.appendChild(nm);
-
-    if (trips.length > 1) {
-      var x = document.createElement('button');
-      x.type = 'button';
-      x.className = 'x';
-      x.textContent = '×';
-      x.title = 'Remove this trip';
-      x.setAttribute('aria-label', 'Remove ' + tripLabel(t));
-      x.addEventListener('click', function (e) { e.stopPropagation(); removeTrip(t.id); });
-      chip.appendChild(x);
-    }
-    bar.appendChild(chip);
-  });
-}
-
-/* Switching does not draw, for the same reason importing does not:
-   the panel fills, and Generate is what puts it on the canvas. */
-function showTripState() {
-  var legs = document.querySelectorAll('#legs-list .entry-card').length;
-  var hotels = document.querySelectorAll('#hotels-list .entry-card').length;
-  if (!legs) { stageEmpty(true); return; }
-  stageEmpty(true, 'Ready to draw',
-    legs + ' flight' + (legs === 1 ? '' : 's') + ' and ' +
-    hotels + ' hotel' + (hotels === 1 ? '' : 's') + ' loaded. Press Generate to draw the trip.');
-}
-
-function switchTrip(id) {
-  if (id === activeId) return;
-  captureActive();
-  var t = byId(id);
-  if (!t) return;
-  activeId = id;
-  loadTripData(clone(t.data));
-  renderTripBar();
-  saveTrips();
-  showTripState();
-}
-
-function newTrip() {
-  captureActive();
-  var t = blankTrip();
-  trips.push(t);
-  activeId = t.id;
-  loadTripData(clone(t.data));
-  renderTripBar();
-  saveTrips();
-  stageEmpty(true);
-  $('trip-chips').scrollLeft = $('trip-chips').scrollWidth;
-}
-
-function removeTrip(id) {
-  if (trips.length < 2) return;
-  var i = -1;
-  trips.forEach(function (t, n) { if (t.id === id) i = n; });
-  if (i < 0) return;
-  var wasActive = id === activeId;
-  trips.splice(i, 1);
-  if (wasActive) {
-    var next = trips[Math.min(i, trips.length - 1)];
-    activeId = next.id;
-    loadTripData(clone(next.data));
-    showTripState();
-  }
-  renderTripBar();
-  saveTrips();
-}
-
-$('trip-new').addEventListener('click', newTrip);
-
-function initTrips() {
-  var stored = readStore();
-  if (stored) {
-    trips = stored.trips;
-    activeId = byId(stored.activeId) ? stored.activeId : trips[0].id;
-  } else {
-    var t = blankTrip();
-    trips = [t];
-    activeId = t.id;
-  }
-  loadTripData(clone(byId(activeId).data));
-  renderTripBar();
-  showTripState();
-}
-
-/* Restore whatever was here last time, or open one empty trip the way
-   the plugin opens: today to a week out, nothing added yet. */
-initTrips();
+/* Open exactly as the plugin opens: today to a week out, nothing added yet. */
+var boot = new Date();
+$('tripStart').value = boot.toISOString().slice(0, 10);
+$('tripEnd').value = new Date(boot.getTime() + 7 * 86400000).toISOString().slice(0, 10);
+updateBadges();
+updateStatus();
+stageEmpty(true);
 </script>
 
 </body>
