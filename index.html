@@ -864,30 +864,58 @@ input[type="time"].f-input::-webkit-date-and-time-value {
 }
 .add-btn:hover { background: var(--accent-soft); }
 
-/* Four labelled buttons will not fit across a 340px rail, so instead of
-   wrapping into a ragged row and a half they lay out on a grid: two by two
-   where it is narrow, one row of four once there is room. Every button is
-   the same size either way, which is the point. */
-.io-bar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
-  gap: 6px; padding: 0 0 2px;
+/* Two choices in the panel, not five. Import, export and clear are things
+   you do to a trip you already have, so they sit behind the menu in the
+   header and leave the body to the only two decisions that matter on an
+   empty panel: build one, or look at one. */
+.sample-btn {
+  width: 100%; height: var(--btn-h-2); margin-top: 8px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--figma-color-border); border-radius: 8px;
+  background: var(--figma-color-bg-secondary); cursor: pointer;
+  color: var(--figma-color-text-secondary);
+  font-size: var(--btn-fs-2); font-family: var(--font-family); font-weight: 600;
+  transition: all 0.12s ease;
 }
-.io-btn {
-  min-width: 0; white-space: nowrap;
-  height: var(--btn-h-3); padding: 0 12px;
-  border: 1px solid var(--figma-color-border);
-  border-radius: 8px; background: var(--figma-color-bg-secondary);
-  cursor: pointer; color: var(--figma-color-text-secondary);
-  font-size: var(--btn-fs-3); font-family: var(--font-family); font-weight: 500;
-  transition: all 0.1s ease;
-  display: flex; align-items: center; justify-content: center; gap: 3px;
+.sample-btn:hover {
+  background: var(--figma-color-bg-hover); color: var(--figma-color-text);
+  border-color: var(--figma-color-text-tertiary);
 }
-.io-btn:hover { background: var(--figma-color-bg-hover); color: var(--figma-color-text); }
-.io-btn:disabled { opacity: 0.45; cursor: default; }
-.io-btn.danger:hover:not(:disabled) {
-  background: var(--danger-soft); color: var(--danger); border-color: var(--danger);
+
+.more-wrap { position: relative; flex: 0 0 auto; }
+.more-btn {
+  display: grid; place-items: center;
+  width: 32px; height: 32px; padding: 0;
+  border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: var(--ink-2); cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
+.more-btn:hover, .more-btn[aria-expanded="true"] {
+  background: var(--surface-2); color: var(--ink); border-color: var(--rule);
+}
+.more-menu {
+  position: absolute; right: 0; top: calc(100% + 6px);
+  z-index: 60; min-width: 186px; padding: 6px;
+  display: grid; gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--rule-firm); border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(10, 14, 20, 0.16);
+}
+.more-menu[hidden] { display: none; }
+.more-item {
+  display: flex; align-items: center;
+  width: 100%; height: var(--btn-h-3); padding: 0 10px;
+  border: 0; border-radius: 7px;
+  background: transparent; cursor: pointer;
+  color: var(--ink-2); text-align: left; white-space: nowrap;
+  font-family: var(--font-family); font-size: var(--btn-fs-3); font-weight: 500;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.more-item:hover:not(:disabled) { background: var(--surface-2); color: var(--ink); }
+.more-item:disabled { opacity: 0.45; cursor: default; }
+.more-item.danger { color: var(--danger); }
+.more-item.danger:hover:not(:disabled) { background: var(--danger-soft); }
+.more-sep { height: 1px; background: var(--rule); margin: 4px 2px; }
 
 .empty-state {
   text-align: center; padding: 16px 10px;
@@ -1011,6 +1039,10 @@ input[type="time"].f-input::-webkit-date-and-time-value {
      zoom toolbar 26px and the drag grip 12px wide, none of which a finger
      can be asked to hit. The glyphs stay the size they are; only the area
      around them grows. */
+  .more-btn { width: 40px; height: 40px; }
+  /* The sheet sits on the bottom edge of the screen, so there is nothing
+     below the header to drop into. It opens upward over the canvas. */
+  .more-menu { top: auto; bottom: calc(100% + 6px); }
   .remove-btn { width: 40px; height: 40px; font-size: 20px; margin-right: -6px; }
   .card-header { padding: 6px 10px; gap: 6px; }
   .drag-handle { padding: 13px 12px; margin: -13px -4px; }
@@ -1112,10 +1144,6 @@ input[type="time"].f-input::-webkit-date-and-time-value {
    and squeezing them hid the year behind the calendar button. They stack
    instead, and the collapsed sheet grows to keep showing both. */
 @media (max-width: 360px) {
-  /* Three labels and two arrows do not fit across the smallest phones at
-     13px, and Clear was dropping to a row of its own. A point smaller, still
-     on the 12px floor, keeps them on one line. */
-  .io-btn { font-size: 12px; padding: 0 8px; }
 }
 
 @media (max-width: 340px) {
@@ -1146,6 +1174,20 @@ input[type="time"].f-input::-webkit-date-and-time-value {
     <div class="sheet-grip" id="sheet-grip"><i></i></div>
     <div class="rail-head">
       <span class="rail-title">Trip details</span>
+      <div class="more-wrap">
+        <button class="more-btn" id="more-btn" type="button" aria-haspopup="true"
+                aria-expanded="false" aria-label="More actions" title="More actions">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><g fill="currentColor">
+            <circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/>
+          </g></svg>
+        </button>
+        <div class="more-menu" id="more-menu" hidden>
+          <button class="more-item export" id="download-btn" type="button">↓ Export JSON</button>
+          <button class="more-item" id="file-btn" type="button">↑ Import JSON</button>
+          <div class="more-sep"></div>
+          <button class="more-item danger" id="clear-trip" type="button" disabled>Clear trip</button>
+        </div>
+      </div>
     </div>
     <div class="rail-scroll">
       <div id="plugin-root">
@@ -1190,13 +1232,8 @@ input[type="time"].f-input::-webkit-date-and-time-value {
           <button class="add-btn" id="add-hotel">+ Add hotel</button>
         </div>
 
-        <div class="io-bar" style="margin-top:8px;">
-          <button class="io-btn export" id="download-btn">↓ Export JSON</button>
-          <button class="io-btn" id="file-btn">↑ Import JSON</button>
-          <button class="io-btn" id="sample-btn" data-sample type="button">Sample trip</button>
-          <button class="io-btn danger" id="clear-trip" type="button" disabled>Clear</button>
-          <input type="file" id="import-file" accept=".json" style="display:none;">
-        </div>
+        <button class="sample-btn" id="sample-btn" type="button">Try a sample trip</button>
+        <input type="file" id="import-file" accept=".json" style="display:none;">
       </div>
     </div>
     <div class="plugin-footer">
@@ -2173,7 +2210,7 @@ function updateStatus() {
     document.querySelectorAll('#hotels-list .entry-card').length;
   $('clear-trip').disabled = !anyCards;
   /* Nothing to export until there is something in the panel. */
-  document.querySelector('.io-btn.export').disabled = !anyCards;
+  document.querySelector('.more-item.export').disabled = !anyCards;
   var btn = $('generate'), status = $('status');
   status.classList.remove('warn');
   if (!$('tripStart').value || !$('tripEnd').value) {
@@ -2287,6 +2324,27 @@ function clearTrip() {
 }
 
 $('clear-trip').addEventListener('click', askToClear);
+
+/* The header menu. Import, export and clear act on a trip you already have,
+   so they belong out of the way of the two choices on an empty panel. */
+var moreBtn = $('more-btn'), moreMenu = $('more-menu');
+function setMore(open) {
+  moreMenu.hidden = !open;
+  moreBtn.setAttribute('aria-expanded', String(open));
+}
+moreBtn.addEventListener('click', function (e) {
+  e.stopPropagation();
+  setMore(moreMenu.hidden);
+});
+moreMenu.addEventListener('click', function (e) {
+  if (e.target.closest('.more-item')) setMore(false);
+});
+document.addEventListener('click', function (e) {
+  if (!moreMenu.hidden && !e.target.closest('.more-wrap')) setMore(false);
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && !moreMenu.hidden) { setMore(false); moreBtn.focus(); }
+});
 
 /* Legs are a sequence, so their order is data. Dragging one reorders the
    trip; collectData reads the DOM, so nothing else has to know. */
@@ -2877,7 +2935,8 @@ var dragFrom = 0, dragH = 0, dragging = false, moved = 0;
 rail.addEventListener('pointerdown', function (e) {
   if (!sheetMQ.matches) return;
   /* Anywhere on the grip or the header, but not on the Clear button. */
-  if (!e.target.closest('.sheet-grip, .rail-head') || e.target.closest('button')) return;
+  if (!e.target.closest('.sheet-grip, .rail-head') ||
+      e.target.closest('button, .more-menu')) return;
   e.preventDefault();   /* without this the browser scrolls the page instead */
   dragging = true;
   moved = 0;
@@ -2935,13 +2994,16 @@ $('se-open').addEventListener('click', function () { sheetOpen(true); });
    the trip is there to pull apart afterwards. */
 function useSampleTrip() {
   loadTripData(SAMPLE_TRIP);
-  if (!render()) return;
+  /* It fills the panel and stops there. Pressing Generate is the step that
+     makes the drawing appear, and someone who has never done it once has
+     not really learned how the page works. */
+  promptReady();
   /* Its own event. Counting it as "generated" would flatter the one ratio
      that says whether people build something of their own. */
   track('sample-loaded', 'Loaded the sample trip');
-  if (sheetMQ.matches) sheetOpen(false);
-  wrap.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
-  fitWidth();
+  /* On a phone the Generate button lives in the sheet footer, which is not
+     on screen while the sheet is shut. */
+  if (sheetMQ.matches) sheetOpen(true);
 }
 
 $('sample-btn').addEventListener('click', function () {

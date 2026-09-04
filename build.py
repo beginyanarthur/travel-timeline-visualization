@@ -103,8 +103,8 @@ def main():
              "the style/header boundary")
 
     s = swap(s,
-             '<button class="io-btn export" id="copy-btn">Copy JSON</button>',
-             '<button class="io-btn export" id="download-btn">↓ Export JSON</button>',
+             '<button class="more-item export" id="copy-btn" type="button">Copy JSON</button>',
+             '<button class="more-item export" id="download-btn" type="button">↓ Export JSON</button>',
              "the export button")
 
     s = swap(s, COPY_HANDLER, DOWNLOAD_HANDLER, "the copy handler")
