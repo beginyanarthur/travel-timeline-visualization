@@ -92,7 +92,7 @@ const CLOCK_GAP = 90
 
 // Leg icons, keyed by transport type
 const LEG_ICONS: { [k: string]: string } = {
-  flight: '\u2708',
+  flight: '\u2708\uFE0F',
   train: '\u{1F686}',
   bus: '\u{1F68C}',
   boat: '\u{1F6A2}',

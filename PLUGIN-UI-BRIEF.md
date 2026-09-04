@@ -19,7 +19,7 @@ before this change still import.
 
 | id | label | icon |
 | --- | --- | --- |
-| `flight` | Flight | ✈ (U+2708) |
+| `flight` | Flight | ✈️ (U+2708 U+FE0F) |
 | `train` | Train | 🚆 (U+1F686) |
 | `bus` | Bus | 🚌 (U+1F68C) |
 | `boat` | Boat | 🚢 (U+1F6A2) |
@@ -27,13 +27,17 @@ before this change still import.
 | `bike` | Bike | 🚲 (U+1F6B2) |
 | `walk` | Walk | 🚶 (U+1F6B6) |
 
+The plane carries an explicit variation selector, `U+FE0F`. Without it
+`U+2708` renders as a flat monochrome glyph and is the only icon in the set
+not in colour. Do not strip it.
+
 One table drives four things: the dropdown options, the card header text, the
 small icon in the From/To route row, and the icon drawn on the generated
 timeline. An eighth mode should be one new entry, not six edits.
 
 ## 2. Panel changes
 
-**Tab label.** `✈ Flights` becomes `✈ Transport`. It has always covered
+**Tab label.** `✈ Flights` becomes `✈️ Transport`. It has always covered
 ground transport; the name did not.
 
 **Dropdown.** Seven options, each `<icon> <label>`, built from the table

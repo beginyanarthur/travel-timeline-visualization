@@ -781,7 +781,7 @@ select.f-input,
 
         <div class="tab-bar">
           <button class="tab-btn active" data-tab="legs">
-            &#9992; Transport <span class="badge" id="legs-badge">0</span>
+            &#9992;&#65039; Transport <span class="badge" id="legs-badge">0</span>
           </button>
           <button class="tab-btn" data-tab="hotels">
             &#127976; Hotels <span class="badge" id="hotels-badge">0</span>
@@ -961,7 +961,7 @@ select.f-input,
 /* Every way of getting between two places. 'flight' and 'train' keep their
    ids so trips exported before the others existed still import. */
 var TRANSPORT = {
-  flight: { label: 'Flight', icon: '\u2708' },
+  flight: { label: 'Flight', icon: '\u2708\ufe0f' },
   train:  { label: 'Train',  icon: '\ud83d\ude86' },
   bus:    { label: 'Bus',    icon: '\ud83d\ude8c' },
   boat:   { label: 'Boat',   icon: '\ud83d\udea2' },
@@ -1475,7 +1475,7 @@ function createLegCard(skipCompute) {
     '<div class="route-indicator">' +
       '<div class="route-city"><div class="f-label">From</div>' +
         '<input class="f-input" data-field="departureCity" placeholder="City"></div>' +
-      '<div class="route-arrow"><span class="flight-icon">✈</span><div class="flight-line"></div></div>' +
+      '<div class="route-arrow"><span class="flight-icon">✈️</span><div class="flight-line"></div></div>' +
       '<div class="route-city"><div class="f-label">To</div>' +
         '<input class="f-input" data-field="arrivalCity" placeholder="City"></div>' +
     '</div>' +
