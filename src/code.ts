@@ -84,8 +84,8 @@ const LEG_TOP = 521
 const _LEG_BOTTOM = 721
 
 // Section 2: Clock Day
-const CLOCK_DAY_TITLE_Y = 1088
-const CLOCK_DAY_DESC_Y = 1162
+const CLOCK_DAY_TITLE_Y = 1064
+const CLOCK_DAY_DESC_Y = 1138
 const CLOCK_TOP = 1320
 const CLOCK_D = 140
 const CLOCK_GAP = 90
@@ -189,6 +189,9 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   // ═══════════════════════════════════════════════════════════════════════
   // SECTION 1: TIMELINE
   // ═══════════════════════════════════════════════════════════════════════
+
+  // Section title background
+  rect(91, TIMELINE_TITLE_Y - 46, 1274, 201, '#F5FBFE')
 
   // Section title and description
   await txt('Timeline', PAD_LEFT - 1, TIMELINE_TITLE_Y, 48, 'Bold', '#000000')
@@ -500,7 +503,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   dotNight.x = PAD_LEFT - 2
   dotNight.y = tlLegY + 57
   dotNight.fills = [spRgb(0.12)]
-  const nightLabel = await txt('Black = Night (9pm - 5am)', LEG_TEXT_X, tlLegY + 59, 12, 'Regular', '#333333')
+  const nightLabel = await txt('Black = Night (6pm - 5am)', LEG_TEXT_X, tlLegY + 59, 12, 'Regular', '#333333')
   nightLabel.setRangeFontName('Black = '.length, 'Black = Night'.length, { family: 'Inter', style: 'Bold' })
 
   const dotDay = figma.createEllipse()
@@ -509,13 +512,13 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   dotDay.x = PAD_LEFT - 2
   dotDay.y = tlLegY + 81
   dotDay.fills = [spRgb(0.75)]
-  const dayLabel2 = await txt('Gray = Day (6am - 8pm)', LEG_TEXT_X, tlLegY + 83, 12, 'Regular', '#333333')
+  const dayLabel2 = await txt('Gray = Day (6am - 5pm)', LEG_TEXT_X, tlLegY + 83, 12, 'Regular', '#333333')
   dayLabel2.setRangeFontName('Gray = '.length, 'Gray = Day'.length, { family: 'Inter', style: 'Bold' })
 
   // Colored segments legend (solid = city stay)
-  rect(PAD_LEFT, tlLegY + 109, 40, 4, '#E53935')
-  const colorLabel = await txt('Solid color = Staying in the city', LEG_TEXT_X, tlLegY + 103, 12, 'Regular', '#333333')
-  colorLabel.setRangeFontName('Solid color = '.length, colorLabel.characters.length, { family: 'Inter', style: 'Bold' })
+  rect(PAD_LEFT, tlLegY + 112, 40, 4, '#E53935')
+  const colorLabel = await txt('Colored segments = Staying in the city', LEG_TEXT_X, tlLegY + 106, 12, 'Regular', '#333333')
+  colorLabel.setRangeFontName('Colored segments = '.length, colorLabel.characters.length, { family: 'Inter', style: 'Bold' })
 
   // Muted segments legend (transit/commute)
   const mutedRect = figma.createRectangle()
@@ -530,6 +533,9 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   // ═══════════════════════════════════════════════════════════════════════
   // SECTION 2: CLOCK DAY
   // ═══════════════════════════════════════════════════════════════════════
+
+  // Section title background
+  rect(91, CLOCK_DAY_TITLE_Y - 56, 1274, 201, '#F5FBFE')
 
   // Section title and description
   await txt('Clock Day', PAD_LEFT - 1, CLOCK_DAY_TITLE_Y, 48, 'Bold', '#000000')
@@ -735,7 +741,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   await txt('How to read', PAD_LEFT - 1, clLegY, 16, 'Bold', '#333333')
 
   // Descriptive paragraph with mixed bold formatting
-  const clockLegendText = `Each of the 24 pie slices is one hour:  Dark slices for nighttime (9 pm–5 am), light Gray for daytime (6 am–8 pm). Colored slices overlay the hours you're staying in a city or in transit. Solid color means a city stay, muted color means commute. Sun-cycle icons (moon → sunrise → sun → sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.`
+  const clockLegendText = `Each of the 24 pie slices is one hour:  Dark slices for nighttime (6 pm–5 am), light Gray for daytime (6 am–5 pm). Colored slices overlay the hours you're staying in a city, so you can see at a glance how much of each day is spent in transit versus on the ground.   Sun-cycle icons (moon → sunrise → sun → sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.`
   const clPara = figma.createText()
   clPara.fontName = { family: 'Inter', style: 'Regular' }
   clPara.characters = clockLegendText
@@ -753,8 +759,6 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
     ['light', 'light'],
     ['Gray', 'Gray'],
     ['Colored slices', 'Colored slices'],
-    ['Solid color', 'Solid color'],
-    ['muted color', 'muted color'],
     ['Sun-cycle', 'Sun-cycle'],
   ]
   for (const [search] of boldRanges) {
@@ -765,7 +769,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   }
 
   // Resize frame to fit — fixed offset from clock legend position
-  const totalH = clLegY + 262
+  const totalH = clLegY + 307
   root.resize(totalW, totalH)
 
   return root
