@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="author" content="Arthur Beginyan">
-<meta name="description" content="A travel itinerary drawn as its own duration: one circle per hour, dark through the night and pale through the day. A Figma plugin, rebuilt to run in the browser.">
+<meta name="description" content="Every hour of a trip drawn as one circle: dark through the night, pale through the day. A Figma plugin, rebuilt to run in the browser.">
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Travel Timeline Visualization">
 <meta property="og:title" content="Travel Timeline Visualization">
-<meta property="og:description" content="A trip drawn as its own duration. Every hour of the journey is a circle. A Figma plugin, rebuilt to run in the browser so you can try it without installing anything.">
+<meta property="og:description" content="Every hour of a trip is one circle: dark through the night, pale through the day, colored across the stretches where you stopped instead of moving.">
 <meta property="og:image" content="https://beginyanarthur.github.io/travel-timeline-visualization/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -19,7 +19,7 @@
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Travel Timeline Visualization">
-<meta name="twitter:description" content="A trip drawn as its own duration. Every hour of the journey is a circle.">
+<meta name="twitter:description" content="Every hour of a trip is one circle: dark through the night, pale through the day.">
 <meta name="twitter:image" content="https://beginyanarthur.github.io/travel-timeline-visualization/og.png">
 
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='17' cy='16' r='13' fill='%23FF5630'/%3E%3Ccircle cx='4.5' cy='16' r='3.5' fill='%23000'/%3E%3C/svg%3E">
@@ -174,17 +174,6 @@ h1 {
   color: var(--ink-2);
   font-size: 14.5px;
 }
-.mast-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  font-family: var(--mono);
-  font-size: 11.5px;
-  color: var(--ink-3);
-  letter-spacing: 0.02em;
-}
-.mast-meta a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
 
 /* ── Workbench ──────────────────────────────────────────────── */
 .workbench {
@@ -219,7 +208,6 @@ h1 {
   text-transform: uppercase;
   color: var(--ink-2);
 }
-.rail-note { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
 .rail-scroll { flex: 1; overflow-y: auto; min-height: 0; padding: 12px 6px 4px; }
 
 /* ── Stage ──────────────────────────────────────────────────── */
@@ -589,7 +577,7 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 .f-input {
   width: 100%; box-sizing: border-box;
   padding: 5px 7px; border: 1px solid var(--figma-color-border);
-  border-radius: 6px; background: var(--figma-color-bg-secondary);
+  border-radius: 6px; background: var(--figma-color-bg);
   color: var(--figma-color-text); font-size: 11px; font-family: var(--font-family);
   transition: border-color 0.12s ease;
 }
@@ -635,9 +623,9 @@ select.f-input,
 }
 
 .add-btn {
-  width: 100%; padding: 7px; border: 1px dashed var(--figma-color-border);
+  width: 100%; padding: 7px; border: 1px dashed var(--rule-firm);
   border-radius: 8px; background: none; cursor: pointer;
-  color: var(--figma-color-text-tertiary); font-size: 11px;
+  color: var(--figma-color-text-secondary); font-size: 11px;
   font-family: var(--font-family); font-weight: 500;
   transition: all 0.12s ease; margin-top: 2px;
 }
@@ -694,7 +682,6 @@ select.f-input,
   .stage { order: 1; height: 62vh; min-height: 380px; }
   .rail { order: 2; border-right: 0; border-top: 1px solid var(--rule); }
   .rail-scroll { overflow-y: visible; }
-  .mast-meta { flex-direction: row; flex-wrap: wrap; gap: 4px 14px; }
 }
 </style>
 </head>
@@ -709,16 +696,11 @@ select.f-input,
     <div class="mast-text">
       <h1>Travel Timeline Visualization</h1>
       <p class="mast-sub">
-        A trip drawn as its own duration. Every hour of the journey is a circle, dark
-        through the night and pale through the day, with a colored bar underneath marking
-        where you actually stopped rather than kept moving. This is a Figma plugin, rebuilt
-        to run in a browser so you can try it without installing anything.
+        Every hour of a trip is one circle: dark through the night, pale through the day,
+        colored across the stretches where you stopped somewhere instead of moving.
+        Add a flight to draw your own.
       </p>
     </div>
-  </div>
-  <div class="mast-meta">
-    <span>Figma plugin &middot; web reproduction</span>
-    <span>Arthur Beginyan</span>
   </div>
 </header>
 
@@ -726,7 +708,6 @@ select.f-input,
   <aside class="rail">
     <div class="rail-head">
       <span class="rail-title">Trip</span>
-      <span class="rail-note">the plugin panel, 340px</span>
     </div>
     <div class="rail-scroll">
       <div id="plugin-root">
@@ -773,8 +754,6 @@ select.f-input,
 
         <div class="io-bar" style="margin-top:8px;">
           <button class="io-btn" id="download-btn">Download</button>
-          <button class="io-btn" id="copy-btn">Copy</button>
-          <button class="io-btn" id="paste-btn">Paste</button>
           <button class="io-btn" id="file-btn">Open file</button>
           <input type="file" id="import-file" accept=".json" style="display:none;">
         </div>
@@ -812,11 +791,10 @@ select.f-input,
         <div class="se-mark" aria-hidden="true">
           <i style="background:#262626"></i><i style="background:#262626"></i><i style="background:#BFBFBF"></i>
         </div>
-        <p class="se-title">Nothing to draw yet</p>
-        <p class="se-body">Add a flight on the left, or start from a trip that already exists.</p>
-        <div class="se-actions">
+        <p class="se-title" id="se-title">Nothing to draw yet</p>
+        <p class="se-body" id="se-body">Add a flight on the left, or start from a trip that already exists.</p>
+        <div class="se-actions" id="se-actions">
           <button class="tool" type="button" data-sample="hamburg">Yerevan to Hamburg, 8 days</button>
-          <button class="tool" type="button" data-sample="stockholm">Yerevan to Stockholm, 8 days</button>
         </div>
       </div>
     </div>
@@ -848,12 +826,11 @@ select.f-input,
     <p>
       Edit any field on the left and the drawing updates. Add a leg, drag a departure into the
       middle of the night, give two cities the same color, or load one of your own trips with
-      <code>Paste JSON</code>.
+      <code>Open file</code>.
     </p>
     <p>
-      <strong>Download</strong> hands you a .json file in the exact shape the real plugin reads, so
-      anything you build here imports straight into Figma. <strong>Copy</strong> puts the same
-      thing on your clipboard.
+      <strong>Download</strong> hands you a .json file in the exact shape the real plugin
+      reads, so anything you build here imports straight into Figma.
     </p>
   </div>
   <div>
@@ -1646,10 +1623,17 @@ function loadTripData(data) {
    ═══════════════════════════════════════════════════════════════ */
 var artboard = $('artboard'), wrap = $('canvas-wrap');
 
-function stageEmpty(on) {
+function stageEmpty(on, title, body) {
   $('stage-empty').hidden = !on;
   $('canvas-pad').hidden = on;
-  if (on) { artboard.innerHTML = ''; $('stage-dims').textContent = ''; }
+  if (!on) return;
+  artboard.innerHTML = '';
+  $('stage-dims').textContent = '';
+  $('se-title').textContent = title || 'Nothing to draw yet';
+  $('se-body').textContent = body ||
+    'Add a flight on the left, or start from a trip that already exists.';
+  /* The sample shortcut is only useful while there is nothing loaded. */
+  $('se-actions').hidden = !!title;
 }
 var scale = 1, fitMode = false, lastSize = { w: 900, h: 820 };
 var renderTimer = 0;
@@ -1795,25 +1779,6 @@ function toast(msg) {
   t._timer = setTimeout(function () { t.classList.remove('show'); }, 2200);
 }
 
-$('copy-btn').addEventListener('click', function () {
-  var json = JSON.stringify(collectData(), null, 2);
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(json).then(
-      function () { toast('Trip JSON copied. Paste it into the Figma plugin.'); },
-      function () { showPaste(json, true); }
-    );
-  } else { showPaste(json, true); }
-});
-
-function showPaste(prefill, readOnly) {
-  $('paste-text').value = prefill || '';
-  $('paste-text').readOnly = !!readOnly;
-  $('paste-dialog').querySelector('h3').textContent = readOnly ? 'Copy this trip' : 'Paste a trip';
-  $('paste-load').style.display = readOnly ? 'none' : '';
-  $('paste-dialog').showModal();
-  if (readOnly) $('paste-text').select();
-}
-
 $('download-btn').addEventListener('click', function () {
   var data = collectData();
   var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1829,7 +1794,14 @@ $('download-btn').addEventListener('click', function () {
   toast('Saved. Import this file with the plugin in Figma.');
 });
 
-$('paste-btn').addEventListener('click', function () { showPaste('', false); });
+function showPaste(prefill, readOnly) {
+  $('paste-text').value = prefill || '';
+  $('paste-text').readOnly = !!readOnly;
+  $('paste-dialog').querySelector('h3').textContent = readOnly ? 'Copy this trip' : 'Paste a trip';
+  $('paste-load').style.display = readOnly ? 'none' : '';
+  $('paste-dialog').showModal();
+  if (readOnly) $('paste-text').select();
+}
 
 $('paste-dialog').addEventListener('close', function () {
   if ($('paste-dialog').returnValue !== 'load') return;
@@ -1858,8 +1830,11 @@ $('import-file').addEventListener('change', function (e) {
   reader.onload = function (ev) {
     try {
       loadTripData(JSON.parse(ev.target.result));
-      render();
-      wrap.scrollTo({ left: 0, top: 0 });
+      var legs = document.querySelectorAll('#legs-list .entry-card').length;
+      var hotels = document.querySelectorAll('#hotels-list .entry-card').length;
+      stageEmpty(true, 'Ready to draw',
+        legs + ' flight' + (legs === 1 ? '' : 's') + ' and ' +
+        hotels + ' hotel' + (hotels === 1 ? '' : 's') + ' loaded. Press Generate to draw the trip.');
       toast('Loaded ' + file.name);
     } catch (err) { toast('Could not read that file: ' + err.message); }
   };

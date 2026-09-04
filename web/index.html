@@ -148,17 +148,6 @@ h1 {
   color: var(--ink-2);
   font-size: 14.5px;
 }
-.mast-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  font-family: var(--mono);
-  font-size: 11.5px;
-  color: var(--ink-3);
-  letter-spacing: 0.02em;
-}
-.mast-meta a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
 
 /* ── Workbench ──────────────────────────────────────────────── */
 .workbench {
@@ -193,7 +182,6 @@ h1 {
   text-transform: uppercase;
   color: var(--ink-2);
 }
-.rail-note { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
 .rail-scroll { flex: 1; overflow-y: auto; min-height: 0; padding: 12px 6px 4px; }
 
 /* ── Stage ──────────────────────────────────────────────────── */
@@ -563,7 +551,7 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 .f-input {
   width: 100%; box-sizing: border-box;
   padding: 5px 7px; border: 1px solid var(--figma-color-border);
-  border-radius: 6px; background: var(--figma-color-bg-secondary);
+  border-radius: 6px; background: var(--figma-color-bg);
   color: var(--figma-color-text); font-size: 11px; font-family: var(--font-family);
   transition: border-color 0.12s ease;
 }
@@ -609,9 +597,9 @@ select.f-input,
 }
 
 .add-btn {
-  width: 100%; padding: 7px; border: 1px dashed var(--figma-color-border);
+  width: 100%; padding: 7px; border: 1px dashed var(--rule-firm);
   border-radius: 8px; background: none; cursor: pointer;
-  color: var(--figma-color-text-tertiary); font-size: 11px;
+  color: var(--figma-color-text-secondary); font-size: 11px;
   font-family: var(--font-family); font-weight: 500;
   transition: all 0.12s ease; margin-top: 2px;
 }
@@ -668,7 +656,6 @@ select.f-input,
   .stage { order: 1; height: 62vh; min-height: 380px; }
   .rail { order: 2; border-right: 0; border-top: 1px solid var(--rule); }
   .rail-scroll { overflow-y: visible; }
-  .mast-meta { flex-direction: row; flex-wrap: wrap; gap: 4px 14px; }
 }
 </style>
 
@@ -680,16 +667,11 @@ select.f-input,
     <div class="mast-text">
       <h1>Travel Timeline Visualization</h1>
       <p class="mast-sub">
-        A trip drawn as its own duration. Every hour of the journey is a circle, dark
-        through the night and pale through the day, with a colored bar underneath marking
-        where you actually stopped rather than kept moving. This is a Figma plugin, rebuilt
-        to run in a browser so you can try it without installing anything.
+        Every hour of a trip is one circle: dark through the night, pale through the day,
+        colored across the stretches where you stopped somewhere instead of moving.
+        Add a flight to draw your own.
       </p>
     </div>
-  </div>
-  <div class="mast-meta">
-    <span>Figma plugin &middot; web reproduction</span>
-    <span>Arthur Beginyan</span>
   </div>
 </header>
 
@@ -697,7 +679,6 @@ select.f-input,
   <aside class="rail">
     <div class="rail-head">
       <span class="rail-title">Trip</span>
-      <span class="rail-note">the plugin panel, 340px</span>
     </div>
     <div class="rail-scroll">
       <div id="plugin-root">
@@ -744,7 +725,6 @@ select.f-input,
 
         <div class="io-bar" style="margin-top:8px;">
           <button class="io-btn" id="copy-btn">Copy JSON</button>
-          <button class="io-btn" id="paste-btn">Paste JSON</button>
           <button class="io-btn" id="file-btn">Open file</button>
           <input type="file" id="import-file" accept=".json" style="display:none;">
         </div>
@@ -782,11 +762,10 @@ select.f-input,
         <div class="se-mark" aria-hidden="true">
           <i style="background:#262626"></i><i style="background:#262626"></i><i style="background:#BFBFBF"></i>
         </div>
-        <p class="se-title">Nothing to draw yet</p>
-        <p class="se-body">Add a flight on the left, or start from a trip that already exists.</p>
-        <div class="se-actions">
+        <p class="se-title" id="se-title">Nothing to draw yet</p>
+        <p class="se-body" id="se-body">Add a flight on the left, or start from a trip that already exists.</p>
+        <div class="se-actions" id="se-actions">
           <button class="tool" type="button" data-sample="hamburg">Yerevan to Hamburg, 8 days</button>
-          <button class="tool" type="button" data-sample="stockholm">Yerevan to Stockholm, 8 days</button>
         </div>
       </div>
     </div>
@@ -818,7 +797,7 @@ select.f-input,
     <p>
       Edit any field on the left and the drawing updates. Add a leg, drag a departure into the
       middle of the night, give two cities the same color, or load one of your own trips with
-      <code>Paste JSON</code>.
+      <code>Open file</code>.
     </p>
     <p>
       <strong>Copy JSON</strong> puts the current trip on your clipboard in the exact shape the
@@ -1615,10 +1594,17 @@ function loadTripData(data) {
    ═══════════════════════════════════════════════════════════════ */
 var artboard = $('artboard'), wrap = $('canvas-wrap');
 
-function stageEmpty(on) {
+function stageEmpty(on, title, body) {
   $('stage-empty').hidden = !on;
   $('canvas-pad').hidden = on;
-  if (on) { artboard.innerHTML = ''; $('stage-dims').textContent = ''; }
+  if (!on) return;
+  artboard.innerHTML = '';
+  $('stage-dims').textContent = '';
+  $('se-title').textContent = title || 'Nothing to draw yet';
+  $('se-body').textContent = body ||
+    'Add a flight on the left, or start from a trip that already exists.';
+  /* The sample shortcut is only useful while there is nothing loaded. */
+  $('se-actions').hidden = !!title;
 }
 var scale = 1, fitMode = false, lastSize = { w: 900, h: 820 };
 var renderTimer = 0;
@@ -1783,8 +1769,6 @@ function showPaste(prefill, readOnly) {
   if (readOnly) $('paste-text').select();
 }
 
-$('paste-btn').addEventListener('click', function () { showPaste('', false); });
-
 $('paste-dialog').addEventListener('close', function () {
   if ($('paste-dialog').returnValue !== 'load') return;
   var raw = $('paste-text').value.trim();
@@ -1812,8 +1796,11 @@ $('import-file').addEventListener('change', function (e) {
   reader.onload = function (ev) {
     try {
       loadTripData(JSON.parse(ev.target.result));
-      render();
-      wrap.scrollTo({ left: 0, top: 0 });
+      var legs = document.querySelectorAll('#legs-list .entry-card').length;
+      var hotels = document.querySelectorAll('#hotels-list .entry-card').length;
+      stageEmpty(true, 'Ready to draw',
+        legs + ' flight' + (legs === 1 ? '' : 's') + ' and ' +
+        hotels + ' hotel' + (hotels === 1 ? '' : 's') + ' loaded. Press Generate to draw the trip.');
       toast('Loaded ' + file.name);
     } catch (err) { toast('Could not read that file: ' + err.message); }
   };
