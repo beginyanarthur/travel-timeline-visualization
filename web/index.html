@@ -185,17 +185,6 @@ h1 {
   text-transform: uppercase;
   color: var(--ink-2);
 }
-.rail-action {
-  appearance: none; border: 0; background: none;
-  font-family: var(--body); font-size: 11.5px; font-weight: 500;
-  color: var(--ink-3); cursor: pointer; padding: 2px 4px;
-}
-.rail-action:hover { color: var(--danger); }
-.toast-action {
-  appearance: none; border: 0; background: none;
-  font-family: var(--body); font-size: 13px; font-weight: 600;
-  color: #7FD4E4; cursor: pointer; padding: 0; margin-left: 12px;
-}
 .rail-scroll { flex: 1; overflow-y: auto; min-height: 0; padding: 12px 6px 4px; }
 
 /* ── Stage ──────────────────────────────────────────────────── */
@@ -397,6 +386,24 @@ h1 {
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ── Paste dialog ───────────────────────────────────────────── */
+dialog.confirm {
+  border: 1px solid var(--rule-firm);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0;
+  width: min(400px, 92vw);
+  box-shadow: 0 18px 50px rgba(10, 14, 20, 0.28);
+}
+dialog.confirm::backdrop { background: rgba(10, 14, 20, 0.45); }
+.confirm-in { padding: 20px 22px 18px; }
+.confirm-in h3 {
+  font-family: var(--display); font-size: 18px; font-weight: 600; margin: 0 0 6px;
+}
+.confirm-in p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+
 dialog.paste {
   border: 1px solid var(--rule-firm);
   border-radius: 11px;
@@ -617,6 +624,10 @@ select.f-input,
   display: flex; align-items: center; justify-content: center; gap: 3px;
 }
 .io-btn:hover { background: var(--figma-color-bg-hover); color: var(--figma-color-text); }
+.io-btn:disabled { opacity: 0.45; cursor: default; }
+.io-btn.danger:hover:not(:disabled) {
+  background: var(--danger-soft); color: var(--danger); border-color: var(--danger);
+}
 
 .empty-state {
   text-align: center; padding: 16px 10px;
@@ -731,7 +742,6 @@ select.f-input,
     <div class="sheet-grip" id="sheet-grip"><i></i></div>
     <div class="rail-head">
       <span class="rail-title">Trip</span>
-      <button class="rail-action" id="clear-trip" type="button" hidden>Clear</button>
     </div>
     <div class="rail-scroll">
       <div id="plugin-root">
@@ -779,6 +789,7 @@ select.f-input,
         <div class="io-bar" style="margin-top:8px;">
           <button class="io-btn" id="copy-btn">Copy JSON</button>
           <button class="io-btn" id="file-btn">↑ Import JSON</button>
+          <button class="io-btn danger" id="clear-trip" type="button" disabled>Clear</button>
           <input type="file" id="import-file" accept=".json" style="display:none;">
         </div>
       </div>
@@ -842,6 +853,17 @@ select.f-input,
   <span>Rendered as SVG in your browser. Nothing is uploaded.</span>
   <span>Output matches the Figma plugin one to one.</span>
 </footer>
+
+<dialog class="confirm" id="confirm-clear">
+  <form method="dialog" class="confirm-in">
+    <h3>Clear this trip?</h3>
+    <p id="confirm-body"></p>
+    <div class="confirm-actions">
+      <button class="btn" value="cancel" type="submit">Keep it</button>
+      <button class="btn danger" value="clear" type="submit">Clear trip</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog class="paste" id="paste-dialog">
   <form method="dialog" class="paste-in">
@@ -1451,7 +1473,7 @@ function updateStatus() {
   var legCards = document.querySelectorAll('#legs-list .entry-card');
   var anyCards = legCards.length ||
     document.querySelectorAll('#hotels-list .entry-card').length;
-  $('clear-trip').hidden = !anyCards;
+  $('clear-trip').disabled = !anyCards;
   var btn = $('generate'), status = $('status');
   status.classList.remove('warn');
   if (!$('tripStart').value || !$('tripEnd').value) {
@@ -1509,8 +1531,26 @@ var HOTELS_EMPTY = '<div class="empty-state" id="hotels-empty"><div class="empty
 /* Imported a file and want to start over by hand. Without this the only
    ways out are deleting every card one at a time, or reloading and
    losing the lot. Clearing is undoable for a few seconds. */
+function countNoun(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+
+function askToClear() {
+  var legs = document.querySelectorAll('#legs-list .entry-card').length;
+  var hotels = document.querySelectorAll('#hotels-list .entry-card').length;
+  if (!legs && !hotels) return;
+  var parts = [];
+  if (legs) parts.push(countNoun(legs, 'flight'));
+  if (hotels) parts.push(countNoun(hotels, 'hotel'));
+  $('confirm-body').textContent =
+    'This removes ' + parts.join(' and ') +
+    ', and resets the dates. Export the trip first if you want to keep it.';
+  $('confirm-clear').showModal();
+}
+
+$('confirm-clear').addEventListener('close', function () {
+  if ($('confirm-clear').returnValue === 'clear') clearTrip();
+});
+
 function clearTrip() {
-  var before = collectData();
   var d = new Date();
   $('tripStart').value = d.toISOString().slice(0, 10);
   $('tripEnd').value = new Date(d.getTime() + 7 * 86400000).toISOString().slice(0, 10);
@@ -1521,13 +1561,10 @@ function clearTrip() {
   updateBadges();
   updateStatus();
   stageEmpty(true);
-  toast('Trip cleared.', 'Undo', function () {
-    loadTripData(before);
-    promptReady();
-  });
+  toast('Trip cleared.');
 }
 
-$('clear-trip').addEventListener('click', clearTrip);
+$('clear-trip').addEventListener('click', askToClear);
 
 $('add-leg').addEventListener('click', function () { createLegCard(); scheduleRender(); });
 $('add-hotel').addEventListener('click', function () { createHotelCard(); scheduleRender(); });
@@ -1739,24 +1776,12 @@ window.addEventListener('resize', function () { if (fitMode) fitWidth(); });
 /* ═══════════════════════════════════════════════════════════════
    JSON in and out
    ═══════════════════════════════════════════════════════════════ */
-function toast(msg, actionLabel, onAction) {
+function toast(msg) {
   var t = $('toast');
   t.textContent = msg;
-  if (actionLabel) {
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'toast-action';
-    b.textContent = actionLabel;
-    b.addEventListener('click', function () {
-      t.classList.remove('show');
-      onAction();
-    });
-    t.appendChild(b);
-  }
   t.classList.add('show');
   clearTimeout(t._timer);
-  /* An undo needs longer than an acknowledgement. */
-  t._timer = setTimeout(function () { t.classList.remove('show'); }, actionLabel ? 7000 : 2200);
+  t._timer = setTimeout(function () { t.classList.remove('show'); }, 2200);
 }
 
 $('copy-btn').addEventListener('click', function () {
