@@ -1993,7 +1993,7 @@ function render() {
       $('status').textContent = problem;
       $('status').classList.add('warn');
     }
-    return;
+    return false;
   }
   stageEmpty(false);
   $('status').classList.remove('warn');
@@ -2004,6 +2004,7 @@ function render() {
   artboard.innerHTML = res.svg;
   applyScale();
   $('stage-dims').textContent = res.w.toLocaleString() + ' × ' + res.h + ' px';
+  return true;
 }
 
 var CANVAS_PAD = 22;
@@ -2082,11 +2083,11 @@ $('view-actual').addEventListener('click', function () { zoomTo(1); });
 $('view-fit').addEventListener('click', fitWidth);
 
 $('generate').addEventListener('click', function () {
-  render();
-  /* Get out of the way once there is something to look at. Only on a
-     success: render() reports a problem in the footer, which lives inside
-     the sheet, so closing on a failure would hide the explanation. */
-  var drew = $('stage-empty').hidden;
+  /* Get out of the way once there is something to look at, but only when
+     this press drew. Asking whether a drawing is on screen is not the same
+     question: after an earlier success one is, and a failed press would
+     then close the sheet over the footer explaining the failure. */
+  var drew = render();
   if (drew && sheetMQ.matches) sheetOpen(false);
   wrap.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
 });
