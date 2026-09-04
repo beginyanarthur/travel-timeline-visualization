@@ -340,14 +340,6 @@ body.canvas-full .stage { height: 100svh; }
   padding: 0 4px;
   font-variant-numeric: tabular-nums;
 }
-.toolbar-spacer { flex: 1 1 auto; }
-.stage-dims {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--ink-3);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
 
 .canvas-wrap {
   flex: 1;
@@ -1028,7 +1020,6 @@ input[type="time"].f-input::-webkit-date-and-time-value {
   .tool.icon { min-width: 48px; font-size: 16px; justify-content: center; }
   .toolbar { padding: 6px clamp(10px, 2vw, 16px); gap: 6px; }
   .zoom-readout { font-size: var(--fs-small); min-width: 56px; }
-  .stage-dims { font-size: var(--fs-small); }
 
   /* The main action gets the whole width, rather than a small target in a
      corner next to a status line nobody taps. */
@@ -1222,8 +1213,6 @@ input[type="time"].f-input::-webkit-date-and-time-value {
         <button class="tool" id="view-actual" aria-pressed="true">Actual size</button>
         <button class="tool" id="view-fit" aria-pressed="false">Fit width</button>
       </div>
-      <span class="toolbar-spacer"></span>
-      <span class="stage-dims" id="stage-dims"></span>
     </div>
     <div class="canvas-wrap" id="canvas-wrap">
       <div class="canvas-pad" id="canvas-pad" hidden>
@@ -2451,7 +2440,6 @@ function stageEmpty(on, title, body) {
   if (on) fullscreen(false);
   if (!on) return;
   artboard.innerHTML = '';
-  $('stage-dims').textContent = '';
   $('se-title').textContent = title || 'Your journey starts here';
   $('se-body').textContent = body || 'Fill in your trip details, then press Generate.';
 }
@@ -2500,7 +2488,6 @@ function render() {
   lastSize = { w: res.w, h: res.h };
   artboard.innerHTML = res.svg;
   applyScale();
-  $('stage-dims').textContent = res.w.toLocaleString() + ' × ' + res.h + ' px';
   return true;
 }
 
