@@ -781,7 +781,7 @@ select.f-input,
 
         <div class="tab-bar">
           <button class="tab-btn active" data-tab="legs">
-            &#9992; Flights <span class="badge" id="legs-badge">0</span>
+            &#9992; Transport <span class="badge" id="legs-badge">0</span>
           </button>
           <button class="tab-btn" data-tab="hotels">
             &#127976; Hotels <span class="badge" id="hotels-badge">0</span>
@@ -1415,6 +1415,14 @@ function computeArrival(card) {
   updateHeaderMeta(card);
 }
 
+/* A leg can be a flight or a train, so the header says which. */
+function setLegLabel(card) {
+  var type = card.querySelector('[data-field="type"]');
+  if (!type) return;
+  card.querySelector('.header-label').textContent =
+    (type.value === 'train' ? 'Train / bus ' : 'Flight ') + card.dataset.n;
+}
+
 function updateHeaderMeta(card) {
   var meta = card.querySelector('.header-meta');
   if (!meta) return;
@@ -1440,6 +1448,7 @@ function createLegCard(skipCompute) {
 
   var card = document.createElement('div');
   card.className = 'entry-card expanded';
+  card.dataset.n = String(idx + 1);
 
   card.innerHTML =
     '<div class="card-header">' +
@@ -1520,6 +1529,7 @@ function createLegCard(skipCompute) {
     }
     var icon = card.querySelector('.flight-icon');
     if (icon) icon.textContent = this.value === 'train' ? '🚌' : '✈';
+    setLegLabel(card);
     computeArrival(card);
   });
 
@@ -1605,8 +1615,10 @@ function updateStatus() {
     return;
   }
   btn.disabled = false;
-  status.textContent = legCards.length + ' flight(s), ' +
-    document.querySelectorAll('#hotels-list .entry-card').length + ' hotel(s)';
+  var hotelCount = document.querySelectorAll('#hotels-list .entry-card').length;
+  status.textContent =
+    legCards.length + (legCards.length === 1 ? ' leg, ' : ' legs, ') +
+    hotelCount + (hotelCount === 1 ? ' hotel' : ' hotels');
 }
 
 $('tripStart').addEventListener('change', function () { updateStatus(); });
@@ -1718,6 +1730,7 @@ function loadTripData(data) {
 
       var icon = card.querySelector('.flight-icon');
       if (icon && leg.type === 'train') icon.textContent = '🚌';
+      setLegLabel(card);
       if (leg.color) card.querySelector('.leg-dot').style.background = leg.color;
 
       computeArrival(card);
@@ -1777,7 +1790,7 @@ function render() {
   else {
     for (var i = 0; i < data.legs.length; i++) {
       if (!data.legs[i].departureDate || !data.legs[i].arrivalDate) {
-        problem = 'Flight ' + (i + 1) + ' needs a duration so arrival can be worked out';
+        problem = 'Leg ' + (i + 1) + ' needs a duration so arrival can be worked out';
         break;
       }
     }
