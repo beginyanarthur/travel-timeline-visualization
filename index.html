@@ -615,7 +615,7 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 .entry-card.expanded .card-body { max-height: 700px; }
 .card-body-inner { padding: 0 10px 10px; }
 
-.f-row { display: flex; gap: 6px; margin-bottom: 6px; }
+.f-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: flex-end; }
 .f-row > * { flex: 1; min-width: 0; }
 .f-label {
   font-size: 9px; font-weight: 600; color: var(--figma-color-text-tertiary);
@@ -624,7 +624,8 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 }
 .f-input {
   width: 100%; box-sizing: border-box;
-  padding: 5px 7px; border: 1px solid var(--figma-color-border);
+  height: 28px;   /* a select renders 2px taller than a text input; pin both */
+  padding: 4px 7px; border: 1px solid var(--figma-color-border);
   border-radius: 6px; background: var(--figma-color-bg);
   color: var(--figma-color-text); font-size: 11px; font-family: var(--font-family);
   transition: border-color 0.12s ease;
@@ -664,11 +665,21 @@ select.f-input,
   font-family: var(--mono); padding: 2px 0 0;
 }
 
+/* Bottom-aligned with the fields beside it and the same height, rather
+   than nudged into place with a margin that could only ever match one
+   edge. The inner swatch is restyled because the browser's default
+   wrapper padding leaves a white gutter inside the border. */
 .color-swatch {
-  width: 22px; height: 22px; border: 1px solid var(--figma-color-border);
-  border-radius: 4px; cursor: pointer; padding: 0;
-  flex: 0 0 22px; margin-top: 12px; background: none;
+  flex: 0 0 30px; width: 30px; height: 28px;
+  align-self: flex-end;
+  padding: 0; cursor: pointer;
+  border: 1px solid var(--figma-color-border);
+  border-radius: 6px;
+  background: var(--figma-color-bg);
 }
+.color-swatch::-webkit-color-swatch-wrapper { padding: 3px; }
+.color-swatch::-webkit-color-swatch { border: none; border-radius: 3px; }
+.color-swatch::-moz-color-swatch { border: none; border-radius: 3px; }
 
 /* Same secondary treatment as Send feedback. */
 .add-btn {
