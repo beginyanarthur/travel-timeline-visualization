@@ -332,9 +332,13 @@ body.canvas-full .stage { height: 100svh; }
 /* The page opens the way the plugin opens, with nothing drawn. The samples
    stay one click away so nobody has to invent a trip to see the idea. */
 .stage-empty {
-  display: grid; place-content: center; justify-items: center;
+  display: grid; place-content: safe center; justify-items: center;
   gap: 9px; text-align: center;
   min-height: 100%; padding: 40px 24px;
+  /* Held sideways there is less room here than the message needs, and the
+     canvas wrapper around this scrolls, so the overflow is reachable.
+     "safe" keeps the centred content from spilling off the top edge, which
+     is the one direction a scroller cannot get back to. */
 }
 /* Arthur's empty state drawing. Its greys come from the theme so the
    night dots do not vanish into a dark ground. */
@@ -894,11 +898,20 @@ input[type="time"].f-input::-webkit-date-and-time-value {
     min-height: 0;
   }
 
-  /* The canvas takes what the sheet leaves. */
+  /* The canvas takes what the sheet leaves. The masthead has to come off
+     too: the sheet is pinned to the bottom of the window while the stage
+     starts below the masthead, so without it the stage hangs exactly one
+     masthead behind the sheet and the empty state centres its button into
+     the part you cannot see. --mast-h is measured, because the title wraps
+     differently at every width. */
   .stage {
-    height: calc(100svh - var(--sheet-h));
-    min-height: 300px;
+    height: calc(100svh - var(--sheet-h) - var(--mast-h, 0px));
+    min-height: 200px;
   }
+  /* Less generous padding, so the whole empty state still fits between the
+     toolbar and the sheet once a browser's own chrome has taken its share. */
+  .stage-empty { padding: 20px 20px; gap: 7px; }
+  .se-art { width: min(120px, 34vw); margin-bottom: 2px; }
 
   /* The panel is a bottom sheet: the trip and its dates are always
      there, and the rest is one drag away, so changing a field never
@@ -945,8 +958,9 @@ input[type="time"].f-input::-webkit-date-and-time-value {
   .rail-head { min-height: 42px; }
   .rail-scroll { overflow-y: auto; overscroll-behavior: contain; }
 
-  /* The sheet covers the bottom of the canvas, so the button sits above it. */
-  .fab { bottom: calc(var(--sheet-h) + 16px); }
+  /* The stage now ends where the sheet begins, so this is measured from a
+     bottom edge that is already clear of it. */
+  .fab { bottom: 16px; }
   body.canvas-full .fab { bottom: 16px; }
 
   .se-open {
@@ -1043,6 +1057,22 @@ input[type="time"].f-input::-webkit-date-and-time-value {
 
   /* Nothing in the page flow should end up under the sheet. */
   .reading { padding-bottom: calc(28px + var(--sheet-h)); }
+}
+
+/* A browser with a lot of its own chrome, or a phone held sideways, leaves
+   very little between the toolbar and the sheet. The drawing gives up its
+   space first, because the button underneath it is the point. */
+@media (max-width: 900px) and (max-height: 720px) {
+  .se-art { width: min(84px, 24vw); margin-bottom: 0; }
+  .stage-empty { padding: 12px 20px; gap: 5px; }
+}
+@media (max-width: 900px) and (max-height: 600px) {
+  .se-art { display: none; }
+  /* The floor under the canvas is a guard against a degenerate strip, but
+     held sideways it is taller than the room actually left, which pushed
+     the stage back under the sheet. At this size a short canvas is the
+     honest answer, and the empty state scrolls inside it. */
+  .stage { min-height: 0; }
 }
 
 /* Two 16px date fields and an arrow will not fit across the smallest phones,
@@ -2698,6 +2728,18 @@ $('fb-send').addEventListener('click', function () {
 /* ═══════════════════════════════════════════════════════════════
    BOTTOM SHEET  (narrow screens only)
    ═══════════════════════════════════════════════════════════════ */
+/* The stage subtracts this so it can end exactly where the sheet begins.
+   The masthead wraps to two lines on a narrow phone and one on a wide one,
+   so its height is not something the stylesheet can know. */
+var masthead = document.querySelector('.masthead');
+function setMastHeight() {
+  document.documentElement.style.setProperty('--mast-h', masthead.offsetHeight + 'px');
+}
+setMastHeight();
+window.addEventListener('resize', setMastHeight);
+window.addEventListener('orientationchange', setMastHeight);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(setMastHeight);
+
 var rail = document.querySelector('.rail');
 var grip = $('sheet-grip');
 var sheetMQ = window.matchMedia('(max-width: 900px)');
