@@ -1383,10 +1383,21 @@ function renderItinerary(data) {
   }
   /* setRangeFontName in the plugin becomes a <tspan> here: `inner` is
      already-escaped markup, so a run can carry its own weight. */
+  /* WebKit does not pass dominant-baseline down into a <tspan>, so on iPhone
+     and iPad every bold run in these lines was drawn on the alphabetic
+     baseline while the rest of the sentence sat on the top edge, throwing
+     the bold words up out of their own line. A plain <text> is fine there,
+     which is why only the mixed weight lines broke.
+
+     So this one puts the baseline where it wants it and drops the property
+     altogether, leaving nothing for an engine to disagree about. 0.96875 is
+     Inter's ascent, 1984/2048 of an em, measured here against the same
+     string drawn both ways rather than taken on trust. */
+  var INTER_ASCENT = 0.96875;
   function txtMixed(inner, x, y, size, weight, color) {
-    out.push('<text x="' + n2(x) + '" y="' + n2(y) + '" font-size="' + size +
-             '" font-weight="' + weight + '" fill="' + color +
-             '" dominant-baseline="text-before-edge">' + inner + '</text>');
+    out.push('<text x="' + n2(x) + '" y="' + n2(y + size * INTER_ASCENT) +
+             '" font-size="' + size +
+             '" font-weight="' + weight + '" fill="' + color + '">' + inner + '</text>');
   }
   function circle(x, y, d, fill) {
     out.push('<circle cx="' + n2(x + d / 2) + '" cy="' + n2(y + d / 2) +
