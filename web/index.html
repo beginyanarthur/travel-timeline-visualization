@@ -27,6 +27,7 @@
   --danger-soft:#FBEAE8;
   --canvas:     #FFFFFF;
   --card:       #F5FBFE;
+  --sheet:      #FFFFFF;
   --card-hover: #E7F2F9;
 
   --display: 'IBM Plex Sans Condensed', 'Helvetica Neue', Arial, sans-serif;
@@ -72,6 +73,7 @@
     --danger-soft:#3A1F1C;
     --card:       #19212A;
     --card-hover: #212B35;
+    --sheet:      #262C34;
   }
 }
 :root[data-theme="dark"] {
@@ -93,6 +95,7 @@
   --danger-soft:#3A1F1C;
   --card:       #19212A;
   --card-hover: #212B35;
+  --sheet:      #262C34;
 }
 
 * { box-sizing: border-box; }
@@ -515,7 +518,7 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 .tab-panel.active { display: block; }
 
 .trip-dates {
-  display: flex; gap: 6px; align-items: center;
+  display: flex; gap: 6px; align-items: flex-end;
   padding: 8px 10px; margin: 0;
   background: var(--figma-color-bg-secondary);
   border-radius: 8px;
@@ -527,9 +530,12 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
   text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;
   font-family: var(--font-family);
 }
+/* Sits on the same baseline as the fields rather than being nudged down
+   by a margin that only matched one label height. */
 .trip-dates .arrow {
   font-size: 14px; color: var(--figma-color-text-tertiary);
-  margin-top: 12px; flex-shrink: 0;
+  flex: 0 0 auto; height: 28px;
+  display: flex; align-items: center;
 }
 
 .entry-card {
@@ -736,10 +742,13 @@ select.f-input,
     left: 0; right: 0; bottom: 0;
     height: var(--sheet-h);
     max-height: 92svh;
+    /* On a dark ground a shadow does nothing, so the lift has to come
+       from the surface itself being lighter than the canvas behind it. */
+    background: var(--sheet);
     border-right: 0;
-    border-top: 1px solid var(--rule);
+    border-top: 1px solid var(--rule-firm);
     border-radius: 16px 16px 0 0;
-    box-shadow: 0 -10px 34px rgba(10, 14, 20, 0.17);
+    box-shadow: 0 -10px 34px rgba(10, 14, 20, 0.28);
     z-index: 30;
     transition: height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   }
