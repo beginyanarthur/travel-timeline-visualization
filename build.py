@@ -29,7 +29,7 @@ HEAD = '''<!doctype html>
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Travel Timeline Visualization">
-<meta property="og:title" content="One dot per hour">
+<meta property="og:title" content="Travel Timeline Visualization">
 <meta property="og:description" content="A trip drawn as its own duration. Every hour of the journey is a circle. A Figma plugin, rebuilt to run in the browser so you can try it without installing anything.">
 <meta property="og:image" content="%(url)sog.png">
 <meta property="og:image:width" content="1200">
@@ -38,7 +38,7 @@ HEAD = '''<!doctype html>
 <meta property="og:url" content="%(url)s">
 
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="One dot per hour">
+<meta name="twitter:title" content="Travel Timeline Visualization">
 <meta name="twitter:description" content="A trip drawn as its own duration. Every hour of the journey is a circle.">
 <meta name="twitter:image" content="%(url)sog.png">
 

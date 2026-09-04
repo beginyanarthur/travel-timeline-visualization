@@ -1,7 +1,5 @@
 # Travel Timeline Visualization
 
-*One dot per hour.*
-
 A travel itinerary drawn as its own duration. Every hour of a trip is one
 circle, dark through the night and pale through the day, with a coloured bar
 marking the stretches where you actually stopped somewhere rather than kept
