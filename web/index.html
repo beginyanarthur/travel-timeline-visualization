@@ -387,18 +387,6 @@ h1 {
   border-left: 2px solid var(--accent); padding-left: 14px;
 }
 
-.colophon {
-  border-top: 1px solid var(--rule);
-  padding: 18px clamp(16px, 3vw, 32px) 30px;
-  font-family: var(--mono);
-  font-size: 11.5px;
-  color: var(--ink-3);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 18px;
-}
-.colophon a { color: var(--accent); }
-
 /* ── Toast ──────────────────────────────────────────────────── */
 .toast {
   position: fixed;
@@ -761,7 +749,7 @@ select.f-input,
   .rail:not([data-open="true"]) .plugin-footer { display: none; }
 
   /* Nothing in the page flow should end up under the sheet. */
-  .colophon { padding-bottom: calc(28px + var(--sheet-h)); }
+  .reading { padding-bottom: calc(28px + var(--sheet-h)); }
 }
 </style>
 
@@ -930,10 +918,6 @@ select.f-input,
   </div>
 </section>
 
-<footer class="colophon">
-  <span>Rendered as SVG in your browser. Nothing is uploaded.</span>
-  <span>Output matches the Figma plugin one to one.</span>
-</footer>
 
 <dialog class="confirm" id="confirm-clear">
   <form method="dialog" class="confirm-in">
