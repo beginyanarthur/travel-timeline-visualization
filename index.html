@@ -1486,7 +1486,7 @@ function updateStatus() {
     btn.disabled = true; status.textContent = 'Set trip dates'; return;
   }
   if (!legCards.length) {
-    btn.disabled = true; status.textContent = 'Add at least one flight'; return;
+    btn.disabled = true; status.textContent = ''; return;
   }
   btn.disabled = false;
   status.textContent = legCards.length + ' flight(s), ' +
@@ -1634,9 +1634,15 @@ function render() {
     }
   }
   if (problem) {
-    $('status').textContent = problem;
-    $('status').classList.add('warn');
-    if (!data.legs.length) { stageEmpty(true); $('status').classList.remove('warn'); }
+    if (!data.legs.length) {
+      /* Nothing loaded is not an error, and the canvas already says so. */
+      stageEmpty(true);
+      $('status').classList.remove('warn');
+      $('status').textContent = '';
+    } else {
+      $('status').textContent = problem;
+      $('status').classList.add('warn');
+    }
     return;
   }
   stageEmpty(false);
