@@ -2088,6 +2088,7 @@ $('generate').addEventListener('click', function () {
      question: after an earlier success one is, and a failed press would
      then close the sheet over the footer explaining the failure. */
   var drew = render();
+  if (drew) track('generated', 'Generated a trip');
   if (drew && sheetMQ.matches) sheetOpen(false);
   wrap.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
 });
@@ -2146,6 +2147,16 @@ window.addEventListener('resize', function () { if (fitMode) fitWidth(); });
 /* ═══════════════════════════════════════════════════════════════
    JSON in and out
    ═══════════════════════════════════════════════════════════════ */
+/* GoatCounter is added by build.py on Pages only. In the Artifact there is
+   no script to load it, so this quietly does nothing. */
+function track(path, title) {
+  try {
+    if (window.goatcounter && window.goatcounter.count) {
+      window.goatcounter.count({ path: path, title: title, event: true });
+    }
+  } catch (e) {}
+}
+
 function toast(msg) {
   var t = $('toast');
   t.textContent = msg;
@@ -2233,6 +2244,7 @@ function feedbackAnswers() {
 }
 
 function feedbackDone(msg) {
+  track('feedback-sent', 'Sent feedback');
   var form = $('feedback');
   var p = document.createElement('p');
   p.className = 'fb-done';

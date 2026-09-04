@@ -22,6 +22,9 @@
 <meta name="twitter:description" content="See your whole trip on one timeline. Every hour is one circle.">
 <meta name="twitter:image" content="https://beginyanarthur.github.io/travel-timeline-visualization/og.png">
 
+<script data-goatcounter="https://traveltimeline.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='17' cy='16' r='13' fill='%23F76434'/%3E%3Ccircle cx='4.5' cy='16' r='3.5' fill='%23000'/%3E%3C/svg%3E">
 
 <title>Travel Timeline Visualization</title>
@@ -2117,6 +2120,7 @@ $('generate').addEventListener('click', function () {
      question: after an earlier success one is, and a failed press would
      then close the sheet over the footer explaining the failure. */
   var drew = render();
+  if (drew) track('generated', 'Generated a trip');
   if (drew && sheetMQ.matches) sheetOpen(false);
   wrap.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
 });
@@ -2175,6 +2179,16 @@ window.addEventListener('resize', function () { if (fitMode) fitWidth(); });
 /* ═══════════════════════════════════════════════════════════════
    JSON in and out
    ═══════════════════════════════════════════════════════════════ */
+/* GoatCounter is added by build.py on Pages only. In the Artifact there is
+   no script to load it, so this quietly does nothing. */
+function track(path, title) {
+  try {
+    if (window.goatcounter && window.goatcounter.count) {
+      window.goatcounter.count({ path: path, title: title, event: true });
+    }
+  } catch (e) {}
+}
+
 function toast(msg) {
   var t = $('toast');
   t.textContent = msg;
@@ -2267,6 +2281,7 @@ function feedbackAnswers() {
 }
 
 function feedbackDone(msg) {
+  track('feedback-sent', 'Sent feedback');
   var form = $('feedback');
   var p = document.createElement('p');
   p.className = 'fb-done';
