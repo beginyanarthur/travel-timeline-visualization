@@ -509,10 +509,11 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 }
 .trip-chip .x:hover { opacity: 1; }
 .trip-new {
-  flex: 0 0 auto; width: 26px; height: 26px;
+  flex: 0 0 auto; padding: 4px 11px;
   border: 1px dashed var(--rule-firm); border-radius: 999px;
   background: none; color: var(--figma-color-text-secondary);
-  font-size: 15px; line-height: 1; cursor: pointer;
+  font-family: var(--font-family); font-size: 11px; font-weight: 500;
+  line-height: 1.4; white-space: nowrap; cursor: pointer;
 }
 .trip-new:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -726,7 +727,7 @@ select.f-input,
       <div id="plugin-root">
         <div class="trip-bar">
           <div class="trip-chips" id="trip-chips" role="tablist" aria-label="Saved trips"></div>
-          <button class="trip-new" id="trip-new" type="button" title="New trip" aria-label="New trip">+</button>
+          <button class="trip-new" id="trip-new" type="button" title="Start another trip">+ New trip</button>
         </div>
 
         <div class="trip-dates" style="margin-bottom:8px;">
@@ -1958,7 +1959,7 @@ function shortDate(iso) {
    went: the longest stay, which skips layovers the way a traveller does. */
 function autoLabel(data) {
   var legs = (data && data.legs) || [];
-  if (!legs.length) return 'New trip';
+  if (!legs.length) return 'Untitled trip';
   var first = legs[0].departureCity || 'Trip';
   var last = legs[legs.length - 1].arrivalCity || '';
   var name;
@@ -2048,9 +2049,13 @@ function renderTripBar() {
     nm.type = 'button';
     nm.className = 'nm';
     nm.textContent = tripLabel(t);
-    nm.title = t.data.startDate + ' to ' + t.data.endDate + '  (double click to rename)';
-    nm.addEventListener('click', function () { switchTrip(t.id); });
-    nm.addEventListener('dblclick', function (e) { e.preventDefault(); startRename(t, nm); });
+    nm.title = t.id === activeId
+      ? 'Click to rename'
+      : 'Switch to ' + tripLabel(t) + '  (' + t.data.startDate + ' to ' + t.data.endDate + ')';
+    nm.addEventListener('click', function () {
+      if (t.id === activeId) startRename(t, nm);
+      else switchTrip(t.id);
+    });
     chip.appendChild(nm);
 
     if (trips.length > 1) {
