@@ -167,6 +167,7 @@ h1 {
   flex-direction: column;
   min-height: 0;
 }
+.sheet-grip { display: none; }
 .rail-head {
   display: flex;
   align-items: center;
@@ -645,14 +646,66 @@ select.f-input,
 
 /* ── Narrow screens: canvas first, controls under it ────────── */
 @media (max-width: 900px) {
+  /* Enough for the grip, the header and the dates row, which is what
+     stays on screen while the canvas has the rest. */
+  :root { --sheet-h: 156px; }
+
   .workbench {
     grid-template-columns: 1fr;
     height: auto;
     min-height: 0;
   }
-  .stage { order: 1; height: 62vh; min-height: 380px; }
-  .rail { order: 2; border-right: 0; border-top: 1px solid var(--rule); }
-  .rail-scroll { overflow-y: visible; }
+
+  /* The canvas takes what the sheet leaves. */
+  .stage {
+    height: calc(100svh - var(--sheet-h));
+    min-height: 300px;
+  }
+
+  /* The panel is a bottom sheet: the trip and its dates are always
+     there, and the rest is one drag away, so changing a field never
+     means scrolling away from the drawing. */
+  .rail {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: var(--sheet-h);
+    max-height: 92svh;
+    border-right: 0;
+    border-top: 1px solid var(--rule);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -10px 34px rgba(10, 14, 20, 0.17);
+    z-index: 30;
+    transition: height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .rail.dragging { transition: none; }
+  .rail[data-open="true"] { height: 86svh; }
+
+  .sheet-grip {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 22px;
+    flex: 0 0 auto;
+    cursor: grab;
+    touch-action: none;
+  }
+  .sheet-grip i {
+    display: block;
+    width: 38px; height: 4px;
+    border-radius: 2px;
+    background: var(--rule-firm);
+  }
+  .rail.dragging .sheet-grip { cursor: grabbing; }
+
+  .rail-head { min-height: 42px; }
+  .rail-scroll { overflow-y: auto; }
+
+  /* Collapsed, the sheet shows the dates and nothing below them. */
+  .rail:not([data-open="true"]) .rail-scroll { overflow: hidden; }
+  .rail:not([data-open="true"]) .plugin-footer { display: none; }
+
+  /* Nothing in the page flow should end up under the sheet. */
+  .colophon { padding-bottom: calc(28px + var(--sheet-h)); }
 }
 </style>
 
@@ -675,6 +728,7 @@ select.f-input,
 
 <main class="workbench">
   <aside class="rail">
+    <div class="sheet-grip" id="sheet-grip"><i></i></div>
     <div class="rail-head">
       <span class="rail-title">Trip</span>
       <button class="rail-action" id="clear-trip" type="button" hidden>Clear</button>
@@ -1827,6 +1881,67 @@ $('fb-send').addEventListener('click', function () {
     if (navigator.clipboard) navigator.clipboard.writeText(body);
   });
 });
+
+/* ═══════════════════════════════════════════════════════════════
+   BOTTOM SHEET  (narrow screens only)
+   ═══════════════════════════════════════════════════════════════ */
+var rail = document.querySelector('.rail');
+var grip = $('sheet-grip');
+var sheetMQ = window.matchMedia('(max-width: 900px)');
+
+function sheetOpen(open) {
+  if (open) rail.setAttribute('data-open', 'true');
+  else rail.removeAttribute('data-open');
+}
+function isOpen() { return rail.getAttribute('data-open') === 'true'; }
+
+/* Reaching for a field should open the sheet rather than fail silently. */
+['add-leg', 'add-hotel'].forEach(function (id) {
+  $(id).addEventListener('click', function () {
+    if (sheetMQ.matches) sheetOpen(true);
+  });
+});
+
+var dragFrom = 0, dragH = 0, dragging = false, moved = 0;
+
+grip.addEventListener('pointerdown', function (e) {
+  if (!sheetMQ.matches) return;
+  dragging = true;
+  moved = 0;
+  dragFrom = e.clientY;
+  dragH = rail.getBoundingClientRect().height;
+  rail.classList.add('dragging');
+  grip.setPointerCapture(e.pointerId);
+});
+
+grip.addEventListener('pointermove', function (e) {
+  if (!dragging) return;
+  var dy = dragFrom - e.clientY;
+  moved = Math.abs(dy);
+  var h = Math.min(window.innerHeight * 0.92, Math.max(96, dragH + dy));
+  rail.style.height = h + 'px';
+});
+
+['pointerup', 'pointercancel'].forEach(function (ev) {
+  grip.addEventListener(ev, function () {
+    if (!dragging) return;
+    dragging = false;
+    rail.classList.remove('dragging');
+    var h = rail.getBoundingClientRect().height;
+    rail.style.height = '';
+    /* A short press is a tap: just toggle. Otherwise snap to whichever
+       end the sheet is nearer. */
+    if (moved < 8) sheetOpen(!isOpen());
+    else sheetOpen(h > window.innerHeight * 0.42);
+  });
+});
+
+/* Tapping the drawing puts the sheet away. */
+wrap.addEventListener('pointerdown', function () {
+  if (sheetMQ.matches && isOpen()) sheetOpen(false);
+});
+
+sheetMQ.addEventListener('change', function () { sheetOpen(false); rail.style.height = ''; });
 
 /* Open exactly as the plugin opens: today to a week out, nothing added yet. */
 var boot = new Date();
