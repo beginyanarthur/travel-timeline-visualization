@@ -2056,7 +2056,11 @@ function zoomTo(next, keepFit) {
   var anchor = centreAnchor();
   cancelAnimationFrame(zoomAnim);
   if (reduceMotion.matches) { scale = next; applyScale(anchor); return; }
-  var from = scale, t0 = performance.now(), dur = 300;
+  var from = scale, t0 = performance.now();
+  /* A button press should be quick; Fit width covers far more ground and
+     earns a little longer. */
+  var ratio = Math.max(next, from) / Math.max(0.0001, Math.min(next, from));
+  var dur = Math.min(240, 90 + Math.log(ratio) * 150);
   function step(now) {
     var t = Math.min(1, (now - t0) / dur);
     scale = from + (next - from) * (1 - Math.pow(1 - t, 3));  /* easeOutCubic */
@@ -2071,9 +2075,8 @@ function fitWidth() {
   zoomTo((wrap.clientWidth - 44) / lastSize.w, true);
 }
 
-/* 1.18 rather than 1.25: more presses, each of them gentler. */
-$('zoom-in').addEventListener('click', function () { zoomTo(scale * 1.18); });
-$('zoom-out').addEventListener('click', function () { zoomTo(scale / 1.18); });
+$('zoom-in').addEventListener('click', function () { zoomTo(scale * 1.25); });
+$('zoom-out').addEventListener('click', function () { zoomTo(scale / 1.25); });
 $('view-actual').addEventListener('click', function () { zoomTo(1); });
 $('view-fit').addEventListener('click', fitWidth);
 
