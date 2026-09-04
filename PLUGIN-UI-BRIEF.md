@@ -155,3 +155,42 @@ behind the calendar button in the narrow rail.
 
 Copy note: the hotel headings read `Check in` and `Check out` rather than
 `Check-in` and `Check-out`, in line with the no dashes rule.
+
+## 8. Renameable legs, and field sizing for touch
+
+**A leg can be renamed.** Click the card title and it becomes an input.
+`Flight 1` becomes `Wizz to Hamburg`. A leg is the only card with no name
+field of its own, so its title is the only place to put one; hotels already
+have `Hotel name`, which is why they were left alone.
+
+Rules that matter if the plugin copies this:
+
+- A name the traveller typed outranks anything generated. Changing the type
+  or reordering the list no longer relabels a renamed card.
+- Clearing the field hands the name back to the automatic one, so there is
+  always a way out of a bad name.
+- Escape cancels, Enter and blur commit.
+- The title no longer toggles the card open, but the rest of the header
+  still does.
+
+**JSON.** A leg gains an optional `label` string, written only when the
+traveller named it, so an untouched export is byte for byte what it was and
+reimporting does not freeze the automatic names. Old files without the key
+import exactly as before. The plugin can ignore the key safely; the drawing
+does not use it.
+
+**Fields are 16px on touch.** iOS zooms the whole page in whenever you focus
+a field smaller than 16px, and it does not zoom back out when you are done,
+which left people stranded mid form. The fix is to size the fields properly:
+16px text in 40px rows below 900px, the proportional face rather than the
+mono one for dates and times so three fields still fit across a phone, and
+rows that wrap rather than squeezing the date until the year hides behind the
+calendar button. Below 380px the trip dates stack.
+
+Capping `maximum-scale` in the viewport would also stop the zoom, by taking
+pinch zoom away from everyone. That is not a trade worth making, and it fails
+WCAG 1.4.4.
+
+The Figma panel runs in a desktop webview, so the zoom problem does not
+apply there. The 16px minimum is only worth copying if the panel ever runs on
+a touch device.

@@ -638,6 +638,32 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
   font-size: 11px; font-weight: 600; color: var(--figma-color-text);
   flex-shrink: 0; white-space: nowrap;
 }
+/* A leg has no name field anywhere else, so its title is the only place to
+   put one. It reads as plain text until you go near it, the way a layer
+   name does, rather than sitting there as a permanent input. */
+.header-label[data-editable] {
+  cursor: text;
+  max-width: 55%; overflow: hidden; text-overflow: ellipsis;
+  padding: 2px 5px; margin: -2px -5px;
+  border: 1px solid transparent; border-radius: 4px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.header-label[data-editable]:hover,
+.header-label[data-editable]:focus-visible {
+  background: var(--figma-color-bg);
+  border-color: var(--figma-color-border);
+  outline: none;
+}
+.label-input {
+  flex: 1 1 auto; min-width: 0;
+  height: 24px; padding: 2px 5px;
+  font-size: 11px; font-weight: 600; font-family: var(--font-family);
+  color: var(--figma-color-text);
+  background: var(--figma-color-bg);
+  border: 1px solid var(--figma-color-bg-brand);
+  border-radius: 4px;
+}
+.label-input:focus { outline: none; }
 .header-meta {
   font-size: 10px; color: var(--figma-color-text-tertiary);
   font-family: var(--mono); flex: 1; min-width: 0;
@@ -800,6 +826,7 @@ input[type="time"].f-input::-webkit-date-and-time-value {
    reads "4 Sep 2026" and needs more still. Splitting the row evenly hid the
    year behind the calendar button once the rail got narrow. */
 .f-row > .time-col { flex: 0 0 84px; }
+.f-row > .zone-col { flex: 0 0 76px; }
 .f-row > .swatch-field { flex: 0 0 auto; }
 .color-swatch::-webkit-color-swatch-wrapper { padding: 3px; }
 .color-swatch::-webkit-color-swatch { border: none; border-radius: 3px; }
@@ -933,6 +960,39 @@ input[type="time"].f-input::-webkit-date-and-time-value {
   }
   .se-open:active { background: var(--accent-soft); }
 
+  /* iOS zooms the whole page in whenever you focus a field smaller than 16px,
+     and it does not zoom back out when you are done with it. Sizing the
+     fields for touch is the fix. Capping maximum-scale in the viewport would
+     also stop the zoom, by taking pinch zoom away from everyone, and that is
+     not a trade worth making. */
+  .f-input, .label-input, .free, #paste-text { font-size: 16px; }
+  .f-input { height: 40px; padding: 6px 10px; }
+  .label-input { height: 32px; }
+
+  /* The proportional face is a good deal narrower than the mono one at this
+     size, and these rows have three fields to fit across a phone. */
+  input[type="date"].f-input,
+  input[type="time"].f-input,
+  input[type="number"].f-input,
+  select.f-input,
+  .f-input[data-field="flightNumber"] {
+    font-family: var(--font-family); font-size: 16px;
+  }
+
+  /* Taller fields, so everything that lines up with one grows to match. */
+  .color-swatch { flex: 0 0 40px; width: 40px; height: 40px; }
+  .route-arrow, .trip-dates .arrow { height: 40px; }
+  .dur-unit .f-input { width: 68px; }
+
+  /* Three 16px fields will not always fit across a narrow phone, so the row
+     is allowed to wrap rather than squeezing the date until the year hides
+     behind the calendar button. */
+  .f-row { flex-wrap: wrap; }
+  .f-row > * { flex: 1 1 128px; }
+  .f-row > .time-col { flex: 1 1 92px; }
+  .f-row > .zone-col { flex: 1 1 92px; max-width: 160px; }
+  .f-row > .swatch-field { flex: 0 0 auto; }
+
   /* The sheet is as wide as the phone or the tablet, but a form is not
      improved by stretching a date field to 370px to hold "04.09.2026".
      Cap the column and centre it; the fields go back to a readable size
@@ -952,6 +1012,16 @@ input[type="time"].f-input::-webkit-date-and-time-value {
 
   /* Nothing in the page flow should end up under the sheet. */
   .reading { padding-bottom: calc(28px + var(--sheet-h)); }
+}
+
+/* Two 16px date fields and an arrow will not fit across the smallest phones,
+   and squeezing them hid the year behind the calendar button. They stack
+   instead, and the collapsed sheet grows to keep showing both. */
+@media (max-width: 380px) {
+  :root { --sheet-h: 214px; }
+  .trip-dates { flex-wrap: wrap; row-gap: 8px; }
+  .trip-dates .date-field { flex: 1 1 100%; }
+  .trip-dates .arrow { display: none; }
 }
 </style>
 </head>
@@ -1713,7 +1783,61 @@ function setRefField(card) {
   input.placeholder = ref.ph;
 }
 
+/* Click the title to rename a leg. Clearing the field hands the name back
+   to the automatic one, so there is always a way out of a bad name. */
+function makeLabelEditable(card) {
+  var span = card.querySelector('.header-label');
+  span.setAttribute('data-editable', '');
+  span.setAttribute('role', 'button');
+  span.setAttribute('tabindex', '0');
+  span.title = 'Rename';
+
+  function start() {
+    if (card.querySelector('.label-input')) return;
+    var before = span.textContent;
+    var input = document.createElement('input');
+    input.className = 'label-input';
+    input.value = before;
+    input.setAttribute('aria-label', 'Name for this leg');
+    input.maxLength = 60;
+    span.hidden = true;
+    span.parentNode.insertBefore(input, span.nextSibling);
+    input.focus();
+    input.select();
+
+    function finish(commit) {
+      if (!input.parentNode) return;
+      var v = input.value.trim();
+      input.remove();
+      span.hidden = false;
+      if (!commit) return;
+      if (v) {
+        card.dataset.named = '1';
+        span.textContent = v;
+      } else {
+        delete card.dataset.named;
+        setLegLabel(card);
+      }
+    }
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    });
+    input.addEventListener('blur', function () { finish(true); });
+  }
+
+  span.addEventListener('click', function (e) { e.stopPropagation(); start(); });
+  span.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault(); e.stopPropagation(); start();
+    }
+  });
+}
+
 function setLegLabel(card) {
+  /* A name the traveller typed outranks anything we would generate. */
+  if (card.dataset.named) return;
   var type = card.querySelector('[data-field="type"]');
   if (!type) return;
   card.querySelector('.header-label').textContent =
@@ -1782,7 +1906,7 @@ function createLegCard(skipCompute) {
         '<div class="f-row">' +
           '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="departureDate" value="' + tripStart + '"></div>' +
           '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="departureTime" value="06:30"></div>' +
-          '<div style="flex:0 0 76px"><div class="f-label">Zone</div>' + utcSelectHtml('departureUtc', 4) + '</div>' +
+          '<div class="zone-col"><div class="f-label">Zone</div>' + utcSelectHtml('departureUtc', 4) + '</div>' +
         '</div>' +
       '</div>' +
       '<div style="grid-area:dur">' +
@@ -1801,15 +1925,18 @@ function createLegCard(skipCompute) {
         '<div class="f-row">' +
           '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="arrivalDate"></div>' +
           '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="arrivalTime"></div>' +
-          '<div style="flex:0 0 76px"><div class="f-label">Zone</div>' + utcSelectHtml('arrivalUtc', 2) + '</div>' +
+          '<div class="zone-col"><div class="f-label">Zone</div>' + utcSelectHtml('arrivalUtc', 2) + '</div>' +
         '</div>' +
       '</div>' +
       '<div class="arrival-info">Fill in departure and duration.</div>' +
     '</div>' +
     '</div></div>';
 
+  makeLabelEditable(card);
+
   card.querySelector('.card-header').addEventListener('click', function (e) {
-    if (e.target.closest('.remove-btn') || e.target.closest('.drag-handle')) return;
+    if (e.target.closest('.remove-btn') || e.target.closest('.drag-handle') ||
+        e.target.closest('.header-label') || e.target.closest('.label-input')) return;
     card.classList.toggle('expanded');
   });
   card.querySelector('.remove-btn').addEventListener('click', function () {
@@ -1976,6 +2103,11 @@ function collectData() {
       arrivalUtc: getInt('arrivalUtc'),
       color: get('color')
     });
+    /* Only when the traveller named it, so an untouched export stays clean
+       and reimporting does not freeze the automatic names. */
+    if (card.dataset.named) {
+      legs[legs.length - 1].label = card.querySelector('.header-label').textContent;
+    }
   });
   var hotels = [];
   document.querySelectorAll('#hotels-list .entry-card').forEach(function (card) {
@@ -2117,6 +2249,10 @@ function loadTripData(data) {
 
       var icon = card.querySelector('.flight-icon');
       if (icon) icon.textContent = mode(leg.type).icon;
+      if (leg.label) {
+        card.dataset.named = '1';
+        card.querySelector('.header-label').textContent = leg.label;
+      }
       setLegLabel(card);
       setRefField(card);
       if (leg.color) card.querySelector('.leg-dot').style.background = leg.color;
@@ -2210,7 +2346,8 @@ function render() {
   else {
     for (var i = 0; i < data.legs.length; i++) {
       if (!data.legs[i].departureDate || !data.legs[i].arrivalDate) {
-        problem = 'Leg ' + (i + 1) + ' needs a duration so arrival can be worked out';
+        problem = (data.legs[i].label || 'Leg ' + (i + 1)) +
+                  ' needs a duration so arrival can be worked out';
         break;
       }
     }
