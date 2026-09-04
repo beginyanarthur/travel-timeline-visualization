@@ -69,20 +69,25 @@ function dayLabel(dateStr: string): string {
 }
 
 // ── Layout ─────────────────────────────────────────────────────────────
-// Match reference: dots are ~22px, nearly touching (gap 2px)
 const DOT = 22
 const DOT_GAP = 2
 const HOUR_W = DOT + DOT_GAP  // 24px per hour
-const PAD_LEFT = 60
+const PAD_LEFT = 140
 
-// Vertical zones
-const HOTEL_TOP = 30         // hotel icons + names
-const _HOTEL_BOTTOM = 150    // bottom of hotel area
-const TIMELINE_Y = 180       // center of dot row
-const LEG_TOP = 220          // transit info starts
-const _LEG_BOTTOM = 420      // bottom of transit area
-const CLOCK_TOP = 460        // clock diagrams
-const CLOCK_D = 140          // clock diameter
+// Section 1: Timeline
+const TIMELINE_TITLE_Y = 124
+const TIMELINE_DESC_Y = 198
+const HOTEL_TOP = 331
+const _HOTEL_BOTTOM = 451
+const TIMELINE_Y = 481
+const LEG_TOP = 521
+const _LEG_BOTTOM = 721
+
+// Section 2: Clock Day
+const CLOCK_DAY_TITLE_Y = 1088
+const CLOCK_DAY_DESC_Y = 1162
+const CLOCK_TOP = 1320
+const CLOCK_D = 140
 const CLOCK_GAP = 90
 
 // ── Clock zone icon vector paths (Material Design: clear_day & wb_twilight) ──
@@ -134,7 +139,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   const t1 = t1End
   const totalHours = Math.ceil((t1.getTime() - t0.getTime()) / 3600000)
   const numDays = Math.ceil(totalHours / 24)
-  const W = PAD_LEFT + totalHours * HOUR_W + 60
+  const W = PAD_LEFT + totalHours * HOUR_W + 183
   const clocksW = PAD_LEFT + numDays * (CLOCK_D + CLOCK_GAP)
   const totalW = Math.max(W, clocksW, 900)
 
@@ -170,6 +175,14 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 1: TIMELINE
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // Section title and description
+  await txt('Timeline', PAD_LEFT - 1, TIMELINE_TITLE_Y, 48, 'Bold', '#000000')
+  await txt('A linear hour-by-hour strip spanning the entire trip.', PAD_LEFT - 1, TIMELINE_DESC_Y, 24, 'Regular', '#000000')
+
+  // ═══════════════════════════════════════════════════════════════════════
   // 1. HOURLY DOT TIMELINE
   // ═══════════════════════════════════════════════════════════════════════
   for (let day = 0; day <= numDays; day++) {
@@ -188,7 +201,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
       if (hMs >= t1.getTime()) break
 
       const cx = xMs(hMs)
-      const isNight = hour < 6 || hour >= 18
+      const isNight = hour < 6 || hour >= 21  // 9pm–6am night, 6am–8pm day
 
       const dot = figma.createEllipse()
       dot.resize(DOT, DOT)
@@ -257,7 +270,23 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
     col: leg.color || defColors[i % defColors.length]
   }))
 
-  // Draw city-stay colored lines: from leg[i].arrival to leg[i+1].departure
+  // Draw transit/commute lines: from leg[i].departure to leg[i].arrival (muted color)
+  for (let i = 0; i < legTimes.length; i++) {
+    const transitStart = legTimes[i].depMs
+    const transitEnd = legTimes[i].arrMs
+    if (transitEnd > transitStart) {
+      const sx = xMs(transitStart)
+      const ex = xMs(transitEnd)
+      const r = figma.createRectangle()
+      r.resize(Math.max(4, ex - sx), 4)
+      root.appendChild(r)
+      r.x = sx
+      r.y = LEG_TOP + 4
+      r.fills = [{ type: 'SOLID', color: hexToRgb(legTimes[i].col), opacity: 0.4 } as SolidPaint]
+    }
+  }
+
+  // Draw city-stay colored lines: from leg[i].arrival to leg[i+1].departure (solid color)
   for (let i = 0; i < legTimes.length - 1; i++) {
     const stayStart = legTimes[i].arrMs
     const stayEnd = legTimes[i + 1].depMs
@@ -426,6 +455,75 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // TIMELINE LEGEND — "How to read" section for the timeline
+  // ═══════════════════════════════════════════════════════════════════════
+  const tlLegY = LEG_TOP + 230  // Timeline legend Y position
+  const LEG_TEXT_X = 202  // all legend text labels aligned here
+  await txt('How to read', PAD_LEFT - 1, tlLegY, 16, 'Bold', '#333333')
+
+  // Two small dots (dark + light) representing night and day hours
+  const dotDark = figma.createEllipse()
+  dotDark.resize(7, 7)
+  dotDark.name = 'An hour am'
+  const dotLight = figma.createEllipse()
+  dotLight.resize(7, 7)
+  dotLight.name = 'An hour am'
+  root.appendChild(dotDark)
+  root.appendChild(dotLight)
+  dotDark.x = PAD_LEFT - 1
+  dotDark.y = tlLegY + 40
+  dotDark.fills = [spRgb(0.02)]
+  dotLight.x = PAD_LEFT + 7
+  dotLight.y = tlLegY + 40
+  dotLight.fills = [spRgb(0.85)]
+  const grp = figma.group([dotDark, dotLight], root)
+  grp.name = 'Group 141'
+  const legendText = await txt('Each circle represents 1 hour', LEG_TEXT_X, tlLegY + 35, 12, 'Regular', '#333333')
+  const boldStart = 'Each circle represents '.length
+  legendText.setRangeFontName(boldStart, legendText.characters.length, { family: 'Inter', style: 'Bold' })
+
+  const dotNight = figma.createEllipse()
+  dotNight.resize(18, 18)
+  root.appendChild(dotNight)
+  dotNight.x = PAD_LEFT - 2
+  dotNight.y = tlLegY + 57
+  dotNight.fills = [spRgb(0.12)]
+  const nightLabel = await txt('Black = Night (9pm - 5am)', LEG_TEXT_X, tlLegY + 59, 12, 'Regular', '#333333')
+  nightLabel.setRangeFontName('Black = '.length, 'Black = Night'.length, { family: 'Inter', style: 'Bold' })
+
+  const dotDay = figma.createEllipse()
+  dotDay.resize(18, 18)
+  root.appendChild(dotDay)
+  dotDay.x = PAD_LEFT - 2
+  dotDay.y = tlLegY + 81
+  dotDay.fills = [spRgb(0.75)]
+  const dayLabel2 = await txt('Gray = Day (6am - 8pm)', LEG_TEXT_X, tlLegY + 83, 12, 'Regular', '#333333')
+  dayLabel2.setRangeFontName('Gray = '.length, 'Gray = Day'.length, { family: 'Inter', style: 'Bold' })
+
+  // Colored segments legend (solid = city stay)
+  rect(PAD_LEFT, tlLegY + 109, 40, 4, '#E53935')
+  const colorLabel = await txt('Solid color = Staying in the city', LEG_TEXT_X, tlLegY + 103, 12, 'Regular', '#333333')
+  colorLabel.setRangeFontName('Solid color = '.length, colorLabel.characters.length, { family: 'Inter', style: 'Bold' })
+
+  // Muted segments legend (transit/commute)
+  const mutedRect = figma.createRectangle()
+  mutedRect.resize(40, 4)
+  root.appendChild(mutedRect)
+  mutedRect.x = PAD_LEFT
+  mutedRect.y = tlLegY + 133
+  mutedRect.fills = [{ type: 'SOLID', color: hexToRgb('#E53935'), opacity: 0.4 } as SolidPaint]
+  const mutedLabel = await txt('Muted color = In transit / commute', LEG_TEXT_X, tlLegY + 127, 12, 'Regular', '#333333')
+  mutedLabel.setRangeFontName('Muted color = '.length, mutedLabel.characters.length, { family: 'Inter', style: 'Bold' })
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 2: CLOCK DAY
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // Section title and description
+  await txt('Clock Day', PAD_LEFT - 1, CLOCK_DAY_TITLE_Y, 48, 'Bold', '#000000')
+  await txt('A 24-hour donut chart representing one calendar day.', PAD_LEFT - 1, CLOCK_DAY_DESC_Y, 24, 'Regular', '#000000')
+
+  // ═══════════════════════════════════════════════════════════════════════
   // 4. DAILY CLOCK DIAGRAMS
   // ═══════════════════════════════════════════════════════════════════════
   for (let day = 0; day < numDays; day++) {
@@ -469,7 +567,20 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
       }
     }
 
+    // Determine transit/commute hours (departure of leg[i] → arrival of leg[i])
+    const transitHours: Map<number, string> = new Map()
+    for (let li = 0; li < legTimes.length; li++) {
+      const transitStart = legTimes[li].depMs
+      const transitEnd = legTimes[li].arrMs
+      const transitCol = legTimes[li].col
+      for (let hour = 0; hour < 24; hour++) {
+        const hs = dayMs + hour * 3600000
+        if (hs < transitEnd && hs + 3600000 > transitStart) transitHours.set(hour, transitCol)
+      }
+    }
+
     // 24 pie slices (donut)
+    // Priority: city stay (solid color) > transit (muted color) > night/day
     for (let hour = 0; hour < 24; hour++) {
       const sa = (hour / 24) * 2 * Math.PI - Math.PI / 2
       const ea = ((hour + 1) / 24) * 2 * Math.PI - Math.PI / 2
@@ -482,8 +593,11 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
 
       if (stayHours.has(hour)) {
         slice.fills = [sp(stayHours.get(hour)!)]
+      } else if (transitHours.has(hour)) {
+        // Transit/commute: leg color at 40% opacity (muted to distinguish from city stay)
+        slice.fills = [{ type: 'SOLID', color: hexToRgb(transitHours.get(hour)!), opacity: 0.4 } as SolidPaint]
       } else {
-        const isNight = hour < 6 || hour >= 18  // 6pm–6am, matching timeline dots
+        const isNight = hour < 6 || hour >= 21  // 9pm–6am night, 6am–8pm day
         slice.fills = [spRgb(isNight ? 0.12 : 0.75)]
       }
     }
@@ -602,57 +716,44 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
     ]
   }
 
-  // ── Legend ──
-  const legY = CLOCK_TOP + 30 + CLOCK_D + 100
-  const LEG_TEXT_X = 122  // all legend text labels aligned here
-  await txt('How to read', PAD_LEFT - 1, legY, 14, 'Bold', '#333333')
+  // ═══════════════════════════════════════════════════════════════════════
+  // CLOCK DAY LEGEND — "How to read" section for the clock diagrams
+  // ═══════════════════════════════════════════════════════════════════════
+  const clLegY = CLOCK_TOP + 30 + CLOCK_D + 114  // Clock Day legend Y position
+  await txt('How to read', PAD_LEFT - 1, clLegY, 16, 'Bold', '#333333')
 
-  // Two small dots (dark + light) representing night and day hours
-  const dotDark = figma.createEllipse()
-  dotDark.resize(7, 7)
-  dotDark.name = 'An hour am'
-  const dotLight = figma.createEllipse()
-  dotLight.resize(7, 7)
-  dotLight.name = 'An hour am'
-  root.appendChild(dotDark)
-  root.appendChild(dotLight)
-  dotDark.x = PAD_LEFT - 1
-  dotDark.y = legY + 29
-  dotDark.fills = [spRgb(0.02)]
-  dotLight.x = PAD_LEFT + 7
-  dotLight.y = legY + 29
-  dotLight.fills = [spRgb(0.85)]
-  const grp = figma.group([dotDark, dotLight], root)
-  grp.name = 'Group 141'
-  const legendText = await txt('Each circle represents 1 hour', LEG_TEXT_X, legY + 24, 12, 'Regular', '#333333')
-  const boldStart = 'Each circle represents '.length
-  legendText.setRangeFontName(boldStart, legendText.characters.length, { family: 'Inter', style: 'Bold' })
+  // Descriptive paragraph with mixed bold formatting
+  const clockLegendText = `Each of the 24 pie slices is one hour:  Dark slices for nighttime (9 pm–5 am), light Gray for daytime (6 am–8 pm). Colored slices overlay the hours you're staying in a city or in transit. Solid color means a city stay, muted color means commute. Sun-cycle icons (moon → sunrise → sun → sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.`
+  const clPara = figma.createText()
+  clPara.fontName = { family: 'Inter', style: 'Regular' }
+  clPara.characters = clockLegendText
+  clPara.fontSize = 12
+  clPara.fills = [sp('#000000')]
+  clPara.textAutoResize = 'NONE'
+  clPara.resize(351, 10)
+  root.appendChild(clPara)
+  clPara.x = PAD_LEFT - 1
+  clPara.y = clLegY + 33
 
-  const dotNight = figma.createEllipse()
-  dotNight.resize(18, 18)
-  root.appendChild(dotNight)
-  dotNight.x = PAD_LEFT - 2
-  dotNight.y = legY + 46
-  dotNight.fills = [spRgb(0.12)]
-  const nightLabel = await txt('Black = Night (6pm - 5am)', LEG_TEXT_X, legY + 48, 12, 'Regular', '#333333')
-  nightLabel.setRangeFontName('Black = '.length, 'Black = Night'.length, { family: 'Inter', style: 'Bold' })
+  // Apply bold ranges
+  const boldRanges: Array<[string, string]> = [
+    ['Dark slices', 'Dark slices'],
+    ['light', 'light'],
+    ['Gray', 'Gray'],
+    ['Colored slices', 'Colored slices'],
+    ['Solid color', 'Solid color'],
+    ['muted color', 'muted color'],
+    ['Sun-cycle', 'Sun-cycle'],
+  ]
+  for (const [search] of boldRanges) {
+    const idx = clockLegendText.indexOf(search)
+    if (idx >= 0) {
+      clPara.setRangeFontName(idx, idx + search.length, { family: 'Inter', style: 'Bold' })
+    }
+  }
 
-  const dotDay = figma.createEllipse()
-  dotDay.resize(18, 18)
-  root.appendChild(dotDay)
-  dotDay.x = PAD_LEFT - 2
-  dotDay.y = legY + 70
-  dotDay.fills = [spRgb(0.75)]
-  const dayLabel2 = await txt('Gray = Day (6am - 5pm)', LEG_TEXT_X, legY + 72, 12, 'Regular', '#333333')
-  dayLabel2.setRangeFontName('Gray = '.length, 'Gray = Day'.length, { family: 'Inter', style: 'Bold' })
-
-  // Colored segments legend
-  rect(PAD_LEFT, legY + 98, 40, 4, '#E53935')
-  const colorLabel = await txt('Colored segments = Staying in the city', LEG_TEXT_X, legY + 92, 12, 'Regular', '#333333')
-  colorLabel.setRangeFontName('Colored segments = '.length, colorLabel.characters.length, { family: 'Inter', style: 'Bold' })
-
-  // Resize frame to fit
-  const totalH = legY + 120
+  // Resize frame to fit — fixed offset from clock legend position
+  const totalH = clLegY + 262
   root.resize(totalW, totalH)
 
   return root
