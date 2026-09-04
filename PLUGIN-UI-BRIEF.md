@@ -194,3 +194,36 @@ WCAG 1.4.4.
 The Figma panel runs in a desktop webview, so the zoom problem does not
 apply there. The 16px minimum is only worth copying if the panel ever runs on
 a touch device.
+
+## 9. One control scale, and a floor under the text
+
+Buttons had been sized by whatever padding looked right at the time, so a
+button's importance and its size had stopped matching. Everything is now
+driven by a small set of tokens, and importance is the only thing that sets
+size.
+
+| Role | desktop | touch |
+| --- | --- | --- |
+| Primary, Generate | 36px / 13px | 52px / 16px, full width |
+| Secondary, Add, Send feedback | 34px / 12.5px | 48px / 15px |
+| Quiet, Export, Import, Clear | 30px / 11.5px | 44px / 13px |
+| Tabs | 38px / 12px | 48px / 15px |
+
+Every touch value clears 44px, which is the smallest target a finger can be
+asked to hit. On a phone the primary action takes the whole width with the
+status line above it, rather than sitting in a corner beside text nobody
+taps.
+
+The small controls were targets too, and worse than the big ones: the close
+button was 20px, the zoom toolbar 26px, the drag grip 12px wide. Their hit
+areas grew; the glyphs did not.
+
+One trap worth knowing if the plugin copies this. Padding will not enlarge an
+`<svg>` while `box-sizing: border-box` is set globally, because the width and
+height attributes pin the box and the padding is absorbed. The grip's hit area
+lives on a wrapper span now, with the SVG left at 12x14 inside it.
+
+**Text has a floor.** 9px field labels were legible on the desk they were
+drawn on and nowhere else. Nothing is below 11px on desktop or 12px on touch,
+set through `--fs-label`, `--fs-micro` and `--fs-small` so it stays that way.
+Inputs are already 16px on touch for the zoom reason in section 8.
