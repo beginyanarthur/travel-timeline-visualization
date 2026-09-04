@@ -18,9 +18,11 @@
   --surface-3:  #EAECF1;
   --rule:       #E4E6EB;
   --rule-firm:  #CDD1DA;
-  --accent:     #C75640;
+  --accent:     #FF5630;
+  --accent-muted:      #C75640;
+  --accent-muted-soft: #F7E9E4;
   --accent-ink: #FFFFFF;
-  --accent-soft:#F7E9E4;
+  --accent-soft:#FFEDE8;
   --danger:     #B3372C;
   --danger-soft:#FBEAE8;
   --canvas:     #FFFFFF;
@@ -61,9 +63,11 @@
     --surface-3:  #262C34;
     --rule:       #2C323A;
     --rule-firm:  #3C434D;
-    --accent:     #E0836C;
+    --accent:     #FF6E4D;
     --accent-ink: #2A1108;
-    --accent-soft:#37231D;
+    --accent-soft:#3A2018;
+    --accent-muted:      #C98570;
+    --accent-muted-soft: #33221C;
     --danger:     #E88379;
     --danger-soft:#3A1F1C;
     --card:       #19212A;
@@ -80,9 +84,11 @@
   --surface-3:  #262C34;
   --rule:       #2C323A;
   --rule-firm:  #3C434D;
-  --accent:     #E0836C;
+  --accent:     #FF6E4D;
   --accent-ink: #2A1108;
-  --accent-soft:#37231D;
+  --accent-soft:#3A2018;
+  --accent-muted:      #C98570;
+  --accent-muted-soft: #33221C;
   --danger:     #E88379;
   --danger-soft:#3A1F1C;
   --card:       #19212A;
@@ -489,7 +495,7 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 .tab-btn:hover { color: var(--figma-color-text-secondary); }
 .tab-btn.active {
   color: var(--figma-color-text);
-  border-bottom-color: var(--figma-color-bg-brand);
+  border-bottom-color: var(--accent-muted);
 }
 .tab-btn .badge {
   background: var(--figma-color-bg-secondary); border-radius: 10px;
@@ -498,8 +504,8 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
   font-family: var(--mono);
 }
 .tab-btn.active .badge {
-  background: var(--figma-color-bg-brand-tertiary);
-  color: var(--figma-color-bg-brand);
+  background: var(--accent-muted-soft);
+  color: var(--accent-muted);
 }
 .tab-panel { display: none; padding: 8px 0 0; }
 .tab-panel.active { display: block; }
@@ -964,13 +970,14 @@ select.f-input,
 /* Every way of getting between two places. 'flight' and 'train' keep their
    ids so trips exported before the others existed still import. */
 var TRANSPORT = {
-  flight: { label: 'Flight', icon: '\u2708\ufe0f' },
-  train:  { label: 'Train',  icon: '\ud83d\ude86' },
-  bus:    { label: 'Bus',    icon: '\ud83d\ude8c' },
-  boat:   { label: 'Boat',   icon: '\ud83d\udea2' },
-  car:    { label: 'Car',    icon: '\ud83d\ude97' },
-  bike:   { label: 'Bike',   icon: '\ud83d\udeb2' },
-  walk:   { label: 'Walk',   icon: '\ud83d\udeb6' }
+  flight: { label: 'Flight', icon: '\u2708\ufe0f', ref: { label: 'Flight no.', ph: 'W67805' } },
+  train:  { label: 'Train',  icon: '\ud83d\ude86', ref: { label: 'Train no.',  ph: 'ICE 573' } },
+  bus:    { label: 'Bus',    icon: '\ud83d\ude8c', ref: { label: 'Route',      ph: 'FlixBus 006' } },
+  boat:   { label: 'Boat',   icon: '\ud83d\udea2', ref: { label: 'Ferry',      ph: 'Color Line' } },
+  /* A car, a bike and a pair of legs do not have a number. */
+  car:    { label: 'Car',    icon: '\ud83d\ude97', ref: null },
+  bike:   { label: 'Bike',   icon: '\ud83d\udeb2', ref: null },
+  walk:   { label: 'Walk',   icon: '\ud83d\udeb6', ref: null }
 };
 function mode(t) { return TRANSPORT[t] || TRANSPORT.flight; }
 
@@ -1432,6 +1439,25 @@ function computeArrival(card) {
 }
 
 /* A leg can be a flight or a train, so the header says which. */
+/* Flights and trains have numbers, buses have routes, ferries have names.
+   A car, a bike and a walk have none, so the field goes rather than sitting
+   there asking for something that does not exist. */
+function setRefField(card) {
+  var type = card.querySelector('[data-field="type"]');
+  var wrap = card.querySelector('.ref-field');
+  if (!type || !wrap) return;
+  var input = card.querySelector('[data-field="flightNumber"]');
+  var ref = mode(type.value).ref;
+  if (!ref) {
+    wrap.hidden = true;
+    input.value = '';   /* so a walk never exports a flight number */
+    return;
+  }
+  wrap.hidden = false;
+  card.querySelector('.ref-label').textContent = ref.label;
+  input.placeholder = ref.ph;
+}
+
 function setLegLabel(card) {
   var type = card.querySelector('[data-field="type"]');
   if (!type) return;
@@ -1490,7 +1516,7 @@ function createLegCard(skipCompute) {
             return '<option value="' + k + '">' + mode(k).icon + ' ' + mode(k).label + '</option>';
           }).join('') +
         '</select></div>' +
-      '<div style="flex:1"><div class="f-label">Number</div>' +
+      '<div style="flex:1" class="ref-field"><div class="f-label ref-label">Flight no.</div>' +
         '<input class="f-input" data-field="flightNumber" placeholder="W67805"></div>' +
       '<input type="color" class="color-swatch" data-field="color" value="' + color + '" aria-label="Leg color">' +
     '</div>' +
@@ -1549,6 +1575,7 @@ function createLegCard(skipCompute) {
     var icon = card.querySelector('.flight-icon');
     if (icon) icon.textContent = mode(this.value).icon;
     setLegLabel(card);
+    setRefField(card);
     computeArrival(card);
   });
 
@@ -1808,6 +1835,7 @@ function loadTripData(data) {
       var icon = card.querySelector('.flight-icon');
       if (icon) icon.textContent = mode(leg.type).icon;
       setLegLabel(card);
+      setRefField(card);
       if (leg.color) card.querySelector('.leg-dot').style.background = leg.color;
 
       computeArrival(card);
