@@ -474,6 +474,42 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 .tab-panel { display: none; padding: 8px 0 0; }
 .tab-panel.active { display: block; }
 
+/* Several trips live in the panel; one is drawn at a time. */
+.trip-bar { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+.trip-chips {
+  display: flex; gap: 5px; flex: 1; min-width: 0;
+  overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin;
+}
+.trip-chip {
+  display: flex; align-items: center; gap: 2px; flex: 0 0 auto;
+  max-width: 172px; padding: 3px 4px 3px 10px;
+  border: 1px solid var(--rule-firm); border-radius: 999px;
+  background: var(--surface); color: var(--ink-2);
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.trip-chip:hover { border-color: var(--accent); }
+.trip-chip[aria-current="true"] {
+  background: var(--accent); border-color: var(--accent); color: var(--accent-ink);
+}
+.trip-chip .nm {
+  border: 0; background: none; color: inherit; cursor: pointer;
+  font-family: var(--font-family); font-size: 11px; font-weight: 500;
+  padding: 2px 2px; max-width: 132px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.trip-chip .x {
+  border: 0; background: none; color: inherit; cursor: pointer;
+  font-size: 13px; line-height: 1; padding: 0 4px; opacity: 0.5;
+}
+.trip-chip .x:hover { opacity: 1; }
+.trip-new {
+  flex: 0 0 auto; width: 26px; height: 26px;
+  border: 1px dashed var(--rule-firm); border-radius: 999px;
+  background: none; color: var(--figma-color-text-secondary);
+  font-size: 15px; line-height: 1; cursor: pointer;
+}
+.trip-new:hover { border-color: var(--accent); color: var(--accent); }
+
 .trip-dates {
   display: flex; gap: 6px; align-items: center;
   padding: 8px 10px; margin: 0;
@@ -678,10 +714,15 @@ select.f-input,
 <main class="workbench">
   <aside class="rail">
     <div class="rail-head">
-      <span class="rail-title">Trip</span>
+      <span class="rail-title">Trips</span>
     </div>
     <div class="rail-scroll">
       <div id="plugin-root">
+        <div class="trip-bar">
+          <div class="trip-chips" id="trip-chips" role="tablist" aria-label="Saved trips"></div>
+          <button class="trip-new" id="trip-new" type="button" title="New trip" aria-label="New trip">+</button>
+        </div>
+
         <div class="trip-dates" style="margin-bottom:8px;">
           <div class="date-field">
             <div class="date-label">Start</div>
@@ -1580,7 +1621,12 @@ var renderTimer = 0;
 
 function scheduleRender() {
   clearTimeout(renderTimer);
-  renderTimer = setTimeout(render, 180);
+  renderTimer = setTimeout(function () {
+    captureActive();
+    renderTripBar();
+    saveTrips();
+    render();
+  }, 180);
 }
 
 function render() {
@@ -1664,7 +1710,10 @@ document.querySelectorAll('[data-sample]').forEach(function (btn) {
     document.querySelectorAll('[data-sample]').forEach(function (b) {
       b.setAttribute('aria-pressed', String(b === btn));
     });
-    loadTripData(JSON.parse(JSON.stringify(SAMPLES[btn.dataset.sample])));
+    loadTripData(clone(SAMPLES[btn.dataset.sample]));
+    captureActive();
+    renderTripBar();
+    saveTrips();
     render();
     wrap.scrollTo({ left: 0, top: 0 });
   });
@@ -1771,11 +1820,10 @@ $('import-file').addEventListener('change', function (e) {
   reader.onload = function (ev) {
     try {
       loadTripData(JSON.parse(ev.target.result));
-      var legs = document.querySelectorAll('#legs-list .entry-card').length;
-      var hotels = document.querySelectorAll('#hotels-list .entry-card').length;
-      stageEmpty(true, 'Ready to draw',
-        legs + ' flight' + (legs === 1 ? '' : 's') + ' and ' +
-        hotels + ' hotel' + (hotels === 1 ? '' : 's') + ' loaded. Press Generate to draw the trip.');
+      captureActive();
+      renderTripBar();
+      saveTrips();
+      showTripState();
       toast('Loaded ' + file.name);
     } catch (err) { toast('Could not read that file: ' + err.message); }
   };
@@ -1865,11 +1913,166 @@ $('fb-send').addEventListener('click', function () {
   });
 });
 
-/* Open exactly as the plugin opens: today to a week out, nothing added yet. */
-var boot = new Date();
-$('tripStart').value = boot.toISOString().slice(0, 10);
-$('tripEnd').value = new Date(boot.getTime() + 7 * 86400000).toISOString().slice(0, 10);
-updateBadges();
-updateStatus();
-stageEmpty(true);
+
+/* ═══════════════════════════════════════════════════════════════
+   SAVED TRIPS
+   The panel holds several trips and draws one at a time. They live in
+   this browser's localStorage, so a plan survives a reload without
+   anything leaving the machine. Storage can throw (private windows,
+   blocked site data), so every access is guarded and the session still
+   works when it fails.
+   ═══════════════════════════════════════════════════════════════ */
+var STORE_KEY = 'ttv.trips.v1';
+var trips = [];
+var activeId = null;
+
+function blankTrip() {
+  var d = new Date();
+  return {
+    id: 't' + Date.now() + Math.random().toString(36).slice(2, 7),
+    data: {
+      startDate: d.toISOString().slice(0, 10),
+      endDate: new Date(d.getTime() + 7 * 86400000).toISOString().slice(0, 10),
+      legs: [],
+      hotels: []
+    }
+  };
+}
+
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+function tripLabel(data) {
+  var legs = (data && data.legs) || [];
+  if (!legs.length) return 'New trip';
+  var from = legs[0].departureCity || 'Trip';
+  var to = legs[legs.length - 1].arrivalCity || '';
+  return to ? from + ' → ' + to : from;
+}
+
+function byId(id) {
+  for (var i = 0; i < trips.length; i++) if (trips[i].id === id) return trips[i];
+  return null;
+}
+
+function saveTrips() {
+  try {
+    window.localStorage.setItem(STORE_KEY, JSON.stringify({ trips: trips, activeId: activeId }));
+  } catch (e) { /* nothing to do; the trips still work for this session */ }
+}
+
+function readStore() {
+  try {
+    var parsed = JSON.parse(window.localStorage.getItem(STORE_KEY));
+    if (parsed && parsed.trips && parsed.trips.length) return parsed;
+  } catch (e) {}
+  return null;
+}
+
+function captureActive() {
+  var t = byId(activeId);
+  if (t) t.data = collectData();
+}
+
+function renderTripBar() {
+  var bar = $('trip-chips');
+  bar.innerHTML = '';
+  trips.forEach(function (t) {
+    var chip = document.createElement('div');
+    chip.className = 'trip-chip';
+    chip.setAttribute('aria-current', String(t.id === activeId));
+
+    var nm = document.createElement('button');
+    nm.type = 'button';
+    nm.className = 'nm';
+    nm.textContent = tripLabel(t.data);
+    nm.title = t.data.startDate + ' to ' + t.data.endDate;
+    nm.addEventListener('click', function () { switchTrip(t.id); });
+    chip.appendChild(nm);
+
+    if (trips.length > 1) {
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'x';
+      x.textContent = '×';
+      x.title = 'Remove this trip';
+      x.setAttribute('aria-label', 'Remove ' + tripLabel(t.data));
+      x.addEventListener('click', function (e) { e.stopPropagation(); removeTrip(t.id); });
+      chip.appendChild(x);
+    }
+    bar.appendChild(chip);
+  });
+}
+
+/* Switching does not draw, for the same reason importing does not:
+   the panel fills, and Generate is what puts it on the canvas. */
+function showTripState() {
+  var legs = document.querySelectorAll('#legs-list .entry-card').length;
+  var hotels = document.querySelectorAll('#hotels-list .entry-card').length;
+  if (!legs) { stageEmpty(true); return; }
+  stageEmpty(true, 'Ready to draw',
+    legs + ' flight' + (legs === 1 ? '' : 's') + ' and ' +
+    hotels + ' hotel' + (hotels === 1 ? '' : 's') + ' loaded. Press Generate to draw the trip.');
+}
+
+function switchTrip(id) {
+  if (id === activeId) return;
+  captureActive();
+  var t = byId(id);
+  if (!t) return;
+  activeId = id;
+  loadTripData(clone(t.data));
+  renderTripBar();
+  saveTrips();
+  showTripState();
+}
+
+function newTrip() {
+  captureActive();
+  var t = blankTrip();
+  trips.push(t);
+  activeId = t.id;
+  loadTripData(clone(t.data));
+  renderTripBar();
+  saveTrips();
+  stageEmpty(true);
+  $('trip-chips').scrollLeft = $('trip-chips').scrollWidth;
+}
+
+function removeTrip(id) {
+  if (trips.length < 2) return;
+  var i = -1;
+  trips.forEach(function (t, n) { if (t.id === id) i = n; });
+  if (i < 0) return;
+  var wasActive = id === activeId;
+  trips.splice(i, 1);
+  if (wasActive) {
+    var next = trips[Math.min(i, trips.length - 1)];
+    activeId = next.id;
+    loadTripData(clone(next.data));
+    showTripState();
+  }
+  renderTripBar();
+  saveTrips();
+}
+
+$('trip-new').addEventListener('click', newTrip);
+
+function initTrips() {
+  var stored = readStore();
+  if (stored) {
+    trips = stored.trips;
+    activeId = byId(stored.activeId) ? stored.activeId : trips[0].id;
+  } else {
+    var t = blankTrip();
+    trips = [t];
+    activeId = t.id;
+  }
+  loadTripData(clone(byId(activeId).data));
+  renderTripBar();
+  showTripState();
+}
+
+/* Restore whatever was here last time, or open one empty trip the way
+   the plugin opens: today to a week out, nothing added yet. */
+initTrips();
 </script>
