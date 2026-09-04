@@ -406,7 +406,7 @@ body.canvas-full .stage { height: 100svh; }
 .se-body { margin: 0; font-size: 14px; color: var(--ink-2); max-width: 34ch; }
 /* Only useful where the panel is hidden behind a sheet. On a wide screen
    it is already open beside the canvas. */
-.se-open { display: none; }
+.se-actions, .se-open, .se-sample { display: none; }
 .artboard {
   background: var(--canvas);
   box-shadow: 0 1px 2px rgba(10, 14, 20, 0.10), 0 10px 30px rgba(10, 14, 20, 0.09);
@@ -860,7 +860,7 @@ input[type="time"].f-input::-webkit-date-and-time-value {
   color: var(--accent); font-size: var(--btn-fs-2);
   font-family: var(--font-family); font-weight: 600;
   display: inline-flex; align-items: center; justify-content: center;
-  transition: background 0.12s ease; margin-top: 2px;
+  transition: background 0.12s ease;
 }
 .add-btn:hover { background: var(--accent-soft); }
 
@@ -868,17 +868,20 @@ input[type="time"].f-input::-webkit-date-and-time-value {
    you do to a trip you already have, so they sit behind the menu in the
    header and leave the body to the only two decisions that matter on an
    empty panel: build one, or look at one. */
+/* Second, and it has to look it. Filled grey at the same height and weight
+   read heavier than the outlined accent above it, which put the two choices
+   the wrong way round. */
 .sample-btn {
   width: 100%; height: var(--btn-h-2); margin-top: 8px;
   display: flex; align-items: center; justify-content: center;
   border: 1px solid var(--figma-color-border); border-radius: 8px;
-  background: var(--figma-color-bg-secondary); cursor: pointer;
+  background: transparent; cursor: pointer;
   color: var(--figma-color-text-secondary);
-  font-size: var(--btn-fs-2); font-family: var(--font-family); font-weight: 600;
+  font-size: var(--btn-fs-2); font-family: var(--font-family); font-weight: 500;
   transition: all 0.12s ease;
 }
 .sample-btn:hover {
-  background: var(--figma-color-bg-hover); color: var(--figma-color-text);
+  background: var(--figma-color-bg-secondary); color: var(--figma-color-text);
   border-color: var(--figma-color-text-tertiary);
 }
 
@@ -918,7 +921,7 @@ input[type="time"].f-input::-webkit-date-and-time-value {
 .more-sep { height: 1px; background: var(--rule); margin: 4px 2px; }
 
 .empty-state {
-  text-align: center; padding: 16px 10px;
+  text-align: center; padding: 22px 10px 18px;
   color: var(--figma-color-text-tertiary);
   font-size: var(--fs-small); font-family: var(--font-family);
 }
@@ -1025,15 +1028,24 @@ input[type="time"].f-input::-webkit-date-and-time-value {
   .rail-head { min-height: 42px; }
   .rail-scroll { overflow-y: auto; overscroll-behavior: contain; }
 
-  .se-open {
-    display: inline-flex; align-items: center; justify-content: center;
-    margin-top: 14px;
-    font-family: var(--body); font-size: var(--btn-fs-2); font-weight: 600;
-    height: var(--btn-h-2); padding: 0 22px;
-    border: 1px solid var(--accent); border-radius: 8px;
-    background: transparent; color: var(--accent); cursor: pointer;
+  /* The panel is behind the sheet here, so the canvas offers both ways in.
+     On the desk they are both a glance away in the panel already. */
+  .se-actions {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    justify-content: center; margin-top: 14px;
   }
+  .se-open, .se-sample {
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--body); font-size: var(--btn-fs-2); font-weight: 600;
+    height: var(--btn-h-2); padding: 0 20px;
+    border-radius: 8px; background: transparent; cursor: pointer;
+  }
+  .se-open { border: 1px solid var(--accent); color: var(--accent); }
   .se-open:active { background: var(--accent-soft); }
+  /* Quieter: the way out for someone with no trip in mind, not the road we
+     would rather they took. */
+  .se-sample { border: 1px solid var(--rule-firm); color: var(--ink-2); }
+  .se-sample:active { background: var(--surface-2); }
 
   /* The small controls are targets too. The close button was 20px, the
      zoom toolbar 26px and the drag grip 12px wide, none of which a finger
@@ -1232,7 +1244,7 @@ input[type="time"].f-input::-webkit-date-and-time-value {
           <button class="add-btn" id="add-hotel">+ Add hotel</button>
         </div>
 
-        <button class="sample-btn" id="sample-btn" type="button">Try a sample trip</button>
+        <button class="sample-btn" id="sample-btn" type="button">Use a sample trip</button>
         <input type="file" id="import-file" accept=".json" style="display:none;">
       </div>
     </div>
@@ -1307,7 +1319,10 @@ input[type="time"].f-input::-webkit-date-and-time-value {
         </svg>
         <p class="se-title" id="se-title">Your journey starts here</p>
         <p class="se-body" id="se-body">Fill in your trip details, then press Generate.</p>
-        <button class="se-open" id="se-open" type="button">Add trip details</button>
+        <div class="se-actions">
+          <button class="se-open" id="se-open" type="button">Add trip details</button>
+          <button class="se-sample" id="se-sample" type="button">Use a sample trip</button>
+        </div>
       </div>
     </div>
   </section>
@@ -3006,11 +3021,12 @@ function useSampleTrip() {
   if (sheetMQ.matches) sheetOpen(true);
 }
 
-$('sample-btn').addEventListener('click', function () {
+/* Offered in two places, the panel and the canvas, so it is one function.
+   Either can be pressed with a trip already loaded, since the canvas keeps
+   showing its message while a trip waits to be drawn. */
+function askForSample() {
   var legs = document.querySelectorAll('#legs-list .entry-card').length;
   var hotels = document.querySelectorAll('#hotels-list .entry-card').length;
-  /* It sits in the row permanently, so it has to be safe to press with a
-     trip already in the panel. */
   if (legs || hotels) {
     askConfirm('Replace this trip with the sample?',
       'The sample overwrites everything in the panel. Export your trip first if you want to keep it.',
@@ -3018,7 +3034,9 @@ $('sample-btn').addEventListener('click', function () {
     return;
   }
   useSampleTrip();
-});
+}
+$('sample-btn').addEventListener('click', askForSample);
+$('se-sample').addEventListener('click', askForSample);
 
 ['tripStart', 'tripEnd'].forEach(function (id) {
   $(id).addEventListener('focus', function () {
