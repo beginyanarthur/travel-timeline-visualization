@@ -249,7 +249,7 @@
       <!-- Tab bar -->
       <div class="tab-bar">
         <button class="tab-btn active" data-tab="legs">
-          ✈ Flights <span class="badge" id="legs-badge">0</span>
+          ✈ Transport <span class="badge" id="legs-badge">0</span>
         </button>
         <button class="tab-btn" data-tab="hotels">
           🏨 Hotels <span class="badge" id="hotels-badge">0</span>
@@ -294,6 +294,26 @@
 
   <script>
     var COLORS = ['#E53935','#FF9800','#9C27B0','#4CAF50','#2196F3','#795548','#00BCD4','#FF5722']
+
+    // Every way of getting between two places. 'flight' and 'train' keep
+    // their ids so trips exported before the others existed still import.
+    var TRANSPORT = {
+      flight: { label: 'Flight', icon: '\u2708' },
+      train:  { label: 'Train',  icon: '\ud83d\ude86' },
+      bus:    { label: 'Bus',    icon: '\ud83d\ude8c' },
+      car:    { label: 'Car',    icon: '\ud83d\ude97' },
+      bike:   { label: 'Bike',   icon: '\ud83d\udeb2' },
+      walk:   { label: 'Walk',   icon: '\ud83d\udeb6' }
+    }
+    function mode(t) { return TRANSPORT[t] || TRANSPORT.flight }
+
+    // A leg can be any of the six, so the card header says which.
+    function setLegLabel(card) {
+      var type = card.querySelector('[data-field="type"]')
+      if (!type) return
+      card.querySelector('.header-label').textContent =
+        mode(type.value).label + ' ' + card.dataset.n
+    }
     var legCounter = 0
     var hotelCounter = 0
 
@@ -403,6 +423,7 @@
       var card = document.createElement('div')
       card.className = 'entry-card expanded'
       card.dataset.idx = String(idx)
+      card.dataset.n = String(idx + 1)
 
       card.innerHTML =
         '<div class="card-header">' +
@@ -434,8 +455,9 @@
         '<div class="f-row">' +
           '<div style="flex:1"><div class="f-label">Type</div>' +
             '<select class="f-input" data-field="type">' +
-              '<option value="flight">✈ Flight</option>' +
-              '<option value="train">🚌 Train / bus</option>' +
+              Object.keys(TRANSPORT).map(function(k) {
+                return '<option value="' + k + '">' + mode(k).icon + ' ' + mode(k).label + '</option>'
+              }).join('') +
             '</select></div>' +
           '<div style="flex:1"><div class="f-label">Number</div>' +
             '<input class="f-input" data-field="flightNumber" placeholder="W67805"></div>' +
@@ -509,18 +531,19 @@
 
       // Train/bus → sync arrival UTC to departure UTC
       card.querySelector('[data-field="type"]').addEventListener('change', function() {
-        if (this.value === 'train') {
+        if (this.value !== 'flight') {
           var depUtcVal = card.querySelector('[data-field="departureUtc"]').value
           card.querySelector('[data-field="arrivalUtc"]').value = depUtcVal
         }
         // Update flight icon in route indicator
         var icon = card.querySelector('.flight-icon')
-        if (icon) icon.textContent = this.value === 'train' ? '🚌' : '✈'
+        if (icon) icon.textContent = mode(this.value).icon
+        setLegLabel(card)
         computeArrival(card)
       })
 
       card.querySelector('[data-field="departureUtc"]').addEventListener('change', function() {
-        if (card.querySelector('[data-field="type"]').value === 'train') {
+        if (card.querySelector('[data-field="type"]').value !== 'flight') {
           card.querySelector('[data-field="arrivalUtc"]').value = this.value
         }
         computeArrival(card)
@@ -631,7 +654,9 @@
       }
       btn.removeAttribute('disabled')
       var hotelCards = document.querySelectorAll('#hotels-list .entry-card')
-      status.textContent = legCards.length + ' flight(s), ' + hotelCards.length + ' hotel(s)'
+      status.textContent =
+        legCards.length + (legCards.length === 1 ? ' leg, ' : ' legs, ') +
+        hotelCards.length + (hotelCards.length === 1 ? ' hotel' : ' hotels')
     }
 
     document.getElementById('tripStart').addEventListener('change', updateStatus)
@@ -689,7 +714,7 @@
       for (var i = 0; i < data.legs.length; i++) {
         var leg = data.legs[i]
         if (!leg.departureDate || !leg.arrivalDate) {
-          alert('Flight ' + (i + 1) + ' needs departure and arrival dates. Make sure duration is filled to auto-calculate arrival.')
+          alert('Leg ' + (i + 1) + ' needs departure and arrival dates. Make sure duration is filled to auto-calculate arrival.')
           return
         }
       }
@@ -805,7 +830,8 @@
 
           // Update flight icon
           var icon = card.querySelector('.flight-icon')
-          if (icon && leg.type === 'train') icon.textContent = '🚌'
+          if (icon) icon.textContent = mode(leg.type).icon
+          setLegLabel(card)
 
           // Update color dot
           var dot = card.querySelector('.leg-dot')
