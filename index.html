@@ -998,9 +998,15 @@ input[type="time"].f-input::-webkit-date-and-time-value {
   .remove-btn { width: 40px; height: 40px; font-size: 20px; margin-right: -6px; }
   .card-header { padding: 6px 10px; gap: 6px; }
   .drag-handle { padding: 13px 12px; margin: -13px -4px; }
-  .tool { height: 40px; font-size: 13px; padding: 0 14px; display: inline-flex;
+  /* Full size, like everything else you can tap. On a phone the toolbar
+     sits above the canvas rather than beside the sheet header, so it is
+     free to be taller than the 48px head the two share on the desk. */
+  .tool { height: 44px; font-size: 13.5px; padding: 0 14px; display: inline-flex;
           align-items: center; }
-  .tool.icon { min-width: 44px; justify-content: center; }
+  .tool.icon { min-width: 48px; font-size: 16px; justify-content: center; }
+  .toolbar { padding: 6px clamp(10px, 2vw, 16px); gap: 6px; }
+  .zoom-readout { font-size: var(--fs-small); min-width: 56px; }
+  .stage-dims { font-size: var(--fs-small); }
 
   /* The main action gets the whole width, rather than a small target in a
      corner next to a status line nobody taps. */

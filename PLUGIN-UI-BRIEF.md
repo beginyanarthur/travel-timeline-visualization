@@ -216,7 +216,11 @@ taps.
 
 The small controls were targets too, and worse than the big ones: the close
 button was 20px, the zoom toolbar 26px, the drag grip 12px wide. Their hit
-areas grew; the glyphs did not.
+areas grew; the glyphs did not. The zoom toolbar is a full 44px on touch,
+which it can afford because on a phone it sits above the canvas rather than
+beside the sheet header, so it is not held to the 48px head the two share on
+the desk. Below about 340px it wraps onto two rows rather than shortening its
+labels.
 
 One trap worth knowing if the plugin copies this. Padding will not enlarge an
 `<svg>` while `box-sizing: border-box` is set globally, because the width and
