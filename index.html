@@ -407,6 +407,22 @@ body.canvas-full .stage { height: 100svh; }
 /* Only useful where the panel is hidden behind a sheet. On a wide screen
    it is already open beside the canvas. */
 .se-open { display: none; }
+.se-actions {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  justify-content: center; margin-top: 14px;
+}
+/* Quieter than "Add trip details": a way out for someone who has no trip in
+   mind, not the road we want them on. */
+.se-sample {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: var(--btn-h-2); padding: 0 18px;
+  font-family: var(--body); font-size: var(--btn-fs-2); font-weight: 600;
+  border: 1px solid var(--rule-firm); border-radius: 8px;
+  background: transparent; color: var(--ink-2); cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.se-sample:hover { background: var(--surface-2); color: var(--ink); border-color: var(--ink-3); }
+.se-sample:active { background: var(--surface-3); }
 .artboard {
   background: var(--canvas);
   box-shadow: 0 1px 2px rgba(10, 14, 20, 0.10), 0 10px 30px rgba(10, 14, 20, 0.09);
@@ -997,7 +1013,6 @@ input[type="time"].f-input::-webkit-date-and-time-value {
 
   .se-open {
     display: inline-flex; align-items: center; justify-content: center;
-    margin-top: 14px;
     font-family: var(--body); font-size: var(--btn-fs-2); font-weight: 600;
     height: var(--btn-h-2); padding: 0 22px;
     border: 1px solid var(--accent); border-radius: 8px;
@@ -1267,7 +1282,10 @@ input[type="time"].f-input::-webkit-date-and-time-value {
         </svg>
         <p class="se-title" id="se-title">Your journey starts here</p>
         <p class="se-body" id="se-body">Fill in your trip details, then press Generate.</p>
-        <button class="se-open" id="se-open" type="button">Add trip details</button>
+        <div class="se-actions">
+          <button class="se-open" id="se-open" type="button">Add trip details</button>
+          <button class="se-sample" id="se-sample" type="button">Try a sample trip</button>
+        </div>
       </div>
     </div>
   </section>
@@ -2633,6 +2651,47 @@ window.addEventListener('resize', function () { if (fitMode) fitWidth(); });
    ═══════════════════════════════════════════════════════════════ */
 /* GoatCounter is added by build.py on Pages only. In the Artifact there is
    no script to load it, so this quietly does nothing. */
+/* A real trip, so the drawing shows what it is for: two flights and two
+   trains across a week, four hotels, and a timezone that moves twice. The
+   copy on disk in samples/ has a couple of faults that would read badly as
+   a demo, a Hamburg to Berlin leg typed as a flight and the offsets on the
+   way home swapped, so this is the corrected version. */
+var SAMPLE_TRIP = {
+  startDate: '2027-07-06', endDate: '2027-07-13',
+  legs: [
+    { type: 'flight', departureCity: 'Yerevan', departureDate: '2027-07-06',
+      departureTime: '06:30', departureUtc: 4, flightNumber: 'W67805',
+      durationHours: 4, durationMinutes: 50, arrivalCity: 'Hamburg',
+      arrivalDate: '2027-07-06', arrivalTime: '09:20', arrivalUtc: 2, color: '#FF5630' },
+    { type: 'train', departureCity: 'Hamburg Hbf', departureDate: '2027-07-07',
+      departureTime: '09:51', departureUtc: 2, flightNumber: 'ICE 574',
+      durationHours: 2, durationMinutes: 0, arrivalCity: 'Berlin Hbf',
+      arrivalDate: '2027-07-07', arrivalTime: '11:51', arrivalUtc: 2, color: '#FFCB11' },
+    { type: 'train', departureCity: 'Berlin Hbf', departureDate: '2027-07-09',
+      departureTime: '12:37', departureUtc: 2, flightNumber: 'ICE 1105',
+      durationHours: 2, durationMinutes: 35, arrivalCity: 'Nuremberg Hbf',
+      arrivalDate: '2027-07-09', arrivalTime: '15:12', arrivalUtc: 2, color: '#E86EF3' },
+    { type: 'train', departureCity: 'Nuremberg Hbf', departureDate: '2027-07-11',
+      departureTime: '17:00', departureUtc: 2, flightNumber: 'ICE 1006',
+      durationHours: 4, durationMinutes: 28, arrivalCity: 'Dortmund Hbf',
+      arrivalDate: '2027-07-11', arrivalTime: '21:28', arrivalUtc: 2, color: '#4CAF50' },
+    { type: 'flight', departureCity: 'Dortmund', departureDate: '2027-07-12',
+      departureTime: '17:30', departureUtc: 2, flightNumber: 'W67806',
+      durationHours: 4, durationMinutes: 20, arrivalCity: 'Yerevan',
+      arrivalDate: '2027-07-12', arrivalTime: '23:50', arrivalUtc: 4, color: '#2196F3' }
+  ],
+  hotels: [
+    { name: 'Novotel Hamburg City Alster', checkInDate: '2027-07-06', checkInTime: '14:00',
+      checkOutDate: '2027-07-07', checkOutTime: '08:00' },
+    { name: 'NH Collection Berlin Mitte', checkInDate: '2027-07-07', checkInTime: '12:00',
+      checkOutDate: '2027-07-09', checkOutTime: '11:00' },
+    { name: 'Leonardo Royal Hotel N\u00fcrnberg', checkInDate: '2027-07-09', checkInTime: '14:00',
+      checkOutDate: '2027-07-11', checkOutTime: '14:00' },
+    { name: 'NH Dortmund', checkInDate: '2027-07-11', checkInTime: '22:00',
+      checkOutDate: '2027-07-12', checkOutTime: '12:00' }
+  ]
+};
+
 function track(path, title) {
   try {
     if (window.goatcounter && window.goatcounter.count) {
@@ -2872,6 +2931,21 @@ sheetMQ.addEventListener('change', function () { sheetOpen(false); rail.style.he
    Touching one opens it, so Generate comes into view and the rule that
    nothing is drawn until you press it is visible rather than implied. */
 $('se-open').addEventListener('click', function () { sheetOpen(true); });
+
+/* Not everyone arrives with a trip in mind, and inventing plausible dates
+   and timezones is real work for someone who only wants to see the idea.
+   This fills the panel and draws in one press; the panel stays filled, so
+   the trip is there to pull apart afterwards. */
+$('se-sample').addEventListener('click', function () {
+  loadTripData(SAMPLE_TRIP);
+  if (!render()) return;
+  /* Its own event. Counting it as "generated" would flatter the one ratio
+     that says whether people build something of their own. */
+  track('sample-loaded', 'Loaded the sample trip');
+  if (sheetMQ.matches) sheetOpen(false);
+  wrap.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+  fitWidth();
+});
 
 ['tripStart', 'tripEnd'].forEach(function (id) {
   $(id).addEventListener('focus', function () {
