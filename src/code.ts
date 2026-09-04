@@ -3,7 +3,7 @@ const DISPLAY_NAME = 'Travel itinerary'
 
 // ── Types ──────────────────────────────────────────────────────────────
 interface FlightLeg {
-  type: 'flight' | 'train' | 'bus' | 'car' | 'bike' | 'walk'
+  type: 'flight' | 'train' | 'bus' | 'boat' | 'car' | 'bike' | 'walk'
   departureCity: string
   departureTime: string
   departureDate: string
@@ -95,6 +95,7 @@ const LEG_ICONS: { [k: string]: string } = {
   flight: '\u2708',
   train: '\u{1F686}',
   bus: '\u{1F68C}',
+  boat: '\u{1F6A2}',
   car: '\u{1F697}',
   bike: '\u{1F6B2}',
   walk: '\u{1F6B6}',

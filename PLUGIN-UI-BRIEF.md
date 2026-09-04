@@ -14,7 +14,7 @@ neither: a car transfer, a bike leg, a walk between two places.
 
 ## 1. The transport table
 
-Six modes. `flight` and `train` keep their existing ids so trips exported
+Seven modes. `flight` and `train` keep their existing ids so trips exported
 before this change still import.
 
 | id | label | icon |
@@ -22,21 +22,22 @@ before this change still import.
 | `flight` | Flight | ✈ (U+2708) |
 | `train` | Train | 🚆 (U+1F686) |
 | `bus` | Bus | 🚌 (U+1F68C) |
+| `boat` | Boat | 🚢 (U+1F6A2) |
 | `car` | Car | 🚗 (U+1F697) |
 | `bike` | Bike | 🚲 (U+1F6B2) |
 | `walk` | Walk | 🚶 (U+1F6B6) |
 
 One table drives four things: the dropdown options, the card header text, the
 small icon in the From/To route row, and the icon drawn on the generated
-timeline. A seventh mode should be one new entry, not six edits.
+timeline. An eighth mode should be one new entry, not six edits.
 
 ## 2. Panel changes
 
 **Tab label.** `✈ Flights` becomes `✈ Transport`. It has always covered
 ground transport; the name did not.
 
-**Dropdown.** Six options, each `<icon> <label>`, built from the table rather
-than hardcoded.
+**Dropdown.** Seven options, each `<icon> <label>`, built from the table
+rather than hardcoded.
 
 **Card header.** Was always `Flight N`. It now reads the selected type:
 `Flight 1`, `Train 2`, `Bus 3`, `Car 4`, `Bike 5`, `Walk 6`. It relabels the
@@ -69,8 +70,8 @@ rule, the transit shading and both legends are untouched.
 
 ## 5. Design notes for the panel mock
 
-- Six options make the dropdown taller than two did. Worth checking it does
-  not overflow the 340px panel awkwardly when opened near the bottom.
+- Seven options make the dropdown far taller than two did. Worth checking it
+  does not overflow the 340px panel awkwardly when opened near the bottom.
 - Card headers are now variable width: `Flight 1` is short, `Train 12` is
   longer. The header is `flex-shrink: 0` with the route summary beside it
   taking the remaining space and ellipsing, so the label never truncates.
