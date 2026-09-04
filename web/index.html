@@ -306,26 +306,59 @@ h1 {
   padding: 1px 5px;
 }
 
-/* Feedback prompts encode what is actually undecided, so they are a
-   list of open questions rather than decorative numbered steps. */
-.asks { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.asks li {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 10px;
-  align-items: start;
-  font-size: 14px;
-  color: var(--ink-2);
+/* The form asks only what is still undecided. Three of the four are one
+   tap, because a page of empty text boxes collects nothing. */
+.feedback { display: grid; gap: 17px; }
+.ask { display: grid; gap: 7px; }
+.ask-q { font-size: 13.5px; line-height: 1.4; color: var(--ink); font-weight: 500; }
+.ask-q .opt {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 400;
+  color: var(--ink-3); letter-spacing: 0.02em;
 }
-.asks .q {
-  font-family: var(--mono);
-  font-size: 10.5px;
-  color: var(--accent);
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  appearance: none;
+  font-family: var(--body); font-size: 12.5px;
+  padding: 5px 11px;
+  border: 1px solid var(--rule-firm);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.chip:hover { border-color: var(--accent); color: var(--ink); }
+.chip[aria-pressed="true"] {
+  background: var(--accent); border-color: var(--accent); color: var(--accent-ink);
+}
+.free {
+  width: 100%;
+  font-family: var(--body); font-size: 13.5px; line-height: 1.5;
+  padding: 9px 11px;
+  border: 1px solid var(--rule-firm);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  resize: vertical;
+}
+.free::placeholder { color: var(--ink-3); }
+.free:focus { outline: none; border-color: var(--accent); }
+.fb-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 2px; }
+.fb-send {
+  appearance: none;
+  font-family: var(--body); font-size: 13.5px; font-weight: 600;
+  padding: 9px 20px;
   border: 1px solid var(--accent);
-  border-radius: 3px;
-  padding: 1px 5px;
-  line-height: 1.5;
-  white-space: nowrap;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+.fb-send:disabled { opacity: 0.55; cursor: default; }
+.fb-note { font-size: 12.5px; color: var(--ink-3); }
+.fb-done {
+  font-size: 14px; color: var(--ink-2); line-height: 1.5;
+  border-left: 2px solid var(--accent); padding-left: 14px;
 }
 
 .colophon {
@@ -766,12 +799,44 @@ select.f-input,
   </div>
   <div>
     <h2>What would help most</h2>
-    <ul class="asks">
-      <li><span class="q">01</span><span>Did the day and night reading land before you read the legend, or after?</span></li>
-      <li><span class="q">02</span><span>Are the ring diagrams doing work the band does not already do?</span></li>
-      <li><span class="q">03</span><span>Sideways scrolling: honest to the data, or just awkward?</span></li>
-      <li><span class="q">04</span><span>What did you try to change that the panel would not let you?</span></li>
-    </ul>
+    <form class="feedback" id="feedback" novalidate>
+      <div class="ask">
+        <span class="ask-q">Did the day and night reading land before you read the legend?</span>
+        <div class="chips" role="group" aria-label="Day and night reading">
+          <button type="button" class="chip" aria-pressed="false">Straight away</button>
+          <button type="button" class="chip" aria-pressed="false">Only after the legend</button>
+          <button type="button" class="chip" aria-pressed="false">Still unclear</button>
+        </div>
+      </div>
+      <div class="ask">
+        <span class="ask-q">Do the day rings earn their place next to the band?</span>
+        <div class="chips" role="group" aria-label="Day rings">
+          <button type="button" class="chip" aria-pressed="false">They add something</button>
+          <button type="button" class="chip" aria-pressed="false">They repeat the band</button>
+          <button type="button" class="chip" aria-pressed="false">Not sure</button>
+        </div>
+      </div>
+      <div class="ask">
+        <span class="ask-q">Scrolling sideways through the whole trip:</span>
+        <div class="chips" role="group" aria-label="Sideways scrolling">
+          <button type="button" class="chip" aria-pressed="false">Right call</button>
+          <button type="button" class="chip" aria-pressed="false">Awkward</button>
+          <button type="button" class="chip" aria-pressed="false">Would rather it fit</button>
+        </div>
+      </div>
+      <div class="ask">
+        <span class="ask-q">What did you try to change that the panel would not let you?</span>
+        <textarea class="free" rows="3" placeholder="Anything at all. Blunt is more useful than polite."></textarea>
+      </div>
+      <div class="ask">
+        <span class="ask-q">Who are you, if you want a reply? <span class="opt">optional</span></span>
+        <input type="text" class="free" placeholder="Name, LinkedIn, email, anything">
+      </div>
+      <div class="fb-actions">
+        <button type="button" class="fb-send" id="fb-send">Send feedback</button>
+        <span class="fb-note" id="fb-note"></span>
+      </div>
+    </form>
   </div>
 </section>
 
@@ -1723,6 +1788,85 @@ $('import-file').addEventListener('change', function (e) {
 /* ═══════════════════════════════════════════════════════════════
    Open loaded, not empty
    ═══════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════
+   FEEDBACK
+   Set FORM_ENDPOINT to a Formspree (or compatible) URL and the button
+   posts. Left empty, it copies the answers to the clipboard instead, so
+   the form is useful from the first minute and no address sits in the
+   page source waiting to be scraped.
+   ═══════════════════════════════════════════════════════════════ */
+var FORM_ENDPOINT = '';
+
+document.querySelectorAll('.chips').forEach(function (group) {
+  group.addEventListener('click', function (e) {
+    var btn = e.target.closest('.chip');
+    if (!btn) return;
+    var already = btn.getAttribute('aria-pressed') === 'true';
+    group.querySelectorAll('.chip').forEach(function (b) {
+      b.setAttribute('aria-pressed', 'false');
+    });
+    btn.setAttribute('aria-pressed', already ? 'false' : 'true');
+  });
+});
+
+function feedbackAnswers() {
+  var parts = [];
+  document.querySelectorAll('#feedback .ask').forEach(function (ask) {
+    var q = ask.querySelector('.ask-q').textContent.replace(/\s+/g, ' ').trim();
+    var picked = ask.querySelector('.chip[aria-pressed="true"]');
+    var free = ask.querySelector('textarea, input[type="text"]');
+    var a = picked ? picked.textContent.trim() : (free ? free.value.trim() : '');
+    if (a) parts.push(q + '\n    ' + a);
+  });
+  return parts.join('\n\n');
+}
+
+function feedbackDone(msg) {
+  var form = $('feedback');
+  var p = document.createElement('p');
+  p.className = 'fb-done';
+  p.textContent = msg;
+  form.parentNode.replaceChild(p, form);
+}
+
+$('fb-send').addEventListener('click', function () {
+  var body = feedbackAnswers();
+  if (!body) {
+    $('fb-note').textContent = 'Answer at least one question first.';
+    return;
+  }
+  var btn = $('fb-send');
+
+  if (!FORM_ENDPOINT) {
+    var payload = 'Feedback on Travel Timeline Visualization\n\n' + body;
+    var done = function () {
+      feedbackDone('Copied. Paste it into the comments or send it to me directly. Thank you for actually trying it.');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(payload).then(done, function () { showPaste(payload, true); });
+    } else {
+      showPaste(payload, true);
+    }
+    return;
+  }
+
+  btn.disabled = true;
+  $('fb-note').textContent = 'Sending...';
+  fetch(FORM_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ page: 'Travel Timeline Visualization', feedback: body })
+  }).then(function (r) {
+    if (!r.ok) throw new Error('rejected');
+    feedbackDone('Sent. Thank you for actually trying it.');
+  }).catch(function () {
+    btn.disabled = false;
+    $('fb-note').textContent = 'That did not send. Copy it instead and paste it in the comments.';
+    if (navigator.clipboard) navigator.clipboard.writeText(body);
+  });
+});
+
 loadTripData(JSON.parse(JSON.stringify(SAMPLES.hamburg)));
 render();
 </script>

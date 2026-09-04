@@ -44,6 +44,23 @@ python3 build.py
 Set `PAGES_URL` at the top of `build.py` before the first deploy. Social
 previews need an absolute URL, so a relative one will not resolve.
 
+## Collecting the feedback
+
+The form at the bottom of the page works with no backend: it copies the
+answers to the clipboard so people can paste them into a comment or a message.
+That costs nothing and keeps your address out of the page source.
+
+To have answers arrive on their own, create a free form endpoint (Formspree,
+Formspark, Basin, all fine) and set it in `web/index.html`:
+
+```js
+var FORM_ENDPOINT = 'https://formspree.io/f/YOURID';
+```
+
+Then run `python3 build.py`. The button switches from copying to posting, and
+falls back to copying if the request fails, so a dead endpoint never swallows
+someone's answer.
+
 ## Regenerating the preview card
 
 ```
