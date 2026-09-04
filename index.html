@@ -384,6 +384,9 @@ body.canvas-full .stage { height: 100svh; }
   margin: 0; color: var(--ink);
 }
 .se-body { margin: 0; font-size: 14px; color: var(--ink-2); max-width: 34ch; }
+/* Only useful where the panel is hidden behind a sheet. On a wide screen
+   it is already open beside the canvas. */
+.se-open { display: none; }
 .artboard {
   background: var(--canvas);
   box-shadow: 0 1px 2px rgba(10, 14, 20, 0.10), 0 10px 30px rgba(10, 14, 20, 0.09);
@@ -842,6 +845,16 @@ select.f-input,
   .fab { bottom: calc(var(--sheet-h) + 16px); }
   body.canvas-full .fab { bottom: 16px; }
 
+  .se-open {
+    display: inline-block;
+    margin-top: 14px;
+    font-family: var(--body); font-size: 13.5px; font-weight: 600;
+    padding: 9px 18px;
+    border: 1px solid var(--accent); border-radius: 8px;
+    background: transparent; color: var(--accent); cursor: pointer;
+  }
+  .se-open:active { background: var(--accent-soft); }
+
   /* Collapsed, the sheet shows the dates and nothing below them. */
   .rail:not([data-open="true"]) .rail-scroll { overflow: hidden; }
   .rail:not([data-open="true"]) .plugin-footer { display: none; }
@@ -996,6 +1009,7 @@ select.f-input,
         </svg>
         <p class="se-title" id="se-title">Your journey starts here</p>
         <p class="se-body" id="se-body">Fill in your trip details, then press Generate.</p>
+        <button class="se-open" id="se-open" type="button">Add trip details</button>
       </div>
     </div>
   </section>
@@ -2468,6 +2482,8 @@ sheetMQ.addEventListener('change', function () { sheetOpen(false); rail.style.he
 /* The dates are the only fields reachable while the sheet is collapsed.
    Touching one opens it, so Generate comes into view and the rule that
    nothing is drawn until you press it is visible rather than implied. */
+$('se-open').addEventListener('click', function () { sheetOpen(true); });
+
 ['tripStart', 'tripEnd'].forEach(function (id) {
   $(id).addEventListener('focus', function () {
     if (sheetMQ.matches && !isOpen()) sheetOpen(true);
