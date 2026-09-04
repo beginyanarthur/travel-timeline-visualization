@@ -25,7 +25,10 @@
 <script data-goatcounter="https://traveltimeline.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='17' cy='16' r='13' fill='%23F76434'/%3E%3Ccircle cx='4.5' cy='16' r='3.5' fill='%23000'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 
 <title>Travel Timeline Visualization</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -603,15 +606,15 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 .entry-card {
   background: var(--card);
   border-radius: 8px;
-  margin-bottom: 6px; position: relative;
+  margin-bottom: 8px; position: relative;
   border: 1px solid var(--figma-color-border);
   transition: box-shadow 0.15s ease;
   overflow: hidden;
 }
 .entry-card:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
 .card-header {
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 10px; cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; cursor: pointer; user-select: none;
   font-family: var(--font-family);
 }
 .card-header:hover { background: var(--card-hover); }
@@ -658,10 +661,10 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 }
 
 .card-body { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; }
-.entry-card.expanded .card-body { max-height: 700px; }
-.card-body-inner { padding: 0 10px 10px; }
+.entry-card.expanded .card-body { max-height: 820px; }
+.card-body-inner { padding: 2px 12px 14px; container-type: inline-size; }
 
-.f-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: flex-end; }
+.f-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-end; }
 .f-row > * { flex: 1; min-width: 0; }
 .f-label {
   font-size: 9px; font-weight: 600; color: var(--figma-color-text-tertiary);
@@ -711,25 +714,62 @@ input[type="time"].f-input::-webkit-date-and-time-value {
   margin: 0;
 }
 
-.route-indicator { display: flex; align-items: center; gap: 6px; padding: 6px 0; margin-bottom: 6px; }
-.route-city { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.route-indicator { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 10px; }
+.route-city { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+/* Sits on the field row rather than floating above it, now that there is no
+   rule beneath it to hang from. */
 .route-arrow {
-  flex-shrink: 0; font-size: 12px; color: var(--figma-color-text-tertiary);
-  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  flex: 0 0 auto; height: 28px;
+  display: flex; align-items: center; justify-content: center;
 }
-.route-arrow .flight-line { width: 40px; height: 1px; background: var(--figma-color-border); }
-.route-arrow .flight-icon { font-size: 11px; line-height: 1; }
+.route-arrow .flight-icon { font-size: 14px; line-height: 1; }
 
+/* A section heading outranks the field labels under it. It used to be the
+   smallest, faintest text on the card while labelling the largest group,
+   which is why the card read as one undifferentiated block. */
 .section-label {
-  font-size: 8px; font-weight: 700; color: var(--figma-color-text-tertiary);
-  text-transform: uppercase; letter-spacing: 0.8px; font-family: var(--font-family);
-  margin: 4px 0 6px; padding-top: 4px;
+  font-size: 11px; font-weight: 600; color: var(--figma-color-text);
+  font-family: var(--font-family); margin: 0 0 6px;
+}
+.section-label .auto-tag {
+  font-size: 9px; font-weight: 500; color: var(--figma-color-text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.4px; margin-left: 5px;
+}
+
+/* Departure, duration and arrival are three groups, not nine loose fields.
+   Stacked chronologically when the card is narrow; departure and arrival
+   side by side once there is room, which halves the height of the card. */
+.timing {
+  display: grid;
+  gap: 14px 16px;
+  grid-template-areas: "dep" "dur" "arr" "info";
+  margin-top: 14px; padding-top: 14px;
   border-top: 1px solid var(--figma-color-border);
 }
+.timing .f-row { margin-bottom: 0; }
+@container (min-width: 440px) {
+  .timing {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "dep arr" "dur info";
+    align-items: start;
+  }
+}
 
+/* Two numbers and their units, rather than two more shouted labels. */
+.dur-row { display: flex; gap: 14px; align-items: center; }
+.dur-unit { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.dur-unit .f-input { width: 58px; text-align: right; }
+.dur-unit .unit {
+  flex: 0 0 auto; font-size: 10px; color: var(--figma-color-text-tertiary);
+  font-family: var(--font-family);
+}
+
+/* Says only what the two fields above it cannot: which day it lands on and
+   how far the clock moves. Repeating the date and time was noise. */
 .arrival-info {
-  font-size: 10px; color: var(--figma-color-text-secondary);
-  font-family: var(--mono); padding: 2px 0 0;
+  grid-area: info; align-self: end;
+  font-size: 10.5px; color: var(--figma-color-text-secondary);
+  font-family: var(--font-family); line-height: 1.4;
 }
 
 /* Bottom-aligned with the fields beside it and the same height, rather
@@ -738,12 +778,16 @@ input[type="time"].f-input::-webkit-date-and-time-value {
    wrapper padding leaves a white gutter inside the border. */
 .color-swatch {
   flex: 0 0 30px; width: 30px; height: 28px;
-  align-self: flex-end;
   padding: 0; cursor: pointer;
   border: 1px solid var(--figma-color-border);
   border-radius: 6px;
   background: var(--figma-color-bg);
 }
+/* "06:30" needs far less room than "04.09.2026", and on iOS the same field
+   reads "4 Sep 2026" and needs more still. Splitting the row evenly hid the
+   year behind the calendar button once the rail got narrow. */
+.f-row > .time-col { flex: 0 0 84px; }
+.f-row > .swatch-field { flex: 0 0 auto; }
 .color-swatch::-webkit-color-swatch-wrapper { padding: 3px; }
 .color-swatch::-webkit-color-swatch { border: none; border-radius: 3px; }
 .color-swatch::-moz-color-swatch { border: none; border-radius: 3px; }
@@ -875,6 +919,19 @@ input[type="time"].f-input::-webkit-date-and-time-value {
     background: transparent; color: var(--accent); cursor: pointer;
   }
   .se-open:active { background: var(--accent-soft); }
+
+  /* The sheet is as wide as the phone or the tablet, but a form is not
+     improved by stretching a date field to 370px to hold "04.09.2026".
+     Cap the column and centre it; the fields go back to a readable size
+     and the whole panel stops sprawling. The head and footer follow the
+     same column so nothing is left hanging at the far edge. */
+  #plugin-root {
+    max-width: 660px;
+    margin-inline: auto;
+  }
+  .rail-head, .plugin-footer {
+    padding-inline: max(16px, calc((100% - 660px) / 2));
+  }
 
   /* Collapsed, the sheet shows the dates and nothing below them. */
   .rail:not([data-open="true"]) .rail-scroll { overflow: hidden; }
@@ -1543,18 +1600,32 @@ function absMinutes(dateStr, timeStr, utc) {
          parseInt(p[0], 10) * 60 + parseInt(p[1], 10) - utc * 60;
 }
 
+/* The arrival date and time are already sitting in the two fields above, so
+   restating them was noise. What the fields cannot show is which day you land
+   on relative to setting off, and how far the clock moves on the way. */
 function describeArrival(card) {
   var info = card.querySelector('.arrival-info');
+  var dep = card.querySelector('[data-field="departureDate"]').value;
   var d = card.querySelector('[data-field="arrivalDate"]').value;
   var t = card.querySelector('[data-field="arrivalTime"]').value;
-  if (!d || !t) { info.textContent = 'Set departure + duration'; return; }
-  var p = t.split(':');
-  var h = parseInt(p[0], 10);
+  if (!d || !t) { info.textContent = 'Fill in departure and duration.'; return; }
+
+  var bits = [];
+  if (dep) {
+    var days = Math.round((Date.parse(d + 'T00:00:00Z') - Date.parse(dep + 'T00:00:00Z')) / 86400000);
+    var n = Math.abs(days);
+    bits.push(days === 0 ? 'Arrives the same day'
+            : days === 1 ? 'Arrives the next day'
+            : days > 1 ? 'Arrives ' + n + ' days later'
+            : 'Arrives ' + n + (n === 1 ? ' day' : ' days') + ' earlier');
+  }
   var tz = (parseInt(card.querySelector('[data-field="arrivalUtc"]').value, 10) || 0) -
            (parseInt(card.querySelector('[data-field="departureUtc"]').value, 10) || 0);
-  info.textContent = '→ ' + d + ' at ' +
-    (h > 12 ? h - 12 : (h === 0 ? 12 : h)) + ':' + p[1] + ' ' + (h >= 12 ? 'PM' : 'AM') +
-    (tz !== 0 ? ' (' + (tz > 0 ? '+' : '') + tz + 'h tz)' : '');
+  if (tz !== 0) {
+    bits.push(Math.abs(tz) + (Math.abs(tz) === 1 ? ' hour ' : ' hours ') +
+              (tz > 0 ? 'ahead' : 'behind'));
+  }
+  info.textContent = bits.join(', ') + '.';
 }
 
 /* The inverse of computeArrival: set the arrival yourself and the duration
@@ -1604,7 +1675,7 @@ function computeArrival(card) {
     info.style.color = '';
     describeArrival(card);
   } else {
-    info.textContent = 'Set departure + duration';
+    info.textContent = 'Fill in departure and duration.';
   }
   updateHeaderMeta(card);
 }
@@ -1676,7 +1747,7 @@ function createLegCard(skipCompute) {
     '<div class="route-indicator">' +
       '<div class="route-city"><div class="f-label">From</div>' +
         '<input class="f-input" data-field="departureCity" placeholder="City"></div>' +
-      '<div class="route-arrow"><span class="flight-icon">✈️</span><div class="flight-line"></div></div>' +
+      '<div class="route-arrow"><span class="flight-icon">✈️</span></div>' +
       '<div class="route-city"><div class="f-label">To</div>' +
         '<input class="f-input" data-field="arrivalCity" placeholder="City"></div>' +
     '</div>' +
@@ -1689,25 +1760,39 @@ function createLegCard(skipCompute) {
         '</select></div>' +
       '<div style="flex:1" class="ref-field"><div class="f-label ref-label">Flight no.</div>' +
         '<input class="f-input" data-field="flightNumber" placeholder="W67805"></div>' +
-      '<input type="color" class="color-swatch" data-field="color" value="' + color + '" aria-label="Leg color">' +
+      '<div class="swatch-field"><div class="f-label">Colour</div>' +
+        '<input type="color" class="color-swatch" data-field="color" value="' + color + '" aria-label="Leg colour"></div>' +
     '</div>' +
-    '<div class="section-label">Departure</div>' +
-    '<div class="f-row">' +
-      '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="departureDate" value="' + tripStart + '"></div>' +
-      '<div><div class="f-label">Time</div><input type="time" class="f-input" data-field="departureTime" value="06:30"></div>' +
-      '<div style="flex:0 0 76px"><div class="f-label">Zone</div>' + utcSelectHtml('departureUtc', 4) + '</div>' +
+    '<div class="timing">' +
+      '<div style="grid-area:dep">' +
+        '<div class="section-label">Departure</div>' +
+        '<div class="f-row">' +
+          '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="departureDate" value="' + tripStart + '"></div>' +
+          '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="departureTime" value="06:30"></div>' +
+          '<div style="flex:0 0 76px"><div class="f-label">Zone</div>' + utcSelectHtml('departureUtc', 4) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="grid-area:dur">' +
+        '<div class="section-label">Duration</div>' +
+        '<div class="dur-row">' +
+          '<div class="dur-unit">' +
+            '<input type="number" class="f-input" data-field="durationHours" value="4" min="0" max="48" aria-label="Duration in hours">' +
+            '<span class="unit">h</span></div>' +
+          '<div class="dur-unit">' +
+            '<input type="number" class="f-input" data-field="durationMinutes" value="50" min="0" max="59" aria-label="Duration in minutes">' +
+            '<span class="unit">min</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="grid-area:arr">' +
+        '<div class="section-label">Arrival<span class="auto-tag">auto</span></div>' +
+        '<div class="f-row">' +
+          '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="arrivalDate"></div>' +
+          '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="arrivalTime"></div>' +
+          '<div style="flex:0 0 76px"><div class="f-label">Zone</div>' + utcSelectHtml('arrivalUtc', 2) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="arrival-info">Fill in departure and duration.</div>' +
     '</div>' +
-    '<div class="f-row">' +
-      '<div><div class="f-label">Hours</div><input type="number" class="f-input" data-field="durationHours" value="4" min="0" max="48"></div>' +
-      '<div><div class="f-label">Minutes</div><input type="number" class="f-input" data-field="durationMinutes" value="50" min="0" max="59"></div>' +
-    '</div>' +
-    '<div class="section-label">Arrival (auto)</div>' +
-    '<div class="f-row">' +
-      '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="arrivalDate"></div>' +
-      '<div><div class="f-label">Time</div><input type="time" class="f-input" data-field="arrivalTime"></div>' +
-      '<div style="flex:0 0 76px"><div class="f-label">Zone</div>' + utcSelectHtml('arrivalUtc', 2) + '</div>' +
-    '</div>' +
-    '<div class="arrival-info">Set departure + duration</div>' +
     '</div></div>';
 
   card.querySelector('.card-header').addEventListener('click', function (e) {
@@ -1789,11 +1874,11 @@ function createHotelCard() {
       '<input class="f-input" data-field="name" placeholder="Novotel Hamburg"></div></div>' +
     '<div class="f-row">' +
       '<div><div class="f-label">Check-in</div><input type="date" class="f-input" data-field="checkInDate" value="' + tripStart + '"></div>' +
-      '<div><div class="f-label">Time</div><input type="time" class="f-input" data-field="checkInTime" value="14:00"></div>' +
+      '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="checkInTime" value="14:00"></div>' +
     '</div>' +
     '<div class="f-row">' +
       '<div><div class="f-label">Check-out</div><input type="date" class="f-input" data-field="checkOutDate"></div>' +
-      '<div><div class="f-label">Time</div><input type="time" class="f-input" data-field="checkOutTime" value="11:00"></div>' +
+      '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="checkOutTime" value="11:00"></div>' +
     '</div>' +
     '</div></div>';
 
