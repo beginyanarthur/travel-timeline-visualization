@@ -231,7 +231,13 @@ h1 {
    expand rather than the real thing. It behaves the same everywhere. */
 .fab {
   position: absolute;
-  right: 16px; bottom: 16px; z-index: 25;
+  /* Halfway down the edge rather than tucked into the bottom corner, where
+     it sat against the fade above the sheet and was easy to miss. It is
+     positioned against the stage, which includes the toolbar, so half the
+     toolbar is added back to centre it on the canvas itself rather than
+     43px above it. */
+  right: 16px; top: calc(50% + var(--toolbar-h, 0px) / 2);
+  transform: translateY(-50%); z-index: 25;
   width: 44px; height: 44px; padding: 0;
   border: 1px solid var(--rule-firm);
   border-radius: 50%;
@@ -964,11 +970,6 @@ input[type="time"].f-input::-webkit-date-and-time-value {
 
   .rail-head { min-height: 42px; }
   .rail-scroll { overflow-y: auto; overscroll-behavior: contain; }
-
-  /* The stage now ends where the sheet begins, so this is measured from a
-     bottom edge that is already clear of it. */
-  .fab { bottom: 16px; }
-  body.canvas-full .fab { bottom: 16px; }
 
   .se-open {
     display: inline-flex; align-items: center; justify-content: center;
@@ -2757,8 +2758,14 @@ $('fb-send').addEventListener('click', function () {
    The masthead wraps to two lines on a narrow phone and one on a wide one,
    so its height is not something the stylesheet can know. */
 var masthead = document.querySelector('.masthead');
+var toolbarEl = document.querySelector('.toolbar');
 function setMastHeight() {
-  document.documentElement.style.setProperty('--mast-h', masthead.offsetHeight + 'px');
+  var root = document.documentElement.style;
+  root.setProperty('--mast-h', masthead.offsetHeight + 'px');
+  /* The toolbar wraps to two rows on a small phone, so this is measured
+     rather than assumed. The expand button uses it to sit on the middle of
+     the canvas instead of the middle of the stage. */
+  root.setProperty('--toolbar-h', toolbarEl.offsetHeight + 'px');
 }
 setMastHeight();
 window.addEventListener('resize', setMastHeight);
