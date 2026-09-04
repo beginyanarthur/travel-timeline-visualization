@@ -1402,6 +1402,48 @@ function utcSelectHtml(fieldName, defaultVal) {
   return html + '</select>';
 }
 
+/* Minutes since the epoch in UTC, so two local times in different zones
+   can be subtracted. */
+function absMinutes(dateStr, timeStr, utc) {
+  var p = timeStr.split(':');
+  return new Date(dateStr + 'T00:00:00Z').getTime() / 60000 +
+         parseInt(p[0], 10) * 60 + parseInt(p[1], 10) - utc * 60;
+}
+
+function describeArrival(card) {
+  var info = card.querySelector('.arrival-info');
+  var d = card.querySelector('[data-field="arrivalDate"]').value;
+  var t = card.querySelector('[data-field="arrivalTime"]').value;
+  if (!d || !t) { info.textContent = 'Set departure + duration'; return; }
+  var p = t.split(':');
+  var h = parseInt(p[0], 10);
+  var tz = (parseInt(card.querySelector('[data-field="arrivalUtc"]').value, 10) || 0) -
+           (parseInt(card.querySelector('[data-field="departureUtc"]').value, 10) || 0);
+  info.textContent = '→ ' + d + ' at ' +
+    (h > 12 ? h - 12 : (h === 0 ? 12 : h)) + ':' + p[1] + ' ' + (h >= 12 ? 'PM' : 'AM') +
+    (tz !== 0 ? ' (' + (tz > 0 ? '+' : '') + tz + 'h tz)' : '');
+}
+
+/* The inverse of computeArrival: set the arrival yourself and the duration
+   follows, so the two never disagree. */
+function computeDuration(card) {
+  var g = function (f) { return card.querySelector('[data-field="' + f + '"]').value; };
+  if (!g('departureDate') || !g('departureTime') || !g('arrivalDate') || !g('arrivalTime')) return;
+  var mins = absMinutes(g('arrivalDate'), g('arrivalTime'), parseInt(g('arrivalUtc'), 10) || 0) -
+             absMinutes(g('departureDate'), g('departureTime'), parseInt(g('departureUtc'), 10) || 0);
+  var info = card.querySelector('.arrival-info');
+  if (mins < 0) {
+    info.textContent = 'Arrival is before departure';
+    info.style.color = 'var(--danger)';
+    return;
+  }
+  info.style.color = '';
+  card.querySelector('[data-field="durationHours"]').value = Math.floor(mins / 60);
+  card.querySelector('[data-field="durationMinutes"]').value = mins % 60;
+  describeArrival(card);
+  updateHeaderMeta(card);
+}
+
 function computeArrival(card) {
   var departDate = card.querySelector('[data-field="departureDate"]').value;
   var departTime = card.querySelector('[data-field="departureTime"]').value;
@@ -1426,12 +1468,8 @@ function computeArrival(card) {
     card.querySelector('[data-field="arrivalTime"]').value =
       String(arrH).padStart(2, '0') + ':' + String(arrMi).padStart(2, '0');
 
-    var ampm = arrH >= 12 ? 'PM' : 'AM';
-    var h12 = arrH > 12 ? arrH - 12 : (arrH === 0 ? 12 : arrH);
-    var tzDiff = arrUtc - depUtc;
-    info.textContent = '→ ' + dObj.toISOString().slice(0, 10) + ' at ' + h12 + ':' +
-      String(arrMi).padStart(2, '0') + ' ' + ampm +
-      (tzDiff !== 0 ? ' (' + (tzDiff > 0 ? '+' : '') + tzDiff + 'h tz)' : '');
+    info.style.color = '';
+    describeArrival(card);
   } else {
     info.textContent = 'Set departure + duration';
   }
@@ -1556,6 +1594,12 @@ function createLegCard(skipCompute) {
         computeArrival(card);
       });
     });
+
+  ['arrivalDate', 'arrivalTime'].forEach(function (f) {
+    card.querySelector('[data-field="' + f + '"]').addEventListener('change', function () {
+      computeDuration(card);
+    });
+  });
 
   ['departureCity','arrivalCity','departureTime'].forEach(function (f) {
     card.querySelector('[data-field="' + f + '"]').addEventListener('input', function () {

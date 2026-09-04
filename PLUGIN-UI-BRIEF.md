@@ -103,3 +103,13 @@ equivalent Figma surface token instead, one step off the panel background.
 **Export is disabled while the panel is empty.** Exporting nothing produces a
 file with an empty `legs` array, which imports as nothing. Import stays
 enabled, since importing is how data gets in.
+
+**Duration and arrival stay in agreement, both ways.** Editing the departure,
+the duration or either zone recomputes the arrival, as before. Editing the
+arrival date or time now recomputes the duration instead. An arrival earlier
+than its departure says so rather than writing a negative duration.
+
+**The reference field follows the mode.** Flights have flight numbers, trains
+have train numbers, buses have routes, ferries have names. Car, bike and walk
+have none, so the field is hidden and its value cleared, which stops a walk
+carrying a flight number into the exported JSON.

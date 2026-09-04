@@ -345,6 +345,31 @@
       return html
     }
 
+    // Minutes since the epoch in UTC, so two local times in different
+    // zones can be subtracted.
+    function absMinutes(dateStr, timeStr, utc) {
+      var p = timeStr.split(':')
+      return new Date(dateStr + 'T00:00:00Z').getTime() / 60000 +
+             parseInt(p[0], 10) * 60 + parseInt(p[1], 10) - utc * 60
+    }
+
+    // The inverse of computeArrival: set the arrival yourself and the
+    // duration follows, so the two never disagree.
+    function computeDuration(card) {
+      var g = function(f) { return card.querySelector('[data-field="' + f + '"]').value }
+      if (!g('departureDate') || !g('departureTime') || !g('arrivalDate') || !g('arrivalTime')) return
+      var mins = absMinutes(g('arrivalDate'), g('arrivalTime'), parseInt(g('arrivalUtc'), 10) || 0) -
+                 absMinutes(g('departureDate'), g('departureTime'), parseInt(g('departureUtc'), 10) || 0)
+      var info = card.querySelector('.arrival-info')
+      if (mins < 0) {
+        info.textContent = 'Arrival is before departure'
+        return
+      }
+      card.querySelector('[data-field="durationHours"]').value = Math.floor(mins / 60)
+      card.querySelector('[data-field="durationMinutes"]').value = mins % 60
+      updateHeaderMeta(card)
+    }
+
     function computeArrival(card) {
       var departDate = card.querySelector('[data-field="departureDate"]').value
       var departTime = card.querySelector('[data-field="departureTime"]').value
@@ -520,6 +545,13 @@
       autoFields.forEach(function(f) {
         card.querySelector('[data-field="' + f + '"]').addEventListener('change', function() {
           computeArrival(card)
+        })
+      })
+
+      // Editing the arrival drives the duration
+      ;['arrivalDate', 'arrivalTime'].forEach(function(f) {
+        card.querySelector('[data-field="' + f + '"]').addEventListener('change', function() {
+          computeDuration(card)
         })
       })
 
