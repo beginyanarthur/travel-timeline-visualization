@@ -168,10 +168,9 @@ h1 {
 }
 .rail-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 12px 16px 10px;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--rule);
 }
 .rail-title {
@@ -475,7 +474,6 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 .tab-panel.active { display: block; }
 
 /* Several trips live in the panel; one is drawn at a time. */
-.trip-bar { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
 .trip-chips {
   display: flex; gap: 5px; flex: 1; min-width: 0;
   overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin;
@@ -509,11 +507,11 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 }
 .trip-chip .x:hover { opacity: 1; }
 .trip-new {
-  flex: 0 0 auto; padding: 4px 11px;
+  flex: 0 0 auto; width: 26px; height: 26px; padding: 0;
   border: 1px dashed var(--rule-firm); border-radius: 999px;
   background: none; color: var(--figma-color-text-secondary);
-  font-family: var(--font-family); font-size: 11px; font-weight: 500;
-  line-height: 1.4; white-space: nowrap; cursor: pointer;
+  font-size: 15px; line-height: 1; cursor: pointer;
+  display: grid; place-items: center;
 }
 .trip-new:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -723,14 +721,12 @@ select.f-input,
   <aside class="rail">
     <div class="rail-head">
       <span class="rail-title">Trips</span>
+      <div class="trip-chips" id="trip-chips" role="tablist" aria-label="Saved trips"></div>
+      <button class="trip-new" id="trip-new" type="button"
+              title="Start another trip" aria-label="Start another trip">+</button>
     </div>
     <div class="rail-scroll">
       <div id="plugin-root">
-        <div class="trip-bar">
-          <div class="trip-chips" id="trip-chips" role="tablist" aria-label="Saved trips"></div>
-          <button class="trip-new" id="trip-new" type="button" title="Start another trip">+ New trip</button>
-        </div>
-
         <div class="trip-dates" style="margin-bottom:8px;">
           <div class="date-field">
             <div class="date-label">Start</div>
