@@ -204,12 +204,42 @@ h1 {
 
 /* ── Stage ──────────────────────────────────────────────────── */
 .stage {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
   background: var(--surface-2);
 }
+
+/* iOS Safari has no Fullscreen API for elements, so this is an in-page
+   expand rather than the real thing. It behaves the same everywhere. */
+.fab {
+  position: absolute;
+  right: 16px; bottom: 16px; z-index: 25;
+  width: 44px; height: 44px; padding: 0;
+  border: 1px solid var(--rule-firm);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink-2);
+  display: grid; place-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(10, 14, 20, 0.18);
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+.fab:hover { color: var(--accent); border-color: var(--accent); }
+
+body.canvas-full { overflow: hidden; }
+body.canvas-full .masthead,
+body.canvas-full .reading,
+body.canvas-full .rail { display: none; }
+body.canvas-full .workbench {
+  position: fixed; inset: 0; z-index: 40;
+  grid-template-columns: 1fr;
+  height: 100svh; min-height: 0;
+  border-bottom: 0;
+}
+body.canvas-full .stage { height: 100svh; }
 .toolbar {
   display: flex;
   align-items: center;
@@ -779,6 +809,10 @@ select.f-input,
   .rail-head { min-height: 42px; }
   .rail-scroll { overflow-y: auto; overscroll-behavior: contain; }
 
+  /* The sheet covers the bottom of the canvas, so the button sits above it. */
+  .fab { bottom: calc(var(--sheet-h) + 16px); }
+  body.canvas-full .fab { bottom: 16px; }
+
   /* Collapsed, the sheet shows the dates and nothing below them. */
   .rail:not([data-open="true"]) .rail-scroll { overflow: hidden; }
   .rail:not([data-open="true"]) .plugin-footer { display: none; }
@@ -881,6 +915,8 @@ select.f-input,
       <div class="canvas-pad" id="canvas-pad" hidden>
         <div class="artboard" id="artboard"></div>
       </div>
+      <button class="fab" id="fab-full" type="button" hidden
+              title="Fill the screen" aria-label="Fill the screen" aria-pressed="false"></button>
       <div class="stage-empty" id="stage-empty">
         <svg class="se-art" viewBox="0 0 345 343" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <path d="M120 24C120 130.644 120 62.3556 120 169" stroke="var(--il-line)" stroke-width="1.26202" stroke-linecap="round"/>
@@ -1950,9 +1986,40 @@ function promptReady() {
     hotels + ' hotel' + (hotels === 1 ? '' : 's') + ' loaded. Press Generate to draw the trip.');
 }
 
+var ICON_EXPAND = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+  'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M4 9V4h5M20 15v5h-5M20 9V4h-5M4 15v5h5"/></svg>';
+var ICON_COLLAPSE = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+  'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M9 4v5H4M15 20v-5h5M15 4v5h5M9 20v-5H4"/></svg>';
+
+function fullscreen(on) {
+  document.body.classList.toggle('canvas-full', on);
+  var b = $('fab-full');
+  b.innerHTML = on ? ICON_COLLAPSE : ICON_EXPAND;
+  b.title = on ? 'Leave full screen' : 'Fill the screen';
+  b.setAttribute('aria-label', b.title);
+  b.setAttribute('aria-pressed', String(on));
+  /* The canvas just changed size, so a fitted view has to refit. */
+  if (fitMode) requestAnimationFrame(fitWidth);
+}
+
+$('fab-full').addEventListener('click', function () {
+  var on = !document.body.classList.contains('canvas-full');
+  fullscreen(on);
+  if (on) track('fullscreen', 'Filled the screen');
+});
+
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && document.body.classList.contains('canvas-full')) fullscreen(false);
+});
+
 function stageEmpty(on, title, body) {
   $('stage-empty').hidden = !on;
   $('canvas-pad').hidden = on;
+  /* Nothing to fill the screen with until something is drawn. */
+  $('fab-full').hidden = on;
+  if (on) fullscreen(false);
   if (!on) return;
   artboard.innerHTML = '';
   $('stage-dims').textContent = '';
