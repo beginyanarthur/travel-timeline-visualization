@@ -934,7 +934,13 @@ input[type="time"].f-input::-webkit-date-and-time-value {
      also stop the zoom, by taking pinch zoom away from everyone, and that is
      not a trade worth making. */
   .f-input, .label-input, .free, #paste-text { font-size: 16px; }
-  .f-input { height: 40px; padding: 6px 10px; }
+  .f-input { height: 40px; padding: 6px 8px; }
+  /* Chrome's picker button is generous with its own padding, and on a phone
+     row it was taking the space the year needed. */
+  input[type="date"].f-input::-webkit-calendar-picker-indicator,
+  input[type="time"].f-input::-webkit-calendar-picker-indicator {
+    padding: 2px; margin-left: 0;
+  }
   .label-input { height: 32px; }
 
   /* The proportional face is a good deal narrower than the mono one at this
@@ -955,10 +961,13 @@ input[type="time"].f-input::-webkit-date-and-time-value {
   /* Three 16px fields will not always fit across a narrow phone, so the row
      is allowed to wrap rather than squeezing the date until the year hides
      behind the calendar button. */
-  .f-row { flex-wrap: wrap; }
-  .f-row > * { flex: 1 1 128px; }
-  .f-row > .time-col { flex: 1 1 92px; }
-  .f-row > .zone-col { flex: 1 1 92px; max-width: 160px; }
+  /* Three 16px fields barely fit across a phone, so the date, which holds
+     the longest value, gets whatever the other two do not need, and the row
+     may wrap rather than squeezing it until the year disappears. */
+  .f-row { flex-wrap: wrap; gap: 6px; }
+  .f-row > * { flex: 1 1 120px; }
+  .f-row > .time-col { flex: 0 0 88px; }
+  .f-row > .zone-col { flex: 0 0 96px; }
   .f-row > .swatch-field { flex: 0 0 auto; }
 
   /* The sheet is as wide as the phone or the tablet, but a form is not
