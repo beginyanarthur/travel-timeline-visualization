@@ -184,6 +184,17 @@ h1 {
   text-transform: uppercase;
   color: var(--ink-2);
 }
+.rail-action {
+  appearance: none; border: 0; background: none;
+  font-family: var(--body); font-size: 11.5px; font-weight: 500;
+  color: var(--ink-3); cursor: pointer; padding: 2px 4px;
+}
+.rail-action:hover { color: var(--danger); }
+.toast-action {
+  appearance: none; border: 0; background: none;
+  font-family: var(--body); font-size: 13px; font-weight: 600;
+  color: #7FD4E4; cursor: pointer; padding: 0; margin-left: 12px;
+}
 .rail-scroll { flex: 1; overflow-y: auto; min-height: 0; padding: 12px 6px 4px; }
 
 /* ── Stage ──────────────────────────────────────────────────── */
@@ -666,6 +677,7 @@ select.f-input,
   <aside class="rail">
     <div class="rail-head">
       <span class="rail-title">Trip</span>
+      <button class="rail-action" id="clear-trip" type="button" hidden>Clear</button>
     </div>
     <div class="rail-scroll">
       <div id="plugin-root">
@@ -1383,6 +1395,9 @@ function updateBadges() {
 
 function updateStatus() {
   var legCards = document.querySelectorAll('#legs-list .entry-card');
+  var anyCards = legCards.length ||
+    document.querySelectorAll('#hotels-list .entry-card').length;
+  $('clear-trip').hidden = !anyCards;
   var btn = $('generate'), status = $('status');
   status.classList.remove('warn');
   if (!$('tripStart').value || !$('tripEnd').value) {
@@ -1433,6 +1448,32 @@ function collectData() {
   });
   return { startDate: $('tripStart').value, endDate: $('tripEnd').value, legs: legs, hotels: hotels };
 }
+
+var LEGS_EMPTY = '<div class="empty-state" id="legs-empty"><div class="empty-icon">\u2708\ufe0f</div>Add your first flight or transport</div>';
+var HOTELS_EMPTY = '<div class="empty-state" id="hotels-empty"><div class="empty-icon">\ud83c\udfe8</div>Add hotel stays</div>';
+
+/* Imported a file and want to start over by hand. Without this the only
+   ways out are deleting every card one at a time, or reloading and
+   losing the lot. Clearing is undoable for a few seconds. */
+function clearTrip() {
+  var before = collectData();
+  var d = new Date();
+  $('tripStart').value = d.toISOString().slice(0, 10);
+  $('tripEnd').value = new Date(d.getTime() + 7 * 86400000).toISOString().slice(0, 10);
+  $('legs-list').innerHTML = LEGS_EMPTY;
+  $('hotels-list').innerHTML = HOTELS_EMPTY;
+  legCounter = 0;
+  hotelCounter = 0;
+  updateBadges();
+  updateStatus();
+  stageEmpty(true);
+  toast('Trip cleared.', 'Undo', function () {
+    loadTripData(before);
+    promptReady();
+  });
+}
+
+$('clear-trip').addEventListener('click', clearTrip);
 
 $('add-leg').addEventListener('click', function () { createLegCard(); scheduleRender(); });
 $('add-hotel').addEventListener('click', function () { createHotelCard(); scheduleRender(); });
@@ -1494,6 +1535,15 @@ function loadTripData(data) {
    STAGE: render, zoom, pan
    ═══════════════════════════════════════════════════════════════ */
 var artboard = $('artboard'), wrap = $('canvas-wrap');
+
+function promptReady() {
+  var legs = document.querySelectorAll('#legs-list .entry-card').length;
+  var hotels = document.querySelectorAll('#hotels-list .entry-card').length;
+  if (!legs && !hotels) { stageEmpty(true); return; }
+  stageEmpty(true, 'Ready to draw',
+    legs + ' flight' + (legs === 1 ? '' : 's') + ' and ' +
+    hotels + ' hotel' + (hotels === 1 ? '' : 's') + ' loaded. Press Generate to draw the trip.');
+}
 
 function stageEmpty(on, title, body) {
   $('stage-empty').hidden = !on;
@@ -1635,12 +1685,24 @@ window.addEventListener('resize', function () { if (fitMode) fitWidth(); });
 /* ═══════════════════════════════════════════════════════════════
    JSON in and out
    ═══════════════════════════════════════════════════════════════ */
-function toast(msg) {
+function toast(msg, actionLabel, onAction) {
   var t = $('toast');
   t.textContent = msg;
+  if (actionLabel) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'toast-action';
+    b.textContent = actionLabel;
+    b.addEventListener('click', function () {
+      t.classList.remove('show');
+      onAction();
+    });
+    t.appendChild(b);
+  }
   t.classList.add('show');
   clearTimeout(t._timer);
-  t._timer = setTimeout(function () { t.classList.remove('show'); }, 2200);
+  /* An undo needs longer than an acknowledgement. */
+  t._timer = setTimeout(function () { t.classList.remove('show'); }, actionLabel ? 7000 : 2200);
 }
 
 $('copy-btn').addEventListener('click', function () {
@@ -1689,11 +1751,7 @@ $('import-file').addEventListener('change', function (e) {
   reader.onload = function (ev) {
     try {
       loadTripData(JSON.parse(ev.target.result));
-      var legs = document.querySelectorAll('#legs-list .entry-card').length;
-      var hotels = document.querySelectorAll('#hotels-list .entry-card').length;
-      stageEmpty(true, 'Ready to draw',
-        legs + ' flight' + (legs === 1 ? '' : 's') + ' and ' +
-        hotels + ' hotel' + (hotels === 1 ? '' : 's') + ' loaded. Press Generate to draw the trip.');
+      promptReady();
       toast('Loaded ' + file.name);
     } catch (err) { toast('Could not read that file: ' + err.message); }
   };
