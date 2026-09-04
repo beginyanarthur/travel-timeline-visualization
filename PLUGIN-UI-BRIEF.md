@@ -82,3 +82,19 @@ rule, the transit shading and both legends are untouched.
 - Bike and walk legs are typically minutes, not hours. On the generated
   timeline, at 24px per hour, a 20 minute walk is 8px wide. That is honest
   but nearly invisible, and may deserve a minimum width later.
+
+## 6. Later changes, web page only so far
+
+**Reorderable legs and hotels.** Each card has a six dot grip at the left of
+its header. Dragging reorders the list, which reorders the trip, since a leg's
+position is data. Cards renumber after a drag and after a delete; before this,
+deleting Flight 1 left Flight 2 and Flight 3 with no Flight 1.
+
+The grip does not toggle the card open, and an expanded card collapses when
+you start dragging it, because a 400px tall card is unpleasant to drag.
+
+**Card surface.** The web page uses `#F5FBFE`, a very pale blue, for the leg
+and hotel cards, with the input fills staying white so a field still reads as
+a field. Do not hardcode that value in the plugin: the panel follows Figma's
+own theme, and a fixed light blue would be wrong in dark mode. Use the
+equivalent Figma surface token instead, one step off the panel background.

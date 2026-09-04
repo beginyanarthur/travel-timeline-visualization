@@ -24,6 +24,8 @@
   --danger:     #B3372C;
   --danger-soft:#FBEAE8;
   --canvas:     #FFFFFF;
+  --card:       #F5FBFE;
+  --card-hover: #E7F2F9;
 
   --display: 'IBM Plex Sans Condensed', 'Helvetica Neue', Arial, sans-serif;
   --body:    'IBM Plex Sans', system-ui, -apple-system, sans-serif;
@@ -64,6 +66,8 @@
     --accent-soft:#16333B;
     --danger:     #E88379;
     --danger-soft:#3A1F1C;
+    --card:       #19212A;
+    --card-hover: #212B35;
   }
 }
 :root[data-theme="dark"] {
@@ -81,6 +85,8 @@
   --accent-soft:#16333B;
   --danger:     #E88379;
   --danger-soft:#3A1F1C;
+  --card:       #19212A;
+  --card-hover: #212B35;
 }
 
 * { box-sizing: border-box; }
@@ -525,7 +531,7 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
 }
 
 .entry-card {
-  background: var(--figma-color-bg);
+  background: var(--card);
   border-radius: 8px;
   margin-bottom: 6px; position: relative;
   border: 1px solid var(--figma-color-border);
@@ -538,7 +544,19 @@ dialog.paste::backdrop { background: rgba(10, 14, 20, 0.45); }
   padding: 8px 10px; cursor: pointer; user-select: none;
   font-family: var(--font-family);
 }
-.card-header:hover { background: var(--figma-color-bg-hover); }
+.card-header:hover { background: var(--card-hover); }
+.drag-handle {
+  flex: 0 0 auto; cursor: grab; touch-action: none;
+  color: var(--figma-color-text-tertiary);
+  transition: color 0.12s ease;
+}
+.card-header:hover .drag-handle { color: var(--figma-color-text-secondary); }
+.entry-card.dragging {
+  opacity: 0.92;
+  box-shadow: 0 8px 22px rgba(10, 14, 20, 0.18);
+  border-color: var(--figma-color-bg-brand);
+}
+.entry-card.dragging .drag-handle { cursor: grabbing; }
 .leg-dot {
   width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
@@ -1465,6 +1483,7 @@ function createLegCard(skipCompute) {
 
   card.innerHTML =
     '<div class="card-header">' +
+      '<svg class="drag-handle" width="10" height="14" viewBox="0 0 10 14" aria-hidden="true"><g fill="currentColor"><circle cx="2" cy="3" r="1.2"/><circle cx="8" cy="3" r="1.2"/><circle cx="2" cy="7" r="1.2"/><circle cx="8" cy="7" r="1.2"/><circle cx="2" cy="11" r="1.2"/><circle cx="8" cy="11" r="1.2"/></g></svg>' +
       '<span class="leg-dot" style="background:' + color + '"></span>' +
       '<span class="header-label">Flight ' + (idx + 1) + '</span>' +
       '<span class="header-meta"></span>' +
@@ -1510,11 +1529,11 @@ function createLegCard(skipCompute) {
     '</div></div>';
 
   card.querySelector('.card-header').addEventListener('click', function (e) {
-    if (e.target.closest('.remove-btn')) return;
+    if (e.target.closest('.remove-btn') || e.target.closest('.drag-handle')) return;
     card.classList.toggle('expanded');
   });
   card.querySelector('.remove-btn').addEventListener('click', function () {
-    card.remove(); updateBadges(); updateStatus();
+    card.remove(); renumberLegs(); updateBadges(); updateStatus();
     if (!document.querySelectorAll('#legs-list .entry-card').length) {
       var el = $('legs-empty'); if (el) el.style.display = '';
     }
@@ -1569,6 +1588,7 @@ function createHotelCard() {
   card.className = 'entry-card expanded';
   card.innerHTML =
     '<div class="card-header">' +
+      '<svg class="drag-handle" width="10" height="14" viewBox="0 0 10 14" aria-hidden="true"><g fill="currentColor"><circle cx="2" cy="3" r="1.2"/><circle cx="8" cy="3" r="1.2"/><circle cx="2" cy="7" r="1.2"/><circle cx="8" cy="7" r="1.2"/><circle cx="2" cy="11" r="1.2"/><circle cx="8" cy="11" r="1.2"/></g></svg>' +
       '<span style="font-size:12px">🏨</span>' +
       '<span class="header-label">Hotel ' + (idx + 1) + '</span>' +
       '<span class="header-meta"></span>' +
@@ -1589,11 +1609,11 @@ function createHotelCard() {
     '</div></div>';
 
   card.querySelector('.card-header').addEventListener('click', function (e) {
-    if (e.target.closest('.remove-btn')) return;
+    if (e.target.closest('.remove-btn') || e.target.closest('.drag-handle')) return;
     card.classList.toggle('expanded');
   });
   card.querySelector('.remove-btn').addEventListener('click', function () {
-    card.remove(); updateBadges(); updateStatus();
+    card.remove(); renumberHotels(); updateBadges(); updateStatus();
     if (!document.querySelectorAll('#hotels-list .entry-card').length) {
       var el = $('hotels-empty'); if (el) el.style.display = '';
     }
@@ -1714,6 +1734,61 @@ function clearTrip() {
 }
 
 $('clear-trip').addEventListener('click', askToClear);
+
+/* Legs are a sequence, so their order is data. Dragging one reorders the
+   trip; collectData reads the DOM, so nothing else has to know. */
+function renumberLegs() {
+  document.querySelectorAll('#legs-list .entry-card').forEach(function (c, i) {
+    c.dataset.n = String(i + 1);
+    setLegLabel(c);
+  });
+}
+function renumberHotels() {
+  document.querySelectorAll('#hotels-list .entry-card').forEach(function (c, i) {
+    c.querySelector('.header-label').textContent = 'Hotel ' + (i + 1);
+  });
+}
+
+function makeSortable(list, renumber) {
+  var held = null;
+
+  list.addEventListener('pointerdown', function (e) {
+    var handle = e.target.closest('.drag-handle');
+    if (!handle) return;
+    held = handle.closest('.entry-card');
+    if (!held) return;
+    e.preventDefault();
+    /* An expanded card is too tall to drag comfortably. */
+    held.classList.remove('expanded');
+    held.classList.add('dragging');
+    try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+
+  list.addEventListener('pointermove', function (e) {
+    if (!held) return;
+    var others = [].slice.call(list.querySelectorAll('.entry-card'))
+      .filter(function (c) { return c !== held; });
+    var before = null;
+    for (var i = 0; i < others.length; i++) {
+      var r = others[i].getBoundingClientRect();
+      if (e.clientY < r.top + r.height / 2) { before = others[i]; break; }
+    }
+    if (before) { if (before !== held.nextSibling) list.insertBefore(held, before); }
+    else if (list.lastElementChild !== held) list.appendChild(held);
+  });
+
+  ['pointerup', 'pointercancel'].forEach(function (ev) {
+    list.addEventListener(ev, function () {
+      if (!held) return;
+      held.classList.remove('dragging');
+      held = null;
+      renumber();
+    });
+  });
+}
+
+makeSortable($('legs-list'), renumberLegs);
+makeSortable($('hotels-list'), renumberHotels);
 
 $('add-leg').addEventListener('click', function () { createLegCard(); });
 $('add-hotel').addEventListener('click', function () { createHotelCard(); });
