@@ -866,9 +866,13 @@ input[type="time"].f-input::-webkit-date-and-time-value {
 }
 .add-btn:hover { background: var(--accent-soft); }
 
-.io-bar { display: flex; gap: 6px; padding: 0 0 2px; }
+.io-bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 2px; }
+/* Sized by what they say. Equal thirds gave "Clear" room it does not need
+   and squeezed "Import JSON" until it broke across two lines, which left
+   the middle button taller than the two beside it. */
 .io-btn {
-  flex: 1; height: var(--btn-h-3); padding: 0 8px;
+  flex: 1 1 auto; min-width: 0; white-space: nowrap;
+  height: var(--btn-h-3); padding: 0 12px;
   border: 1px solid var(--figma-color-border);
   border-radius: 8px; background: var(--figma-color-bg-secondary);
   cursor: pointer; color: var(--figma-color-text-secondary);
@@ -878,6 +882,9 @@ input[type="time"].f-input::-webkit-date-and-time-value {
 }
 .io-btn:hover { background: var(--figma-color-bg-hover); color: var(--figma-color-text); }
 .io-btn:disabled { opacity: 0.45; cursor: default; }
+/* The odd one out: destructive, least used and short. It takes only what it
+   needs and leaves the width to the two that actually move data. */
+.io-bar > .io-btn.danger { flex: 0 0 auto; }
 .io-btn.danger:hover:not(:disabled) {
   background: var(--danger-soft); color: var(--danger); border-color: var(--danger);
 }
@@ -1110,6 +1117,13 @@ input[type="time"].f-input::-webkit-date-and-time-value {
 /* Two 16px date fields and an arrow will not fit across the smallest phones,
    and squeezing them hid the year behind the calendar button. They stack
    instead, and the collapsed sheet grows to keep showing both. */
+@media (max-width: 360px) {
+  /* Three labels and two arrows do not fit across the smallest phones at
+     13px, and Clear was dropping to a row of its own. A point smaller, still
+     on the 12px floor, keeps them on one line. */
+  .io-btn { font-size: 12px; padding: 0 8px; }
+}
+
 @media (max-width: 340px) {
   :root { --sheet-h: 214px; }
   .trip-dates { flex-wrap: wrap; row-gap: 8px; }
