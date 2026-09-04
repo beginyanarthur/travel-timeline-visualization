@@ -315,7 +315,7 @@ h1 {
   grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
   gap: clamp(20px, 4vw, 44px);
   padding: clamp(28px, 4vw, 44px) clamp(16px, 3vw, 32px);
-  max-width: 1440px;
+  max-width: 640px;
 }
 .reading h2 {
   font-family: var(--display);
@@ -802,37 +802,6 @@ select.f-input,
 </main>
 
 <section class="reading">
-  <div>
-    <h2>What you are looking at</h2>
-    <p>
-      The wide band is the whole trip laid end to end at a fixed <strong>24 pixels per
-      hour</strong>, so distance across the page is literally time. Nothing is compressed to
-      fit. An eight day trip is about 4,700 pixels wide, which is why the canvas scrolls
-      sideways rather than shrinking.
-    </p>
-    <p>
-      Dark circles are night, pale circles are day. The colored bar below them runs from an
-      arrival to the next departure, so it marks the hours you were somewhere rather than in
-      transit. The ring diagrams say the same thing one day at a time on a 24 hour clock,
-      midnight at the top, with the sun cycle marked around the outside.
-    </p>
-    <p>
-      Times are shown in each stop's own zone, but the whole timeline is positioned using the
-      first leg's offset, so a flight west genuinely gets shorter on the page.
-    </p>
-  </div>
-  <div>
-    <h2>Try changing something</h2>
-    <p>
-      Edit any field on the left and the drawing updates. Add a leg, drag a departure into the
-      middle of the night, give two cities the same color, or load one of your own trips with
-      <code>Open file</code>.
-    </p>
-    <p>
-      <strong>Download</strong> hands you a .json file in the exact shape the real plugin
-      reads, so anything you build here imports straight into Figma.
-    </p>
-  </div>
   <div>
     <h2>What would help most</h2>
     <form class="feedback" id="feedback" novalidate>

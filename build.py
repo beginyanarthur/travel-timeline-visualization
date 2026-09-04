@@ -103,13 +103,6 @@ def main():
 
     s = swap(s, COPY_HANDLER, DOWNLOAD_HANDLER, "the copy handler")
 
-    s = swap(s,
-             "<strong>Copy JSON</strong> puts the current trip on your clipboard in the exact shape the\n"
-             "      real plugin reads, so anything you build here imports straight into Figma.",
-             "<strong>Download</strong> hands you a .json file in the exact shape the real plugin\n"
-             "      reads, so anything you build here imports straight into Figma.",
-             "the export paragraph")
-
     io.open(OUT, "w", encoding="utf-8").write(s.rstrip() + "\n\n</body>\n</html>\n")
     print("wrote index.html (%d bytes)" % os.path.getsize(OUT))
 
