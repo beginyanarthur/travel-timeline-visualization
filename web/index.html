@@ -1430,7 +1430,7 @@ function createLegCard(skipCompute) {
     card.classList.toggle('expanded');
   });
   card.querySelector('.remove-btn').addEventListener('click', function () {
-    card.remove(); updateBadges(); updateStatus(); scheduleRender();
+    card.remove(); updateBadges(); updateStatus();
     if (!document.querySelectorAll('#legs-list .entry-card').length) {
       var el = $('legs-empty'); if (el) el.style.display = '';
     }
@@ -1439,23 +1439,19 @@ function createLegCard(skipCompute) {
   ['departureDate','departureTime','durationHours','durationMinutes','departureUtc','arrivalUtc']
     .forEach(function (f) {
       card.querySelector('[data-field="' + f + '"]').addEventListener('change', function () {
-        computeArrival(card); scheduleRender();
+        computeArrival(card);
       });
     });
 
   ['departureCity','arrivalCity','departureTime'].forEach(function (f) {
     card.querySelector('[data-field="' + f + '"]').addEventListener('input', function () {
-      updateHeaderMeta(card); scheduleRender();
+      updateHeaderMeta(card);
     });
   });
 
   card.querySelector('[data-field="color"]').addEventListener('input', function () {
     card.querySelector('.leg-dot').style.background = this.value;
-    scheduleRender();
   });
-  card.querySelector('[data-field="flightNumber"]').addEventListener('input', scheduleRender);
-  card.querySelector('[data-field="arrivalDate"]').addEventListener('change', scheduleRender);
-  card.querySelector('[data-field="arrivalTime"]').addEventListener('change', scheduleRender);
 
   card.querySelector('[data-field="type"]').addEventListener('change', function () {
     if (this.value === 'train') {
@@ -1464,14 +1460,14 @@ function createLegCard(skipCompute) {
     }
     var icon = card.querySelector('.flight-icon');
     if (icon) icon.textContent = this.value === 'train' ? '🚌' : '✈';
-    computeArrival(card); scheduleRender();
+    computeArrival(card);
   });
 
   card.querySelector('[data-field="departureUtc"]').addEventListener('change', function () {
     if (card.querySelector('[data-field="type"]').value === 'train') {
       card.querySelector('[data-field="arrivalUtc"]').value = this.value;
     }
-    computeArrival(card); scheduleRender();
+    computeArrival(card);
   });
 
   $('legs-list').appendChild(card);
@@ -1512,15 +1508,15 @@ function createHotelCard() {
     card.classList.toggle('expanded');
   });
   card.querySelector('.remove-btn').addEventListener('click', function () {
-    card.remove(); updateBadges(); updateStatus(); scheduleRender();
+    card.remove(); updateBadges(); updateStatus();
     if (!document.querySelectorAll('#hotels-list .entry-card').length) {
       var el = $('hotels-empty'); if (el) el.style.display = '';
     }
   });
   ['name','checkInDate','checkInTime','checkOutDate','checkOutTime'].forEach(function (f) {
     var el = card.querySelector('[data-field="' + f + '"]');
-    el.addEventListener('input', function () { updateHeaderMeta(card); scheduleRender(); });
-    el.addEventListener('change', function () { updateHeaderMeta(card); scheduleRender(); });
+    el.addEventListener('input', function () { updateHeaderMeta(card); });
+    el.addEventListener('change', function () { updateHeaderMeta(card); });
   });
 
   $('hotels-list').appendChild(card);
@@ -1543,15 +1539,18 @@ function updateStatus() {
     btn.disabled = true; status.textContent = 'Set trip dates'; return;
   }
   if (!legCards.length) {
-    btn.disabled = true; status.textContent = ''; return;
+    btn.disabled = true;
+    status.textContent = '';
+    stageEmpty(true);
+    return;
   }
   btn.disabled = false;
   status.textContent = legCards.length + ' flight(s), ' +
     document.querySelectorAll('#hotels-list .entry-card').length + ' hotel(s)';
 }
 
-$('tripStart').addEventListener('change', function () { updateStatus(); scheduleRender(); });
-$('tripEnd').addEventListener('change', function () { updateStatus(); scheduleRender(); });
+$('tripStart').addEventListener('change', function () { updateStatus(); });
+$('tripEnd').addEventListener('change', function () { updateStatus(); });
 
 function collectData() {
   var legs = [];
@@ -1629,8 +1628,8 @@ function clearTrip() {
 
 $('clear-trip').addEventListener('click', askToClear);
 
-$('add-leg').addEventListener('click', function () { createLegCard(); scheduleRender(); });
-$('add-hotel').addEventListener('click', function () { createHotelCard(); scheduleRender(); });
+$('add-leg').addEventListener('click', function () { createLegCard(); });
+$('add-hotel').addEventListener('click', function () { createHotelCard(); });
 
 function loadTripData(data) {
   if (data.startDate) $('tripStart').value = data.startDate;
@@ -1709,12 +1708,6 @@ function stageEmpty(on, title, body) {
   $('se-body').textContent = body || 'Add a flight, then press Generate.';
 }
 var scale = 1, fitMode = false, lastSize = { w: 900, h: 820 };
-var renderTimer = 0;
-
-function scheduleRender() {
-  clearTimeout(renderTimer);
-  renderTimer = setTimeout(render, 180);
-}
 
 function render() {
   var data = collectData();
