@@ -92,11 +92,30 @@ answer different questions and neither replaces the other.
 ## Stop counting yourself
 
 Every time you open the page you add a visit, and on a small sample that is
-noise you will misread. GoatCounter has a setting that sets a flag in your
-browser so your own visits are skipped. Do it once per browser and per
-device, and do it before you post the link, not after.
+noise you will misread. Open this once on each device and browser you use:
 
-Mine are in there too, from testing.
+```
+https://beginyanarthur.github.io/travel-timeline-visualization/#toggle-goatcounter
+```
+
+It writes a flag into that browser's local storage and GoatCounter skips you
+from then on. Verified: after visiting it, the counter reports
+`disabled with #toggle-goatcounter` instead of counting, and it survives
+later plain visits with no hash on the URL.
+
+Three things about it:
+
+- **It is a toggle.** Open it twice and you are counted again. Once per
+  browser is all it takes.
+- **It is per browser, per device.** Your Mac, your phone and your iPad each
+  need their own visit, and Chrome and Safari on the same machine count as
+  two.
+- **Clearing site data resets it**, and a private window never had it.
+
+Do it before you post the link, not after.
+
+Test traffic is in there too, both yours and mine. Treat the totals from
+before you post as noise rather than a baseline.
 
 ## Two caveats worth holding
 
