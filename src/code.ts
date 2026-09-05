@@ -602,7 +602,11 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   dividerLine(TL_DIVIDER_Y)
 
   const tlLegY = LEG_TOP + 309  // Timeline legend Y position
-  const LEG_TEXT_X = PAD_LEFT - 2  // all legend text labels aligned here
+  /* The swatches occupy PAD_LEFT-2 to PAD_LEFT+40, so the text has to start
+     clear of them. This was a fixed 202 against a PAD_LEFT of 140, a 62px
+     offset; tying it to PAD_LEFT-2 in the new layout put every label
+     underneath its own swatch. */
+  const LEG_TEXT_X = PAD_LEFT + 62
   await txt('How to read', PAD_LEFT - 1, tlLegY, 16, 'Bold', '#333333')
 
   // Two small dots (dark + light) representing night and day hours

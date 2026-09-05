@@ -1758,7 +1758,11 @@ function renderItinerary(data) {
   dividerLine(TL_DIVIDER_Y);
 
   var tlLegY = LEG_TOP + 309;
-  var LEG_TEXT_X = PAD_LEFT - 2;
+  /* The swatches occupy PAD_LEFT-2 to PAD_LEFT+40, so the text has to start
+     clear of them. This was a fixed 202 against a PAD_LEFT of 140, a 62px
+     offset; tying it to PAD_LEFT-2 in the new layout put every label
+     underneath its own swatch. */
+  var LEG_TEXT_X = PAD_LEFT + 62;
   txt('How to read', PAD_LEFT - 1, tlLegY, 16, 700, '#333333');
   circle(PAD_LEFT - 1, tlLegY + 40, 7, gr(0.02));
   circle(PAD_LEFT + 7, tlLegY + 40, 7, gr(0.85));

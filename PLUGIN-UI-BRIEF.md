@@ -259,3 +259,21 @@ disagree again.
 by its width to build the route line. The web draws the whole line as one
 text node with the separator between names. Same result, less machinery, but
 if you ever want per-city colouring the web version will need splitting.
+
+
+## 11. The legend swatches, and why LEG_TEXT_X cannot follow PAD_LEFT
+
+The new layout set `LEG_TEXT_X = PAD_LEFT - 2`, which put every legend label
+underneath its own swatch: the dots struck through "Black" and "Gray", and the
+colour bars struck through "Colored" and "Muted".
+
+It was correct-looking and wrong. The swatches occupy `PAD_LEFT - 2` through
+`PAD_LEFT + 40`, so the text has to clear `PAD_LEFT + 40`, not sit at
+`PAD_LEFT`. The old value was a hardcoded 202 against a PAD_LEFT of 140,
+which is an offset of 62, and that relationship is what actually mattered.
+
+`LEG_TEXT_X = PAD_LEFT + 62` in both. It now moves with PAD_LEFT and keeps
+22px of air past the widest swatch.
+
+Worth remembering when the layout next moves: the legend has two columns, and
+only one of them is anchored to PAD_LEFT.
