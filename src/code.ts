@@ -320,7 +320,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   let statX = PAD_LEFT
   for (const stat of stats) {
     await txt(stat.value, statX, INSIGHTS_STAT_Y, 36, 'Bold', '#1F1F1F')
-    await txt(stat.label, statX, INSIGHTS_STAT_Y + 44, 14, 'Regular', '#999999')
+    await txt(stat.label, statX, INSIGHTS_STAT_Y + 44, 14, 'Bold', '#999999')
     statX += 180
   }
 
