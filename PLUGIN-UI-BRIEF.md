@@ -231,3 +231,31 @@ lives on a wrapper span now, with the SVG left at 12x14 inside it.
 drawn on and nowhere else. Nothing is below 11px on desktop or 12px on touch,
 set through `--fs-label`, `--fs-micro` and `--fs-small` so it stays that way.
 Inputs are already 16px on touch for the zoom reason in section 8.
+
+
+## 10. The Insights section, and the same three regressions
+
+Arthur rebuilt the page: a title with the route across the top, three
+sections in stroked containers, and **Insights** ahead of Timeline and Clock
+Day carrying six stats and a mode summary. The web renderer now matches, and
+the frame grew from 4931 x 1911 to 5367 x 3477 on the sample trip.
+
+**Three things arrived behind the web page for the third time.** They are
+easy to lose because they live in different parts of the file from whatever
+is being worked on:
+
+- `boat` missing from the type union and the icon table
+- `flight: '\u2708'` without the `\uFE0F` that makes the plane render in
+  colour rather than as a flat glyph
+- the legend reading `Night (6pm - 5am)` and `Day (6am - 5pm)` while the code
+  beside it says `hour < 6 || hour >= 21`, which is 9pm to 6am
+
+The corrected values were kept. If these keep coming back, the fix is
+probably to make the legend read its own rule rather than repeat it in prose:
+derive the hours from the same constant the dots use, and it can never
+disagree again.
+
+**One difference worth knowing.** Figma measures each city name and advances
+by its width to build the route line. The web draws the whole line as one
+text node with the separator between names. Same result, less machinery, but
+if you ever want per-city colouring the web version will need splitting.

@@ -1456,11 +1456,17 @@ var TRANSPORT = {
 };
 function mode(t) { return TRANSPORT[t] || TRANSPORT.flight; }
 
-var DOT = 22, DOT_GAP = 2, HOUR_W = DOT + DOT_GAP, PAD_LEFT = 140;
-var TIMELINE_TITLE_Y = 124, TIMELINE_DESC_Y = 198;
-var HOTEL_TOP = 331, TIMELINE_Y = 481, LEG_TOP = 521;
-var CLOCK_DAY_TITLE_Y = 1064, CLOCK_DAY_DESC_Y = 1138;
-var CLOCK_TOP = 1320, CLOCK_D = 140, CLOCK_GAP = 90;
+var DOT = 22, DOT_GAP = 2, HOUR_W = DOT + DOT_GAP;
+var MARGIN = 243, PAD_LEFT = 359;
+var TITLE_Y = 248, CITY_LIST_Y = 358;
+var INSIGHTS_TITLE_Y = 607, INSIGHTS_DESC_Y = 681;
+var INSIGHTS_CONTAINER_Y = 653, INSIGHTS_CONTAINER_H = 350, INSIGHTS_STAT_Y = 829;
+var TIMELINE_CONTAINER_Y = 1268, TIMELINE_CONTAINER_H = 905, TL_DIVIDER_Y = 1914;
+var CL_CONTAINER_Y = 2448, CL_CONTAINER_H = 781, CL_DIVIDER_Y = 2941;
+var TIMELINE_TITLE_Y = 1210, TIMELINE_DESC_Y = 1284;
+var HOTEL_TOP = 1465, TIMELINE_Y = 1615, LEG_TOP = 1655;
+var CLOCK_DAY_TITLE_Y = 2390, CLOCK_DAY_DESC_Y = 2464;
+var CLOCK_TOP = 2646, CLOCK_D = 140, CLOCK_GAP = 90;
 
 var ICON_SUNSET_PATH = 'M 6.86 2.48 C 6.73 2.35 6.67 2.19 6.67 2.0 L 6.67 0.67 C 6.67 0.48 6.73 0.32 6.86 0.19 C 6.99 0.06 7.14 0 7.33 0 C 7.52 0 7.68 0.06 7.81 0.19 C 7.94 0.32 8.0 0.48 8.0 0.67 L 8.0 2.0 C 8.0 2.19 7.94 2.35 7.81 2.48 C 7.68 2.6 7.52 2.67 7.33 2.67 C 7.14 2.67 6.99 2.6 6.86 2.48 Z M 10.63 4.03 C 10.51 3.91 10.45 3.76 10.45 3.58 C 10.45 3.39 10.51 3.23 10.63 3.1 L 11.57 2.15 C 11.7 2.02 11.86 1.95 12.04 1.95 C 12.23 1.95 12.38 2.02 12.52 2.15 C 12.64 2.27 12.7 2.43 12.7 2.62 C 12.7 2.81 12.64 2.96 12.52 3.08 L 11.57 4.03 C 11.44 4.16 11.29 4.22 11.1 4.22 C 10.91 4.22 10.76 4.16 10.63 4.03 Z M 12.67 8.0 C 12.48 8.0 12.32 7.94 12.19 7.81 C 12.06 7.68 12.0 7.52 12.0 7.33 C 12.0 7.14 12.06 6.99 12.19 6.86 C 12.32 6.73 12.48 6.67 12.67 6.67 L 14.0 6.67 C 14.19 6.67 14.35 6.73 14.48 6.86 C 14.6 6.99 14.67 7.14 14.67 7.33 C 14.67 7.52 14.6 7.68 14.48 7.81 C 14.35 7.94 14.19 8.0 14.0 8.0 L 12.67 8.0 Z M 6.86 14.48 C 6.73 14.35 6.67 14.19 6.67 14.0 L 6.67 12.67 C 6.67 12.48 6.73 12.32 6.86 12.19 C 6.99 12.06 7.14 12.0 7.33 12.0 C 7.52 12.0 7.68 12.06 7.81 12.19 C 7.94 12.32 8.0 12.48 8.0 12.67 L 8.0 14.0 C 8.0 14.19 7.94 14.35 7.81 14.48 C 7.68 14.6 7.52 14.67 7.33 14.67 C 7.14 14.67 6.99 14.6 6.86 14.48 Z M 3.1 4.03 L 2.15 3.1 C 2.02 2.97 1.95 2.81 1.95 2.62 C 1.95 2.43 2.02 2.27 2.15 2.15 C 2.27 2.03 2.43 1.97 2.62 1.97 C 2.81 1.97 2.96 2.03 3.08 2.15 L 4.03 3.1 C 4.16 3.22 4.22 3.38 4.22 3.57 C 4.22 3.76 4.16 3.91 4.03 4.03 C 3.9 4.16 3.74 4.22 3.57 4.22 C 3.39 4.22 3.23 4.16 3.1 4.03 Z M 11.57 12.52 L 10.63 11.57 C 10.51 11.43 10.45 11.28 10.45 11.09 C 10.45 10.91 10.51 10.76 10.63 10.63 C 10.76 10.51 10.91 10.45 11.09 10.45 C 11.28 10.45 11.43 10.51 11.57 10.63 L 12.52 11.57 C 12.65 11.69 12.71 11.84 12.71 12.03 C 12.7 12.22 12.64 12.38 12.52 12.52 C 12.38 12.65 12.22 12.72 12.03 12.72 C 11.84 12.72 11.69 12.65 11.57 12.52 Z M 0.67 8.0 C 0.48 8.0 0.32 7.94 0.19 7.81 C 0.06 7.68 0 7.52 0 7.33 C 0 7.14 0.06 6.99 0.19 6.86 C 0.32 6.73 0.48 6.67 0.67 6.67 L 2.0 6.67 C 2.19 6.67 2.35 6.73 2.48 6.86 C 2.6 6.99 2.67 7.14 2.67 7.33 C 2.67 7.52 2.6 7.68 2.48 7.81 C 2.35 7.94 2.19 8.0 2.0 8.0 L 0.67 8.0 Z M 2.15 12.52 C 2.03 12.39 1.97 12.24 1.97 12.05 C 1.97 11.86 2.03 11.71 2.15 11.58 L 3.1 10.63 C 3.22 10.51 3.38 10.45 3.56 10.45 C 3.74 10.45 3.9 10.51 4.03 10.63 C 4.17 10.77 4.23 10.93 4.23 11.11 C 4.23 11.29 4.17 11.45 4.03 11.58 L 3.1 12.52 C 2.97 12.65 2.81 12.72 2.62 12.72 C 2.43 12.72 2.27 12.65 2.15 12.52 Z M 4.5 10.17 C 3.72 9.39 3.33 8.44 3.33 7.33 C 3.33 6.22 3.72 5.28 4.5 4.5 C 5.28 3.72 6.22 3.33 7.33 3.33 C 8.44 3.33 9.39 3.72 10.17 4.5 C 10.94 5.28 11.33 6.22 11.33 7.33 C 11.33 8.44 10.94 9.39 10.17 10.17 C 9.39 10.94 8.44 11.33 7.33 11.33 C 6.22 11.33 5.28 10.94 4.5 10.17 Z M 9.22 9.22 C 9.74 8.69 10.0 8.07 10.0 7.33 C 10.0 6.6 9.74 5.97 9.22 5.45 C 8.69 4.93 8.07 4.67 7.33 4.67 C 6.6 4.67 5.97 4.93 5.45 5.45 C 4.93 5.97 4.67 6.6 4.67 7.33 C 4.67 8.07 4.93 8.69 5.45 9.22 C 5.97 9.74 6.6 10.0 7.33 10.0 C 8.07 10.0 8.69 9.74 9.22 9.22 Z';
 var ICON_SUNSET_W = 14.67, ICON_SUNSET_H = 14.67;
@@ -1595,6 +1601,28 @@ function renderItinerary(data) {
   var defColors = ['#E53935', '#FF9800', '#9C27B0', '#4CAF50', '#2196F3', '#795548'];
   function xMs(ms) { return PAD_LEFT + ((ms - t0.getTime()) / 3600000) * HOUR_W; }
 
+  /* The containers are drawn first so they sit at the back, and they are
+     sized from the frame, so the frame has to be measured up front rather
+     than at the end the way it used to be. */
+  var clocksW = PAD_LEFT + numDays * (CLOCK_D + CLOCK_GAP);
+  var totalW = Math.max(PAD_LEFT + totalHours * HOUR_W + PAD_LEFT + 41, clocksW, 900);
+  var SECTION_BG_X = MARGIN + 67;
+  var CONTENT_END_X = totalW - PAD_LEFT + 4;
+  var SECTION_BG_W = CONTENT_END_X - SECTION_BG_X;
+  var CONTAINER_W = SECTION_BG_W + 134;
+  var DIVIDER_X = PAD_LEFT - 2;
+  var DIVIDER_W = CONTENT_END_X - DIVIDER_X;
+
+  function containerBox(y, h) {
+    out.push('<rect x="' + n2(MARGIN) + '" y="' + n2(y) + '" width="' + n2(CONTAINER_W) +
+             '" height="' + n2(h) + '" rx="32" fill="none" stroke="#BFBFBF" stroke-width="1"/>');
+  }
+  function dividerLine(y) {
+    out.push('<path d="M ' + n2(DIVIDER_X) + ' ' + n2(y + 0.5) + ' L ' +
+             n2(DIVIDER_X + DIVIDER_W) + ' ' + n2(y + 0.5) +
+             '" stroke="#BFBFBF" stroke-width="1" fill="none"/>');
+  }
+
   var legTimes = legs.map(function (leg, i) {
     return {
       depMs: localToAbsoluteMs(leg.departureDate, leg.departureTime, displayUtcOffset),
@@ -1603,8 +1631,68 @@ function renderItinerary(data) {
     };
   });
 
-  /* Section 1: Timeline */
-  rect(91, TIMELINE_TITLE_Y - 46, 1274, 201, '#F5FBFE', 0, 24);
+  /* Containers first, so they end up behind everything else. */
+  containerBox(INSIGHTS_CONTAINER_Y, INSIGHTS_CONTAINER_H);
+  containerBox(TIMELINE_CONTAINER_Y, TIMELINE_CONTAINER_H);
+  containerBox(CL_CONTAINER_Y, CL_CONTAINER_H);
+
+  /* Title and the route, every city in the order you meet it. */
+  txt('Your Travel Itinerary', MARGIN, TITLE_Y, 80, 700, '#000000');
+
+  var routeCities = [legs[0].departureCity];
+  legs.forEach(function (leg) {
+    if (routeCities[routeCities.length - 1] !== leg.departureCity) {
+      routeCities.push(leg.departureCity);
+    }
+    routeCities.push(leg.arrivalCity);
+  });
+  /* Figma measures each run and advances by its width; here the whole line
+     is one text node, which is simpler and lands in the same place. */
+  txt(routeCities.join('\u30FB'), MARGIN, CITY_LIST_Y, 24, 400, '#000000');
+
+  /* Section 1: Insights */
+  rect(SECTION_BG_X, INSIGHTS_TITLE_Y - 46, SECTION_BG_W, 201, '#F5FBFE', 0, 24);
+  txt('Insights', PAD_LEFT - 1, INSIGHTS_TITLE_Y, 48, 700, '#000000');
+  txt('Key statistics from your trip.', PAD_LEFT - 1, INSIGHTS_DESC_Y, 24, 400, '#000000');
+
+  var uniqueCities = {};
+  legs.forEach(function (leg) {
+    uniqueCities[leg.departureCity] = 1;
+    uniqueCities[leg.arrivalCity] = 1;
+  });
+  var totalTransitMin = legs.reduce(function (sum, leg) {
+    return sum + (leg.durationHours || 0) * 60 + (leg.durationMinutes || 0);
+  }, 0);
+  var longestLeg = legs[0];
+  legs.forEach(function (leg) {
+    if ((leg.durationHours || 0) * 60 + (leg.durationMinutes || 0) >
+        (longestLeg.durationHours || 0) * 60 + (longestLeg.durationMinutes || 0)) longestLeg = leg;
+  });
+  var modeCounts = {};
+  legs.forEach(function (leg) { modeCounts[leg.type] = (modeCounts[leg.type] || 0) + 1; });
+
+  var stats = [
+    { value: String(numDays), label: 'Days' },
+    { value: String(Object.keys(uniqueCities).length), label: 'Cities' },
+    { value: String(legs.length), label: 'Legs' },
+    { value: String((data.hotels || []).length), label: 'Hotels' },
+    { value: Math.floor(totalTransitMin / 60) + 'h ' + (totalTransitMin % 60) + 'm', label: 'In Transit' },
+    { value: fmtDur(longestLeg.durationHours, longestLeg.durationMinutes), label: 'Longest Leg' }
+  ];
+  var statX = PAD_LEFT;
+  stats.forEach(function (st) {
+    txt(st.value, statX, INSIGHTS_STAT_Y, 36, 700, '#1F1F1F');
+    txt(st.label, statX, INSIGHTS_STAT_Y + 44, 14, 400, '#999999');
+    statX += 180;
+  });
+
+  var modeLine = Object.keys(modeCounts).map(function (k) {
+    return mode(k).icon + ' ' + modeCounts[k] + ' ' + k + (modeCounts[k] > 1 ? 's' : '');
+  }).join('   ');
+  txt(modeLine, PAD_LEFT, INSIGHTS_STAT_Y + 90, 14, 400, '#666666');
+
+  /* Section 2: Timeline */
+  rect(SECTION_BG_X, TIMELINE_TITLE_Y - 46, SECTION_BG_W, 201, '#F5FBFE', 0, 24);
   txt('Timeline', PAD_LEFT - 1, TIMELINE_TITLE_Y, 48, 700, '#000000');
   txt('A linear hour-by-hour strip spanning the entire trip.', PAD_LEFT - 1, TIMELINE_DESC_Y, 24, 400, '#000000');
 
@@ -1714,8 +1802,10 @@ function renderItinerary(data) {
   }
 
   /* Timeline legend ──────────────────────────────────────────── */
-  var tlLegY = LEG_TOP + 230;
-  var LEG_TEXT_X = 202;
+  dividerLine(TL_DIVIDER_Y);
+
+  var tlLegY = LEG_TOP + 309;
+  var LEG_TEXT_X = PAD_LEFT - 2;
   txt('How to read', PAD_LEFT - 1, tlLegY, 16, 700, '#333333');
   circle(PAD_LEFT - 1, tlLegY + 40, 7, gr(0.02));
   circle(PAD_LEFT + 7, tlLegY + 40, 7, gr(0.85));
@@ -1734,8 +1824,8 @@ function renderItinerary(data) {
   txtMixed('Muted color = <tspan font-weight="700">In transit / commute</tspan>',
            LEG_TEXT_X, tlLegY + 127, 12, 400, '#333333');
 
-  /* Section 2: Clock Day */
-  rect(91, CLOCK_DAY_TITLE_Y - 56, 1274, 201, '#F5FBFE', 0, 24);
+  /* Section 3: Clock Day */
+  rect(SECTION_BG_X, CLOCK_DAY_TITLE_Y - 56, SECTION_BG_W, 201, '#F5FBFE', 0, 24);
   txt('Clock Day', PAD_LEFT - 1, CLOCK_DAY_TITLE_Y, 48, 700, '#000000');
   txt('A 24-hour donut chart representing one calendar day.', PAD_LEFT - 1, CLOCK_DAY_DESC_Y, 24, 400, '#000000');
 
@@ -1845,16 +1935,16 @@ function renderItinerary(data) {
   }
 
   /* Legend ───────────────────────────────────────────────────── */
-  var clLegY = CLOCK_TOP + 30 + CLOCK_D + 114;
+  dividerLine(CL_DIVIDER_Y);
+
+  var clLegY = CLOCK_TOP + 375;
   txt('How to read', PAD_LEFT - 1, clLegY, 16, 700, '#333333');
   paragraph(
     "Each of the 24 pie slices is one hour:  Dark slices for nighttime (9 pm\u20135 am), light Gray for daytime (6 am\u20138 pm). Colored slices overlay the hours you're staying in a city, so you can see at a glance how much of each day is spent in transit versus on the ground.   Sun-cycle icons (moon \u2192 sunrise \u2192 sun \u2192 sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.",
     ['Dark slices', 'light', 'Gray', 'Colored slices', 'Sun-cycle'],
     PAD_LEFT - 1, clLegY + 33, 351, 12, '#000000');
 
-  var clocksW = PAD_LEFT + numDays * (CLOCK_D + CLOCK_GAP);
-  var totalW = Math.max(PAD_LEFT + totalHours * HOUR_W + 183, clocksW, 900);
-  var totalH = clLegY + 307;
+  var totalH = clLegY + 456;
 
   var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + Math.ceil(totalW) +
     '" height="' + Math.ceil(totalH) + '" viewBox="0 0 ' + Math.ceil(totalW) + ' ' +

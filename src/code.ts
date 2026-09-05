@@ -72,23 +72,39 @@ function dayLabel(dateStr: string): string {
 const DOT = 22
 const DOT_GAP = 2
 const HOUR_W = DOT + DOT_GAP  // 24px per hour
-const PAD_LEFT = 140
+const MARGIN = 243
+const PAD_LEFT = 359
 
-// Section 1: Timeline
-const TIMELINE_TITLE_Y = 124
-const TIMELINE_DESC_Y = 198
-const HOTEL_TOP = 331
-const _HOTEL_BOTTOM = 451
-const TIMELINE_Y = 481
-const LEG_TOP = 521
-const _LEG_BOTTOM = 721
+// Title area
+const TITLE_Y = 248
+const CITY_LIST_Y = 358
 
-// Section 2: Clock Day
-const CLOCK_DAY_TITLE_Y = 1064
-const CLOCK_DAY_DESC_Y = 1138
-const CLOCK_TOP = 1320
+// Section 1: Insights
+const INSIGHTS_TITLE_Y = 607
+const INSIGHTS_DESC_Y = 681
+const INSIGHTS_CONTAINER_Y = 653
+const INSIGHTS_CONTAINER_H = 350
+const INSIGHTS_STAT_Y = 829
+
+// Section 2: Timeline
+const TIMELINE_TITLE_Y = 1210
+const TIMELINE_DESC_Y = 1284
+const TIMELINE_CONTAINER_Y = 1268
+const TIMELINE_CONTAINER_H = 905
+const HOTEL_TOP = 1465
+const TIMELINE_Y = 1615
+const LEG_TOP = 1655
+const TL_DIVIDER_Y = 1914
+
+// Section 3: Clock Day
+const CLOCK_DAY_TITLE_Y = 2390
+const CLOCK_DAY_DESC_Y = 2464
+const CL_CONTAINER_Y = 2448
+const CL_CONTAINER_H = 781
+const CLOCK_TOP = 2646
 const CLOCK_D = 140
 const CLOCK_GAP = 90
+const CL_DIVIDER_Y = 2941
 
 // Leg icons, keyed by transport type
 const LEG_ICONS: { [k: string]: string } = {
@@ -151,12 +167,12 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   const t1 = t1End
   const totalHours = Math.ceil((t1.getTime() - t0.getTime()) / 3600000)
   const numDays = Math.ceil(totalHours / 24)
-  const W = PAD_LEFT + totalHours * HOUR_W + 183
+  const W = PAD_LEFT + totalHours * HOUR_W + PAD_LEFT + 41
   const clocksW = PAD_LEFT + numDays * (CLOCK_D + CLOCK_GAP)
   const totalW = Math.max(W, clocksW, 900)
 
   const root = figma.createFrame()
-  root.name = 'Travel Itinerary'
+  root.name = 'Your Travel Itinerary'
   root.fills = [spRgb(1)]
 
   function xMs(ms: number): number {
@@ -187,12 +203,122 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
     return r
   }
 
+  // ── Section layout dimensions (depend on totalW) ──
+  const SECTION_BG_X = MARGIN + 67
+  const CONTENT_END_X = totalW - PAD_LEFT + 4
+  const SECTION_BG_W = CONTENT_END_X - SECTION_BG_X
+  const CONTAINER_W = SECTION_BG_W + 134
+  const DIVIDER_X = PAD_LEFT - 2
+  const DIVIDER_W = CONTENT_END_X - DIVIDER_X
+
+  // Helper: stroked container rect (no fill, rounded corners)
+  function containerBox(y: number, h: number): void {
+    const r = figma.createRectangle()
+    r.resize(Math.max(1, CONTAINER_W), Math.max(1, h))
+    root.appendChild(r)
+    r.x = MARGIN
+    r.y = y
+    r.fills = []
+    r.strokes = [sp('#BFBFBF')]
+    r.strokeWeight = 1
+    r.cornerRadius = 32
+  }
+
+  // Helper: horizontal divider line
+  function dividerLine(y: number): void {
+    const v = figma.createVector()
+    v.vectorPaths = [{ windingRule: 'NONZERO', data: `M 0.5 0.5 L ${DIVIDER_W + 0.5} 0.5` }]
+    v.resize(DIVIDER_W, 0.01)
+    root.appendChild(v)
+    v.x = DIVIDER_X
+    v.y = y
+    v.strokes = [sp('#BFBFBF')]
+    v.strokeWeight = 1
+    v.fills = []
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
-  // SECTION 1: TIMELINE
+  // CONTAINER RECTS (rendered first = back of layer stack)
+  // ═══════════════════════════════════════════════════════════════════════
+  containerBox(INSIGHTS_CONTAINER_Y, INSIGHTS_CONTAINER_H)
+  containerBox(TIMELINE_CONTAINER_Y, TIMELINE_CONTAINER_H)
+  containerBox(CL_CONTAINER_Y, CL_CONTAINER_H)
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // MAIN TITLE + CITY LIST
+  // ═══════════════════════════════════════════════════════════════════════
+  await txt('Your Travel Itinerary', MARGIN, TITLE_Y, 80, 'Bold', '#000000')
+
+  const routeCities: string[] = [data.legs[0].departureCity]
+  for (const leg of data.legs) {
+    if (routeCities[routeCities.length - 1] !== leg.departureCity) {
+      routeCities.push(leg.departureCity)
+    }
+    routeCities.push(leg.arrivalCity)
+  }
+  let cityX = MARGIN
+  for (let ci = 0; ci < routeCities.length; ci++) {
+    if (ci > 0) {
+      const sep = await txt('\u30FB', cityX, CITY_LIST_Y, 24, 'Regular', '#000000')
+      cityX = sep.x + sep.width
+    }
+    const cn = await txt(routeCities[ci], cityX, CITY_LIST_Y, 24, 'Regular', '#000000')
+    cityX = cn.x + cn.width
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 1: INSIGHTS
+  // ═══════════════════════════════════════════════════════════════════════
+  rect(SECTION_BG_X, INSIGHTS_TITLE_Y - 46, SECTION_BG_W, 201, '#F5FBFE', 24)
+  await txt('Insights', PAD_LEFT - 1, INSIGHTS_TITLE_Y, 48, 'Bold', '#000000')
+  await txt('Key statistics from your trip.', PAD_LEFT - 1, INSIGHTS_DESC_Y, 24, 'Regular', '#000000')
+
+  const uniqueCities = new Set<string>()
+  for (const leg of data.legs) {
+    uniqueCities.add(leg.departureCity)
+    uniqueCities.add(leg.arrivalCity)
+  }
+  const totalTransitMin = data.legs.reduce((sum, leg) => sum + leg.durationHours * 60 + leg.durationMinutes, 0)
+
+  let longestLeg = data.legs[0]
+  for (const leg of data.legs) {
+    if (leg.durationHours * 60 + leg.durationMinutes > longestLeg.durationHours * 60 + longestLeg.durationMinutes) longestLeg = leg
+  }
+
+  const modeCounts: { [k: string]: number } = {}
+  for (const leg of data.legs) {
+    modeCounts[leg.type] = (modeCounts[leg.type] || 0) + 1
+  }
+
+  const stats = [
+    { value: `${numDays}`, label: 'Days' },
+    { value: `${uniqueCities.size}`, label: 'Cities' },
+    { value: `${data.legs.length}`, label: 'Legs' },
+    { value: `${data.hotels.length}`, label: 'Hotels' },
+    { value: `${Math.floor(totalTransitMin / 60)}h ${totalTransitMin % 60}m`, label: 'In Transit' },
+    { value: fmtDur(longestLeg.durationHours, longestLeg.durationMinutes), label: 'Longest Leg' },
+  ]
+
+  let statX = PAD_LEFT
+  for (const stat of stats) {
+    await txt(stat.value, statX, INSIGHTS_STAT_Y, 36, 'Bold', '#1F1F1F')
+    await txt(stat.label, statX, INSIGHTS_STAT_Y + 44, 14, 'Regular', '#999999')
+    statX += 180
+  }
+
+  /* One table drives the icons, so a seventh mode is one new entry there and
+     nothing here. */
+  const modeLine = Object.keys(modeCounts)
+    .map((k) => `${LEG_ICONS[k] || ''} ${modeCounts[k]} ${k}${modeCounts[k] > 1 ? 's' : ''}`)
+    .join('   ')
+  await txt(modeLine, PAD_LEFT, INSIGHTS_STAT_Y + 90, 14, 'Regular', '#666666')
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECTION 2: TIMELINE
   // ═══════════════════════════════════════════════════════════════════════
 
   // Section title background
-  rect(91, TIMELINE_TITLE_Y - 46, 1274, 201, '#F5FBFE', 24)
+  rect(SECTION_BG_X, TIMELINE_TITLE_Y - 46, SECTION_BG_W, 201, '#F5FBFE', 24)
 
   // Section title and description
   await txt('Timeline', PAD_LEFT - 1, TIMELINE_TITLE_Y, 48, 'Bold', '#000000')
@@ -473,8 +599,10 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   // ═══════════════════════════════════════════════════════════════════════
   // TIMELINE LEGEND — "How to read" section for the timeline
   // ═══════════════════════════════════════════════════════════════════════
-  const tlLegY = LEG_TOP + 230  // Timeline legend Y position
-  const LEG_TEXT_X = 202  // all legend text labels aligned here
+  dividerLine(TL_DIVIDER_Y)
+
+  const tlLegY = LEG_TOP + 309  // Timeline legend Y position
+  const LEG_TEXT_X = PAD_LEFT - 2  // all legend text labels aligned here
   await txt('How to read', PAD_LEFT - 1, tlLegY, 16, 'Bold', '#333333')
 
   // Two small dots (dark + light) representing night and day hours
@@ -536,7 +664,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   // ═══════════════════════════════════════════════════════════════════════
 
   // Section title background
-  rect(91, CLOCK_DAY_TITLE_Y - 56, 1274, 201, '#F5FBFE', 24)
+  rect(SECTION_BG_X, CLOCK_DAY_TITLE_Y - 56, SECTION_BG_W, 201, '#F5FBFE', 24)
 
   // Section title and description
   await txt('Clock Day', PAD_LEFT - 1, CLOCK_DAY_TITLE_Y, 48, 'Bold', '#000000')
@@ -738,7 +866,9 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   // ═══════════════════════════════════════════════════════════════════════
   // CLOCK DAY LEGEND — "How to read" section for the clock diagrams
   // ═══════════════════════════════════════════════════════════════════════
-  const clLegY = CLOCK_TOP + 30 + CLOCK_D + 114  // Clock Day legend Y position
+  dividerLine(CL_DIVIDER_Y)
+
+  const clLegY = CLOCK_TOP + 375  // Clock Day legend Y position
   await txt('How to read', PAD_LEFT - 1, clLegY, 16, 'Bold', '#333333')
 
   // Descriptive paragraph with mixed bold formatting
@@ -770,7 +900,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   }
 
   // Resize frame to fit — fixed offset from clock legend position
-  const totalH = clLegY + 307
+  const totalH = clLegY + 456
   root.resize(totalW, totalH)
 
   return root
