@@ -103,7 +103,23 @@ from then on. Verified: after visiting it, the counter reports
 `disabled with #toggle-goatcounter` instead of counting, and it survives
 later plain visits with no hash on the URL.
 
-Three things about it:
+**If you are not sure whether you already did it, do not open that URL to
+check.** It toggles, so checking undoes it. Open one of these instead. They
+set the state outright, they say what they did, and they are safe to open
+twice:
+
+```
+.../travel-timeline-visualization/#goatcounter-status   what is this browser doing
+.../travel-timeline-visualization/#goatcounter-off      stop counting me here
+.../travel-timeline-visualization/#goatcounter-on       count me here again
+```
+
+Each shows a message at the bottom of the screen for a few seconds, which is
+the only way to check this on a phone, where there is no console to look in.
+The visit that carries the hash may still be counted itself, since the
+counter can fire before the setting lands. Every visit after it obeys.
+
+Three things about GoatCounter's own toggle:
 
 - **It is a toggle.** Open it twice and you are counted again. Once per
   browser is all it takes.

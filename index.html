@@ -2813,6 +2813,46 @@ function track(path, title) {
   } catch (e) {}
 }
 
+/* GoatCounter's own switch is a toggle, so checking whether you set it turns
+   it back on if you had. And there is no console on a phone to look with.
+   These three set it outright instead, and say what they did:
+
+     #goatcounter-status   what is this browser doing right now
+     #goatcounter-off      stop counting me here, safe to open twice
+     #goatcounter-on       count me here again
+
+   Harmless to anyone who does not know the words are there. */
+(function () {
+  var h = location.hash;
+  if (h.indexOf('#goatcounter-') !== 0) return;
+  function counted() {
+    try { return localStorage.getItem('skipgc') !== 't'; }
+    catch (e) { return null; }   /* storage blocked, so nothing can be stored */
+  }
+  try {
+    if (h === '#goatcounter-off') localStorage.setItem('skipgc', 't');
+    if (h === '#goatcounter-on') localStorage.removeItem('skipgc');
+  } catch (e) {}
+  var on = counted();
+  var msg = on === null
+    ? 'This browser blocks local storage, so the setting cannot be kept here.'
+    : on
+      ? 'Counted. Your visits DO show up in the stats.'
+      : 'Not counted. Your visits are skipped on this browser.';
+  /* The toast lives in the page, so wait for it. */
+  function show() {
+    var t = document.getElementById('toast');
+    if (!t) { setTimeout(show, 60); return; }
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function () { t.classList.remove('show'); }, 6000);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', show);
+  } else { show(); }
+})();
+
 function toast(msg) {
   var t = $('toast');
   t.textContent = msg;
