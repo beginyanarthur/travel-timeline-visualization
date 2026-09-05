@@ -2114,7 +2114,7 @@ function createLegCard(skipCompute) {
     card.classList.toggle('expanded');
   });
   card.querySelector('.remove-btn').addEventListener('click', function () {
-    card.remove(); renumberLegs(); updateBadges(); updateStatus();
+    card.remove(); renumberLegs(); dirty = true; updateBadges(); updateStatus();
     if (!document.querySelectorAll('#legs-list .entry-card').length) {
       var el = $('legs-empty'); if (el) el.style.display = '';
     }
@@ -2163,7 +2163,7 @@ function createLegCard(skipCompute) {
 
   $('legs-list').appendChild(card);
   if (!skipCompute) computeArrival(card);
-  updateBadges(); updateStatus();
+  dirty = true; updateBadges(); updateStatus();
 }
 
 function createHotelCard() {
@@ -2208,7 +2208,7 @@ function createHotelCard() {
     card.classList.toggle('expanded');
   });
   card.querySelector('.remove-btn').addEventListener('click', function () {
-    card.remove(); renumberHotels(); updateBadges(); updateStatus();
+    card.remove(); renumberHotels(); dirty = true; updateBadges(); updateStatus();
     if (!document.querySelectorAll('#hotels-list .entry-card').length) {
       var el = $('hotels-empty'); if (el) el.style.display = '';
     }
@@ -2220,12 +2220,36 @@ function createHotelCard() {
   });
 
   $('hotels-list').appendChild(card);
-  updateBadges(); updateStatus();
+  dirty = true; updateBadges(); updateStatus();
 }
 
 function updateBadges() {
   $('legs-badge').textContent = String(document.querySelectorAll('#legs-list .entry-card').length);
   $('hotels-badge').textContent = String(document.querySelectorAll('#hotels-list .entry-card').length);
+}
+
+/* The button answers two questions at once: is there anything worth drawing,
+   and is what is drawn still the trip in the panel. Nothing drawn yet reads
+   "Generate"; once something is on the canvas it reads "Apply changes" and
+   goes quiet until the panel actually differs from it. */
+var hasDrawn = false;   /* something is on the canvas */
+var dirty = false;      /* the panel has changed since it was drawn */
+
+function setGenerate() {
+  var btn = $('generate');
+  var legs = document.querySelectorAll('#legs-list .entry-card').length;
+  var ready = !!($('tripStart').value && $('tripEnd').value && legs);
+  btn.textContent = hasDrawn ? 'Apply changes' : 'Generate';
+  btn.disabled = !ready || (hasDrawn && !dirty);
+  btn.title = btn.disabled && hasDrawn && !dirty
+    ? 'The drawing already matches the panel'
+    : '';
+}
+
+function markDirty() {
+  if (dirty) return;
+  dirty = true;
+  setGenerate();
 }
 
 function updateStatus() {
@@ -2238,15 +2262,15 @@ function updateStatus() {
   var btn = $('generate'), status = $('status');
   status.classList.remove('warn');
   if (!$('tripStart').value || !$('tripEnd').value) {
-    btn.disabled = true; status.textContent = 'Set trip dates'; return;
+    setGenerate(); status.textContent = 'Set trip dates'; return;
   }
   if (!legCards.length) {
-    btn.disabled = true;
+    setGenerate();
     status.textContent = '';
     stageEmpty(true);
     return;
   }
-  btn.disabled = false;
+  setGenerate();
   var hotelCount = document.querySelectorAll('#hotels-list .entry-card').length;
   status.textContent =
     legCards.length + (legCards.length === 1 ? ' leg, ' : ' legs, ') +
@@ -2418,6 +2442,7 @@ function makeSortable(list, renumber) {
       held.classList.remove('dragging');
       held = null;
       renumber();
+      markDirty();
     });
   });
 }
@@ -2483,7 +2508,7 @@ function loadTripData(data) {
     });
   } else { $('hotels-empty').style.display = ''; }
 
-  updateBadges(); updateStatus();
+  dirty = true; updateBadges(); updateStatus();
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2534,6 +2559,7 @@ function stageEmpty(on, title, body) {
   /* Nothing to fill the screen with until something is drawn. */
   $('fab-full').hidden = on;
   if (on) fullscreen(false);
+  if (on) { hasDrawn = false; setGenerate(); }
   if (!on) return;
   artboard.innerHTML = '';
   $('se-title').textContent = title || 'Your journey starts here';
@@ -2584,6 +2610,9 @@ function render() {
   lastSize = { w: res.w, h: res.h };
   artboard.innerHTML = res.svg;
   applyScale();
+  hasDrawn = true;
+  dirty = false;
+  setGenerate();
   return true;
 }
 
@@ -3055,6 +3084,13 @@ sheetMQ.addEventListener('change', function () { sheetOpen(false); rail.style.he
 /* The dates are the only fields reachable while the sheet is collapsed.
    Touching one opens it, so Generate comes into view and the rule that
    nothing is drawn until you press it is visible rather than implied. */
+/* Delegated, so a card created ten minutes from now is covered without
+   anyone remembering to wire it up. Editing a field is the whole signal:
+   the panel now says something the drawing does not. */
+['input', 'change'].forEach(function (ev) {
+  $('plugin-root').addEventListener(ev, markDirty);
+});
+
 $('se-open').addEventListener('click', function () { sheetOpen(true); });
 
 /* Not everyone arrives with a trip in mind, and inventing plausible dates
