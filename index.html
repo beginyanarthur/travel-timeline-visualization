@@ -1489,6 +1489,29 @@ var HOTEL_TOP = 1465, TIMELINE_Y = 1615, LEG_TOP = 1655;
 var CLOCK_DAY_TITLE_Y = 2390, CLOCK_DAY_DESC_Y = 2464;
 var CLOCK_TOP = 2646, CLOCK_D = 140, CLOCK_GAP = 90;
 
+/* Type scale. Every size and ink in the drawing is named here, so a new
+   label picks a role instead of a number. It replaced fifteen sizes that
+   had grown one nudge at a time, and two greys eight percent apart that
+   no eye could tell from each other. Regular and Bold are the only Inter
+   styles the plugin loads, so those are the only two weights. */
+var TYPE = {
+  display: 80,  /* the page title, once */
+  section: 48,  /* Insights, Timeline, Clock Day */
+  figure:  36,  /* the value of a statistic */
+  lead:    24,  /* the sentence under a section title, and the route */
+  icon:    20,  /* an emoji standing in for a hotel or a mode of transport */
+  time:    18,  /* a departure or an arrival */
+  label:   14,  /* names a thing: a city, a hotel, a day, a statistic */
+  meta:    12,  /* detail you read: legend, duration, flight number */
+  micro:    9   /* chrome you glance at: offsets, check in and out, hour ticks */
+};
+var INK = {
+  title:     '#000000',  /* titles and the sentences under them */
+  primary:   '#333333',  /* anything you are meant to read */
+  secondary: '#666666',  /* supporting detail */
+  muted:     '#999999'   /* chrome */
+};
+
 var ICON_SUNSET_PATH = 'M 6.86 2.48 C 6.73 2.35 6.67 2.19 6.67 2.0 L 6.67 0.67 C 6.67 0.48 6.73 0.32 6.86 0.19 C 6.99 0.06 7.14 0 7.33 0 C 7.52 0 7.68 0.06 7.81 0.19 C 7.94 0.32 8.0 0.48 8.0 0.67 L 8.0 2.0 C 8.0 2.19 7.94 2.35 7.81 2.48 C 7.68 2.6 7.52 2.67 7.33 2.67 C 7.14 2.67 6.99 2.6 6.86 2.48 Z M 10.63 4.03 C 10.51 3.91 10.45 3.76 10.45 3.58 C 10.45 3.39 10.51 3.23 10.63 3.1 L 11.57 2.15 C 11.7 2.02 11.86 1.95 12.04 1.95 C 12.23 1.95 12.38 2.02 12.52 2.15 C 12.64 2.27 12.7 2.43 12.7 2.62 C 12.7 2.81 12.64 2.96 12.52 3.08 L 11.57 4.03 C 11.44 4.16 11.29 4.22 11.1 4.22 C 10.91 4.22 10.76 4.16 10.63 4.03 Z M 12.67 8.0 C 12.48 8.0 12.32 7.94 12.19 7.81 C 12.06 7.68 12.0 7.52 12.0 7.33 C 12.0 7.14 12.06 6.99 12.19 6.86 C 12.32 6.73 12.48 6.67 12.67 6.67 L 14.0 6.67 C 14.19 6.67 14.35 6.73 14.48 6.86 C 14.6 6.99 14.67 7.14 14.67 7.33 C 14.67 7.52 14.6 7.68 14.48 7.81 C 14.35 7.94 14.19 8.0 14.0 8.0 L 12.67 8.0 Z M 6.86 14.48 C 6.73 14.35 6.67 14.19 6.67 14.0 L 6.67 12.67 C 6.67 12.48 6.73 12.32 6.86 12.19 C 6.99 12.06 7.14 12.0 7.33 12.0 C 7.52 12.0 7.68 12.06 7.81 12.19 C 7.94 12.32 8.0 12.48 8.0 12.67 L 8.0 14.0 C 8.0 14.19 7.94 14.35 7.81 14.48 C 7.68 14.6 7.52 14.67 7.33 14.67 C 7.14 14.67 6.99 14.6 6.86 14.48 Z M 3.1 4.03 L 2.15 3.1 C 2.02 2.97 1.95 2.81 1.95 2.62 C 1.95 2.43 2.02 2.27 2.15 2.15 C 2.27 2.03 2.43 1.97 2.62 1.97 C 2.81 1.97 2.96 2.03 3.08 2.15 L 4.03 3.1 C 4.16 3.22 4.22 3.38 4.22 3.57 C 4.22 3.76 4.16 3.91 4.03 4.03 C 3.9 4.16 3.74 4.22 3.57 4.22 C 3.39 4.22 3.23 4.16 3.1 4.03 Z M 11.57 12.52 L 10.63 11.57 C 10.51 11.43 10.45 11.28 10.45 11.09 C 10.45 10.91 10.51 10.76 10.63 10.63 C 10.76 10.51 10.91 10.45 11.09 10.45 C 11.28 10.45 11.43 10.51 11.57 10.63 L 12.52 11.57 C 12.65 11.69 12.71 11.84 12.71 12.03 C 12.7 12.22 12.64 12.38 12.52 12.52 C 12.38 12.65 12.22 12.72 12.03 12.72 C 11.84 12.72 11.69 12.65 11.57 12.52 Z M 0.67 8.0 C 0.48 8.0 0.32 7.94 0.19 7.81 C 0.06 7.68 0 7.52 0 7.33 C 0 7.14 0.06 6.99 0.19 6.86 C 0.32 6.73 0.48 6.67 0.67 6.67 L 2.0 6.67 C 2.19 6.67 2.35 6.73 2.48 6.86 C 2.6 6.99 2.67 7.14 2.67 7.33 C 2.67 7.52 2.6 7.68 2.48 7.81 C 2.35 7.94 2.19 8.0 2.0 8.0 L 0.67 8.0 Z M 2.15 12.52 C 2.03 12.39 1.97 12.24 1.97 12.05 C 1.97 11.86 2.03 11.71 2.15 11.58 L 3.1 10.63 C 3.22 10.51 3.38 10.45 3.56 10.45 C 3.74 10.45 3.9 10.51 4.03 10.63 C 4.17 10.77 4.23 10.93 4.23 11.11 C 4.23 11.29 4.17 11.45 4.03 11.58 L 3.1 12.52 C 2.97 12.65 2.81 12.72 2.62 12.72 C 2.43 12.72 2.27 12.65 2.15 12.52 Z M 4.5 10.17 C 3.72 9.39 3.33 8.44 3.33 7.33 C 3.33 6.22 3.72 5.28 4.5 4.5 C 5.28 3.72 6.22 3.33 7.33 3.33 C 8.44 3.33 9.39 3.72 10.17 4.5 C 10.94 5.28 11.33 6.22 11.33 7.33 C 11.33 8.44 10.94 9.39 10.17 10.17 C 9.39 10.94 8.44 11.33 7.33 11.33 C 6.22 11.33 5.28 10.94 4.5 10.17 Z M 9.22 9.22 C 9.74 8.69 10.0 8.07 10.0 7.33 C 10.0 6.6 9.74 5.97 9.22 5.45 C 8.69 4.93 8.07 4.67 7.33 4.67 C 6.6 4.67 5.97 4.93 5.45 5.45 C 4.93 5.97 4.67 6.6 4.67 7.33 C 4.67 8.07 4.93 8.69 5.45 9.22 C 5.97 9.74 6.6 10.0 7.33 10.0 C 8.07 10.0 8.69 9.74 9.22 9.22 Z';
 var ICON_SUNSET_W = 14.67, ICON_SUNSET_H = 14.67;
 
@@ -1658,7 +1681,7 @@ function renderItinerary(data) {
   containerBox(CL_CONTAINER_Y, CL_CONTAINER_H);
 
   /* Title and the route, every city in the order you meet it. */
-  txt('Your Travel Itinerary', MARGIN, TITLE_Y, 80, 700, '#000000');
+  txt('Your Travel Itinerary', MARGIN, TITLE_Y, TYPE.display, 700, INK.title);
 
   var routeCities = [legs[0].departureCity];
   legs.forEach(function (leg) {
@@ -1669,12 +1692,12 @@ function renderItinerary(data) {
   });
   /* Figma measures each run and advances by its width; here the whole line
      is one text node, which is simpler and lands in the same place. */
-  txt(routeCities.join('\u30FB'), MARGIN, CITY_LIST_Y, 24, 400, '#000000');
+  txt(routeCities.join('\u30FB'), MARGIN, CITY_LIST_Y, TYPE.lead, 400, INK.title);
 
   /* Section 1: Insights */
   rect(SECTION_BG_X, INSIGHTS_TITLE_Y - 46, SECTION_BG_W, 201, '#F5FBFE', 0, 24);
-  txt('Insights', PAD_LEFT - 1, INSIGHTS_TITLE_Y, 48, 700, '#000000');
-  txt('Key statistics from your trip.', PAD_LEFT - 1, INSIGHTS_DESC_Y, 24, 400, '#000000');
+  txt('Insights', PAD_LEFT - 1, INSIGHTS_TITLE_Y, TYPE.section, 700, INK.title);
+  txt('Key statistics from your trip.', PAD_LEFT - 1, INSIGHTS_DESC_Y, TYPE.lead, 400, INK.title);
 
   var uniqueCities = {};
   legs.forEach(function (leg) {
@@ -1702,20 +1725,20 @@ function renderItinerary(data) {
   ];
   var statX = PAD_LEFT;
   stats.forEach(function (st) {
-    txt(st.value, statX, INSIGHTS_STAT_Y, 36, 700, '#1F1F1F');
-    txt(st.label, statX, INSIGHTS_STAT_Y + 44, 14, 700, '#999999');
+    txt(st.value, statX, INSIGHTS_STAT_Y, TYPE.figure, 700, INK.primary);
+    txt(st.label, statX, INSIGHTS_STAT_Y + 44, TYPE.label, 700, INK.muted);
     statX += 180;
   });
 
   var modeLine = Object.keys(modeCounts).map(function (k) {
     return mode(k).icon + ' ' + modeCounts[k] + ' ' + k + (modeCounts[k] > 1 ? 's' : '');
   }).join('   ');
-  txt(modeLine, PAD_LEFT, INSIGHTS_STAT_Y + 90, 14, 400, '#666666');
+  txt(modeLine, PAD_LEFT, INSIGHTS_STAT_Y + 90, TYPE.label, 400, INK.secondary);
 
   /* Section 2: Timeline */
   rect(SECTION_BG_X, TIMELINE_TITLE_Y - 46, SECTION_BG_W, 201, '#F5FBFE', 0, 24);
-  txt('Timeline', PAD_LEFT - 1, TIMELINE_TITLE_Y, 48, 700, '#000000');
-  txt('A linear hour-by-hour strip spanning the entire trip.', PAD_LEFT - 1, TIMELINE_DESC_Y, 24, 400, '#000000');
+  txt('Timeline', PAD_LEFT - 1, TIMELINE_TITLE_Y, TYPE.section, 700, INK.title);
+  txt('A linear hour-by-hour strip spanning the entire trip.', PAD_LEFT - 1, TIMELINE_DESC_Y, TYPE.lead, 400, INK.title);
 
   /* 1. Hourly dot timeline. Dots carry day and night only; the stay
      colour lives on the bar below and in the day rings. */
@@ -1723,7 +1746,7 @@ function renderItinerary(data) {
     var dayMs = t0.getTime() + day * 86400000;
     if (dayMs > t1.getTime()) break;
     var localDate = new Date(dayMs + displayUtcOffset * 3600000);
-    txt(dayLabel(localDate.toISOString().slice(0, 10)), xMs(dayMs), TIMELINE_Y - 30, 13, 700, '#333333');
+    txt(dayLabel(localDate.toISOString().slice(0, 10)), xMs(dayMs), TIMELINE_Y - 30, TYPE.label, 700, INK.primary);
 
     for (var hour = 0; hour < 24; hour++) {
       var hourMs = dayMs + hour * 3600000;
@@ -1733,8 +1756,8 @@ function renderItinerary(data) {
 
       circle(hx, TIMELINE_Y, DOT, gr(isNight ? 0.15 : 0.75));
 
-      if (hour === 0) txtCentre('00', hx + DOT / 2, TIMELINE_Y + DOT / 2, 9, 700, '#BFBFBF');
-      if (hour === 12) txtCentre('12', hx + DOT / 2, TIMELINE_Y + DOT / 2, 9, 700, '#FFFFFF');
+      if (hour === 0) txtCentre('00', hx + DOT / 2, TIMELINE_Y + DOT / 2, TYPE.micro, 700, '#BFBFBF');
+      if (hour === 12) txtCentre('12', hx + DOT / 2, TIMELINE_Y + DOT / 2, TYPE.micro, 700, '#FFFFFF');
     }
   }
 
@@ -1782,19 +1805,19 @@ function renderItinerary(data) {
     bracket(x1, arrLabelX, LINE_TOP, LINE_H - 20);
 
     var dx = x1 + LABEL_OFFSET, dy = LEG_TOP + 16;
-    txt(leg.departureCity, dx, dy, 14, 700, '#333333');            dy += 20;
-    txt(fmt12(leg.departureTime), dx, dy, 18, 700, col);           dy += 24;
-    txt(fmtUtc(leg.departureUtc), dx, dy, 10, 400, '#999999');     dy += 18;
-    txt(mode(leg.type).icon, dx, dy, 20, 400, '#333333'); dy += 28;
-    if (leg.flightNumber) { txt(leg.flightNumber, dx, dy, 11, 700, '#333333'); dy += 16; }
-    txt('Duration ' + fmtDur(leg.durationHours, leg.durationMinutes), dx, dy, 11, 400, '#666666');
+    txt(leg.departureCity, dx, dy, TYPE.label, 700, INK.primary);            dy += 20;
+    txt(fmt12(leg.departureTime), dx, dy, TYPE.time, 700, col);           dy += 24;
+    txt(fmtUtc(leg.departureUtc), dx, dy, TYPE.micro, 400, INK.muted);     dy += 18;
+    txt(mode(leg.type).icon, dx, dy, TYPE.icon, 400, INK.primary); dy += 28;
+    if (leg.flightNumber) { txt(leg.flightNumber, dx, dy, TYPE.meta, 700, INK.primary); dy += 16; }
+    txt('Duration ' + fmtDur(leg.durationHours, leg.durationMinutes), dx, dy, TYPE.meta, 400, INK.secondary);
 
     if (drawArrivalLabels) {
       var ax = arrLabelX + LABEL_OFFSET, ay = LEG_TOP + 16;
-      txt(leg.arrivalCity, ax, ay, 14, 700, col);                  ay += 20;
-      txt(fmt12(leg.arrivalTime), ax, ay, 18, 700, '#333333');     ay += 24;
-      txt(fmtUtc(leg.arrivalUtc), ax, ay, 10, 400, '#999999');     ay += 18;
-      txt(mode(leg.type).icon, ax, ay, 20, 400, '#333333');
+      txt(leg.arrivalCity, ax, ay, TYPE.label, 700, col);                  ay += 20;
+      txt(fmt12(leg.arrivalTime), ax, ay, TYPE.time, 700, INK.primary);     ay += 24;
+      txt(fmtUtc(leg.arrivalUtc), ax, ay, TYPE.micro, 400, INK.muted);     ay += 18;
+      txt(mode(leg.type).icon, ax, ay, TYPE.icon, 400, INK.primary);
     }
   }
 
@@ -1816,14 +1839,14 @@ function renderItinerary(data) {
     circle(hx2 - 5, hotelLineY - 5, 10, '#BFBFBF');
 
     var htx = hx + 18;
-    txt('🏨', htx, HOTEL_TOP, 22, 400, '#333333');
+    txt('🏨', htx, HOTEL_TOP, TYPE.icon, 400, INK.primary);
     /* A hotel name and a city name are the same kind of thing, the name of
        a place you are, so they read at the same size and weight. It used to
        be 11px regular under a 14px bold city, a hierarchy that was not real.
        The times move down to make room for the taller line. */
-    txt(hotel.name, htx, HOTEL_TOP + 30, 14, 700, '#333333');
-    txt('In ' + fmt12(hotel.checkInTime), htx, HOTEL_TOP + 50, 9, 400, '#999999');
-    txt('Out ' + fmt12(hotel.checkOutTime), htx, HOTEL_TOP + 63, 9, 400, '#999999');
+    txt(hotel.name, htx, HOTEL_TOP + 30, TYPE.label, 700, INK.primary);
+    txt('In ' + fmt12(hotel.checkInTime), htx, HOTEL_TOP + 50, TYPE.micro, 400, INK.muted);
+    txt('Out ' + fmt12(hotel.checkOutTime), htx, HOTEL_TOP + 63, TYPE.micro, 400, INK.muted);
   }
 
   /* Timeline legend ──────────────────────────────────────────── */
@@ -1835,28 +1858,28 @@ function renderItinerary(data) {
      offset; tying it to PAD_LEFT-2 in the new layout put every label
      underneath its own swatch. */
   var LEG_TEXT_X = PAD_LEFT + 62;
-  txt('How to read', PAD_LEFT - 1, tlLegY, 16, 700, '#333333');
+  txt('How to read', PAD_LEFT - 1, tlLegY, TYPE.label, 700, INK.primary);
   circle(PAD_LEFT - 1, tlLegY + 40, 7, gr(0.02));
   circle(PAD_LEFT + 7, tlLegY + 40, 7, gr(0.85));
   txtMixed('Each circle represents <tspan font-weight="700">1 hour</tspan>',
-           LEG_TEXT_X, tlLegY + 35, 12, 400, '#333333');
+           LEG_TEXT_X, tlLegY + 35, TYPE.meta, 400, INK.primary);
   circle(PAD_LEFT - 2, tlLegY + 57, 18, gr(0.12));
   txtMixed('Black = <tspan font-weight="700">Night</tspan> (' + NIGHT_RANGE + ')',
-           LEG_TEXT_X, tlLegY + 59, 12, 400, '#333333');
+           LEG_TEXT_X, tlLegY + 59, TYPE.meta, 400, INK.primary);
   circle(PAD_LEFT - 2, tlLegY + 81, 18, gr(0.75));
   txtMixed('Gray = <tspan font-weight="700">Day</tspan> (' + DAY_RANGE + ')',
-           LEG_TEXT_X, tlLegY + 83, 12, 400, '#333333');
+           LEG_TEXT_X, tlLegY + 83, TYPE.meta, 400, INK.primary);
   rect(PAD_LEFT, tlLegY + 112, 40, 4, '#E53935');
   txtMixed('Colored segments = <tspan font-weight="700">Staying in the city</tspan>',
-           LEG_TEXT_X, tlLegY + 106, 12, 400, '#333333');
+           LEG_TEXT_X, tlLegY + 106, TYPE.meta, 400, INK.primary);
   rect(PAD_LEFT, tlLegY + 133, 40, 4, '#E53935', 0.4);
   txtMixed('Muted color = <tspan font-weight="700">In transit / commute</tspan>',
-           LEG_TEXT_X, tlLegY + 127, 12, 400, '#333333');
+           LEG_TEXT_X, tlLegY + 127, TYPE.meta, 400, INK.primary);
 
   /* Section 3: Clock Day */
   rect(SECTION_BG_X, CLOCK_DAY_TITLE_Y - 56, SECTION_BG_W, 201, '#F5FBFE', 0, 24);
-  txt('Clock Day', PAD_LEFT - 1, CLOCK_DAY_TITLE_Y, 48, 700, '#000000');
-  txt('A 24-hour donut chart representing one calendar day.', PAD_LEFT - 1, CLOCK_DAY_DESC_Y, 24, 400, '#000000');
+  txt('Clock Day', PAD_LEFT - 1, CLOCK_DAY_TITLE_Y, TYPE.section, 700, INK.title);
+  txt('A 24-hour donut chart representing one calendar day.', PAD_LEFT - 1, CLOCK_DAY_DESC_Y, TYPE.lead, 400, INK.title);
 
   /* 4. Daily clock diagrams ──────────────────────────────────── */
   function donut(ccx, ccy, rOut, rIn, a0, a1, fill, op) {
@@ -1883,14 +1906,14 @@ function renderItinerary(data) {
     var gap = dStr.indexOf(' ');
     txtMixed(gap >= 0
       ? esc(dStr.slice(0, gap)) + '<tspan font-weight="700">' + esc(dStr.slice(gap)) + '</tspan>'
-      : esc(dStr), cx + CLOCK_D / 2 - 20, cy - 81, 14, 400, '#333333');
+      : esc(dStr), cx + CLOCK_D / 2 - 20, cy - 81, TYPE.label, 400, INK.primary);
 
-    txt('00', cx + CLOCK_D / 2 - 8, cy - 61, 12, 700, '#1F1F1F');
-    txt('p', cx + CLOCK_D / 2 - 12, cy - 31, 10, 400, '#999999');
-    txt('a', cx + CLOCK_D / 2 + 5, cy - 31, 10, 400, '#999999');
-    txt('p', cx + CLOCK_D / 2 - 12, cy + CLOCK_D + 12, 10, 400, '#999999');
-    txt('a', cx + CLOCK_D / 2 + 5, cy + CLOCK_D + 12, 10, 400, '#999999');
-    txt('12', cx + CLOCK_D / 2 - 7, cy + CLOCK_D + 42, 12, 700, '#1F1F1F');
+    txt('00', cx + CLOCK_D / 2 - 8, cy - 61, TYPE.meta, 700, INK.primary);
+    txt('p', cx + CLOCK_D / 2 - 12, cy - 31, TYPE.micro, 400, INK.muted);
+    txt('a', cx + CLOCK_D / 2 + 5, cy - 31, TYPE.micro, 400, INK.muted);
+    txt('p', cx + CLOCK_D / 2 - 12, cy + CLOCK_D + 12, TYPE.micro, 400, INK.muted);
+    txt('a', cx + CLOCK_D / 2 + 5, cy + CLOCK_D + 12, TYPE.micro, 400, INK.muted);
+    txt('12', cx + CLOCK_D / 2 - 7, cy + CLOCK_D + 42, TYPE.meta, 700, INK.primary);
 
     var dayStayHours = {};
     for (var q = 0; q < legTimes.length - 1; q++) {
@@ -1925,9 +1948,9 @@ function renderItinerary(data) {
     for (var lh = 1; lh <= 23; lh++) {
       if (lh === 12) continue;
       var ang = (lh / 24) * 2 * Math.PI - Math.PI / 2;
-      txt(String(lh > 12 ? lh - 12 : lh),
-          ccx + labelRadius * Math.cos(ang) - 4,
-          ccy + labelRadius * Math.sin(ang) - 4, 7, 400, '#000000');
+      txtCentre(String(lh > 12 ? lh - 12 : lh),
+                ccx + labelRadius * Math.cos(ang),
+                ccy + labelRadius * Math.sin(ang), TYPE.micro, 400, INK.muted);
     }
 
     var clTop = cy - 26, clBot = cy + CLOCK_D + 23;
@@ -1967,11 +1990,11 @@ function renderItinerary(data) {
   dividerLine(CL_DIVIDER_Y);
 
   var clLegY = CLOCK_TOP + 375;
-  txt('How to read', PAD_LEFT - 1, clLegY, 16, 700, '#333333');
+  txt('How to read', PAD_LEFT - 1, clLegY, TYPE.label, 700, INK.primary);
   paragraph(
     "Each of the 24 pie slices is one hour:  Dark slices for nighttime (" + NIGHT_RANGE_SP + "), light Gray for daytime (" + DAY_RANGE_SP + "). Colored slices overlay the hours you're staying in a city, so you can see at a glance how much of each day is spent in transit versus on the ground.   Sun-cycle icons (moon \u2192 sunrise \u2192 sun \u2192 sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.",
     ['Dark slices', 'light', 'Gray', 'Colored slices', 'Sun-cycle'],
-    PAD_LEFT - 1, clLegY + 33, 351, 12, '#000000');
+    PAD_LEFT - 1, clLegY + 33, 351, TYPE.meta, INK.primary);
 
   var totalH = clLegY + 456;
 

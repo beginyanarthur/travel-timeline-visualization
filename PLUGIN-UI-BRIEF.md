@@ -301,3 +301,73 @@ touched, and the dark dots went from 9 a day to 9 a day at the new hours,
 
 **Worth copying to the plugin exactly.** The prose is now generated, so
 editing the words by hand puts the drift back.
+
+---
+
+## 13. The type scale
+
+The drawing had grown fifteen text sizes: 7, 9, 10, 11, 12, 13, 14, 16, 18,
+20, 22, 24, 36, 48, 80. None of the odd ones marked a decision. They were
+nudges, each one a pixel or two from a neighbour, and 7 versus 9 or 11
+versus 12 is a difference no reader can name. Alongside them sat five greys,
+two of which, `#1F1F1F` and `#333333`, are eight percent apart and identical
+to the eye.
+
+Nine roles now, one weight pair, four inks. Both files declare them at the
+top as `TYPE` and `INK`, and no `txt()` call anywhere passes a bare number.
+
+| role | px | typical weight | ink | what wears it |
+|---|---|---|---|---|
+| `display` | 80 | Bold | `title` | the page title, once |
+| `section` | 48 | Bold | `title` | Insights, Timeline, Clock Day |
+| `figure` | 36 | Bold | `primary` | the value of a statistic |
+| `lead` | 24 | Regular | `title` | the sentence under a section title, and the route |
+| `icon` | 20 | Regular | `primary` | an emoji for a hotel or a mode of transport |
+| `time` | 18 | Bold | leg colour | a departure or an arrival |
+| `label` | 14 | Bold | `primary` / `muted` | names a thing: a city, a hotel, a day, a statistic |
+| `meta` | 12 | either | `primary` / `secondary` | detail you read: legend, duration, flight number |
+| `micro` | 9 | Regular | `muted` | chrome you glance at: offsets, check in and out, hour ticks |
+
+```
+INK.title      #000000   titles and the sentences under them
+INK.primary    #333333   anything you are meant to read
+INK.secondary  #666666   supporting detail
+INK.muted      #999999   chrome
+```
+
+Two weights only, Inter Regular and Inter Bold. The plugin used to load
+Medium and Semi Bold as well and never drew a character in either, so those
+two `loadFontAsync` calls are gone.
+
+Three inks stay outside the set on purpose, because they are painted on top
+of something rather than on the page: `#BFBFBF` and `#FFFFFF` for the "00"
+and "12" that sit inside a timeline dot, and the leg's own colour for a
+departure time.
+
+What moved, and why each merge is safe:
+
+- 22 → `icon` 20. The hotel emoji joins the transport emoji. One icon size.
+- 16 → `label` 14. "How to read" appears twice and nowhere else. At 14 Bold
+  above 12 Regular it still reads as a heading; weight carries it.
+- 13 → `label` 14. A timeline day label and a clock day label name the same
+  thing, so they are now the same size.
+- 11 → `meta` 12. Flight number and duration join the legend.
+- 10 → `micro` 9. UTC offsets and the clock's a/p markers join check in and
+  check out.
+- 7 → `micro` 9. The hour ticks around the donut were the smallest thing on
+  the page by two pixels. They were also placed by subtracting a flat 4 from
+  x and y, which centres a two digit hour and leaves a one digit hour
+  hanging, so the ring sat lopsided. They are centred on their own measured
+  box now, `txtCentre` on the web and `label.x = lx - label.width / 2` in the
+  plugin, and drawn in `muted` like the a/p markers they sit beside.
+- `#1F1F1F` → `INK.primary`. Statistic values and the clock's "00"/"12".
+
+Checked, not assumed. Rendering the sample trip and taking the bounding box
+of all 351 text nodes gives zero text on text overlaps, 176 hour ticks with
+none touching a donut ring, and the legend swatches still ending at 375 and
+399 against text starting at 421.
+
+**Every Y in the drawing is a hard-coded number,** so a size change is a
+collision risk, which is how the hotel name going 11 → 14 once pushed its In
+and Out lines from +46/+58 to +50/+63. Measure the boxes after changing a
+size. Do not eyeball it.

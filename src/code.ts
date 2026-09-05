@@ -86,6 +86,30 @@ const DAY_RANGE = `${hourLabel(NIGHT_TO)} - ${hourLabel(NIGHT_FROM - 1)}`
 const NIGHT_RANGE_SP = `${hourLabel(NIGHT_FROM, true)}\u2013${hourLabel(NIGHT_TO - 1, true)}`
 const DAY_RANGE_SP = `${hourLabel(NIGHT_TO, true)}\u2013${hourLabel(NIGHT_FROM - 1, true)}`
 
+// ── Type ─────────────────────────────────────────────────────────────────────────
+// Every size and ink in the drawing is named here, so a new label picks a
+// role instead of a number. It replaced fifteen sizes that had grown one
+// nudge at a time, and two greys eight percent apart that no eye could tell
+// from each other. Regular and Bold are the only styles loaded, so those
+// are the only two weights. Keep this in step with web/index.html.
+const TYPE = {
+  display: 80,  // the page title, once
+  section: 48,  // Insights, Timeline, Clock Day
+  figure:  36,  // the value of a statistic
+  lead:    24,  // the sentence under a section title, and the route
+  icon:    20,  // an emoji standing in for a hotel or a mode of transport
+  time:    18,  // a departure or an arrival
+  label:   14,  // names a thing: a city, a hotel, a day, a statistic
+  meta:    12,  // detail you read: legend, duration, flight number
+  micro:    9,  // chrome you glance at: offsets, check in and out, hour ticks
+}
+const INK = {
+  title:     '#000000',  // titles and the sentences under them
+  primary:   '#333333',  // anything you are meant to read
+  secondary: '#666666',  // supporting detail
+  muted:     '#999999',  // chrome
+}
+
 // ── Layout ─────────────────────────────────────────────────────────────
 const DOT = 22
 const DOT_GAP = 2
@@ -171,8 +195,6 @@ const SUN_ARC_W = 201.96
 async function buildItinerary(data: TripData): Promise<FrameNode> {
   await figma.loadFontAsync({ family: 'Inter', style: 'Regular' })
   await figma.loadFontAsync({ family: 'Inter', style: 'Bold' })
-  await figma.loadFontAsync({ family: 'Inter', style: 'Medium' })
-  await figma.loadFontAsync({ family: 'Inter', style: 'Semi Bold' })
 
   // Use the first leg's departure timezone as the display timezone
   // so the dot timeline aligns with local times shown in labels
@@ -265,7 +287,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   // ═══════════════════════════════════════════════════════════════════════
   // MAIN TITLE + CITY LIST
   // ═══════════════════════════════════════════════════════════════════════
-  await txt('Your Travel Itinerary', MARGIN, TITLE_Y, 80, 'Bold', '#000000')
+  await txt('Your Travel Itinerary', MARGIN, TITLE_Y, TYPE.display, 'Bold', INK.title)
 
   const routeCities: string[] = [data.legs[0].departureCity]
   for (const leg of data.legs) {
@@ -277,10 +299,10 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   let cityX = MARGIN
   for (let ci = 0; ci < routeCities.length; ci++) {
     if (ci > 0) {
-      const sep = await txt('\u30FB', cityX, CITY_LIST_Y, 24, 'Regular', '#000000')
+      const sep = await txt('\u30FB', cityX, CITY_LIST_Y, TYPE.lead, 'Regular', INK.title)
       cityX = sep.x + sep.width
     }
-    const cn = await txt(routeCities[ci], cityX, CITY_LIST_Y, 24, 'Regular', '#000000')
+    const cn = await txt(routeCities[ci], cityX, CITY_LIST_Y, TYPE.lead, 'Regular', INK.title)
     cityX = cn.x + cn.width
   }
 
@@ -288,8 +310,8 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   // SECTION 1: INSIGHTS
   // ═══════════════════════════════════════════════════════════════════════
   rect(SECTION_BG_X, INSIGHTS_TITLE_Y - 46, SECTION_BG_W, 201, '#F5FBFE', 24)
-  await txt('Insights', PAD_LEFT - 1, INSIGHTS_TITLE_Y, 48, 'Bold', '#000000')
-  await txt('Key statistics from your trip.', PAD_LEFT - 1, INSIGHTS_DESC_Y, 24, 'Regular', '#000000')
+  await txt('Insights', PAD_LEFT - 1, INSIGHTS_TITLE_Y, TYPE.section, 'Bold', INK.title)
+  await txt('Key statistics from your trip.', PAD_LEFT - 1, INSIGHTS_DESC_Y, TYPE.lead, 'Regular', INK.title)
 
   const uniqueCities = new Set<string>()
   for (const leg of data.legs) {
@@ -319,8 +341,8 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
 
   let statX = PAD_LEFT
   for (const stat of stats) {
-    await txt(stat.value, statX, INSIGHTS_STAT_Y, 36, 'Bold', '#1F1F1F')
-    await txt(stat.label, statX, INSIGHTS_STAT_Y + 44, 14, 'Bold', '#999999')
+    await txt(stat.value, statX, INSIGHTS_STAT_Y, TYPE.figure, 'Bold', INK.primary)
+    await txt(stat.label, statX, INSIGHTS_STAT_Y + 44, TYPE.label, 'Bold', INK.muted)
     statX += 180
   }
 
@@ -329,7 +351,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   const modeLine = Object.keys(modeCounts)
     .map((k) => `${LEG_ICONS[k] || ''} ${modeCounts[k]} ${k}${modeCounts[k] > 1 ? 's' : ''}`)
     .join('   ')
-  await txt(modeLine, PAD_LEFT, INSIGHTS_STAT_Y + 90, 14, 'Regular', '#666666')
+  await txt(modeLine, PAD_LEFT, INSIGHTS_STAT_Y + 90, TYPE.label, 'Regular', INK.secondary)
 
   // ═══════════════════════════════════════════════════════════════════════
   // SECTION 2: TIMELINE
@@ -339,8 +361,8 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   rect(SECTION_BG_X, TIMELINE_TITLE_Y - 46, SECTION_BG_W, 201, '#F5FBFE', 24)
 
   // Section title and description
-  await txt('Timeline', PAD_LEFT - 1, TIMELINE_TITLE_Y, 48, 'Bold', '#000000')
-  await txt('A linear hour-by-hour strip spanning the entire trip.', PAD_LEFT - 1, TIMELINE_DESC_Y, 24, 'Regular', '#000000')
+  await txt('Timeline', PAD_LEFT - 1, TIMELINE_TITLE_Y, TYPE.section, 'Bold', INK.title)
+  await txt('A linear hour-by-hour strip spanning the entire trip.', PAD_LEFT - 1, TIMELINE_DESC_Y, TYPE.lead, 'Regular', INK.title)
 
   // ═══════════════════════════════════════════════════════════════════════
   // 1. HOURLY DOT TIMELINE
@@ -354,7 +376,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
     const dx = xMs(dayMs)
 
     // Date label above the first dot of each day
-    await txt(dStr, dx, TIMELINE_Y - 30, 13, 'Bold', '#333333')
+    await txt(dStr, dx, TIMELINE_Y - 30, TYPE.label, 'Bold', INK.primary)
 
     for (let hour = 0; hour < 24; hour++) {
       const hMs = dayMs + hour * 3600000
@@ -372,14 +394,14 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
 
       // "00" label centered on midnight dot
       if (hour === 0) {
-        const label = await txt('00', 0, 0, 9, 'Bold', '#BFBFBF')
+        const label = await txt('00', 0, 0, TYPE.micro, 'Bold', '#BFBFBF')
         label.x = cx + DOT / 2 - label.width / 2
         label.y = TIMELINE_Y + DOT / 2 - label.height / 2
       }
 
       // "12" label centered on noon dot
       if (hour === 12) {
-        const label = await txt('12', 0, 0, 9, 'Bold', '#FFFFFF')
+        const label = await txt('12', 0, 0, TYPE.micro, 'Bold', '#FFFFFF')
         label.x = cx + DOT / 2 - label.width / 2
         label.y = TIMELINE_Y + DOT / 2 - label.height / 2
       }
@@ -517,34 +539,34 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
     // ── Departure column (labels offset right of guide line) ──
     const depLblX = x1 + LABEL_OFFSET
     let dy = LEG_TOP + 16
-    await txt(leg.departureCity, depLblX, dy, 14, 'Bold', '#333333')
+    await txt(leg.departureCity, depLblX, dy, TYPE.label, 'Bold', INK.primary)
     dy += 20
-    await txt(fmt12(leg.departureTime), depLblX, dy, 18, 'Bold', col)
+    await txt(fmt12(leg.departureTime), depLblX, dy, TYPE.time, 'Bold', col)
     dy += 24
-    await txt(fmtUtc(leg.departureUtc), depLblX, dy, 10, 'Regular', '#999999')
+    await txt(fmtUtc(leg.departureUtc), depLblX, dy, TYPE.micro, 'Regular', INK.muted)
     dy += 18
     const depIcon = legIcon(leg.type)
-    await txt(depIcon, depLblX, dy, 20, 'Regular', '#333333')
+    await txt(depIcon, depLblX, dy, TYPE.icon, 'Regular', INK.primary)
     dy += 28
     if (leg.flightNumber) {
-      await txt(leg.flightNumber, depLblX, dy, 11, 'Bold', '#333333')
+      await txt(leg.flightNumber, depLblX, dy, TYPE.meta, 'Bold', INK.primary)
       dy += 16
     }
-    await txt(`Duration ${fmtDur(leg.durationHours, leg.durationMinutes)}`, depLblX, dy, 11, 'Regular', '#666666')
+    await txt(`Duration ${fmtDur(leg.durationHours, leg.durationMinutes)}`, depLblX, dy, TYPE.meta, 'Regular', INK.secondary)
 
     // ── Arrival column (labels offset right of bracket end) ──
     // Only draw if there's enough space before the next leg's departure column
     if (drawArrivalLabels) {
       const arrLblX = arrLabelX + LABEL_OFFSET
       let ay = LEG_TOP + 16
-      await txt(leg.arrivalCity, arrLblX, ay, 14, 'Bold', col)
+      await txt(leg.arrivalCity, arrLblX, ay, TYPE.label, 'Bold', col)
       ay += 20
-      await txt(fmt12(leg.arrivalTime), arrLblX, ay, 18, 'Bold', '#333333')
+      await txt(fmt12(leg.arrivalTime), arrLblX, ay, TYPE.time, 'Bold', INK.primary)
       ay += 24
-      await txt(fmtUtc(leg.arrivalUtc), arrLblX, ay, 10, 'Regular', '#999999')
+      await txt(fmtUtc(leg.arrivalUtc), arrLblX, ay, TYPE.micro, 'Regular', INK.muted)
       ay += 18
       const arrIcon = legIcon(leg.type)
-      await txt(arrIcon, arrLblX, ay, 20, 'Regular', '#333333')
+      await txt(arrIcon, arrLblX, ay, TYPE.icon, 'Regular', INK.primary)
     }
   }
 
@@ -605,16 +627,16 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
 
     // Hotel icon + text aligned at same x, right of connector line
     const hotelTextX = hx + 18
-    await txt('\u{1F3E8}', hotelTextX, HOTEL_TOP, 22, 'Regular', '#333333')
+    await txt('\u{1F3E8}', hotelTextX, HOTEL_TOP, TYPE.icon, 'Regular', INK.primary)
     // Same size and weight as a city name: both are the name of a place you
     // are. It was 11px regular under a 14px bold city, a hierarchy that was
     // not real.
-    const nameNode = await txt(hotel.name, hotelTextX, HOTEL_TOP + 30, 14, 'Bold', '#333333')
+    const nameNode = await txt(hotel.name, hotelTextX, HOTEL_TOP + 30, TYPE.label, 'Bold', INK.primary)
     nameNode.textAutoResize = 'WIDTH_AND_HEIGHT'
 
     // Check-in / check-out times
-    await txt(`In ${fmt12(hotel.checkInTime)}`, hotelTextX, HOTEL_TOP + 50, 9, 'Regular', '#999999')
-    await txt(`Out ${fmt12(hotel.checkOutTime)}`, hotelTextX, HOTEL_TOP + 63, 9, 'Regular', '#999999')
+    await txt(`In ${fmt12(hotel.checkInTime)}`, hotelTextX, HOTEL_TOP + 50, TYPE.micro, 'Regular', INK.muted)
+    await txt(`Out ${fmt12(hotel.checkOutTime)}`, hotelTextX, HOTEL_TOP + 63, TYPE.micro, 'Regular', INK.muted)
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -628,7 +650,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
      offset; tying it to PAD_LEFT-2 in the new layout put every label
      underneath its own swatch. */
   const LEG_TEXT_X = PAD_LEFT + 62
-  await txt('How to read', PAD_LEFT - 1, tlLegY, 16, 'Bold', '#333333')
+  await txt('How to read', PAD_LEFT - 1, tlLegY, TYPE.label, 'Bold', INK.primary)
 
   // Two small dots (dark + light) representing night and day hours
   const dotDark = figma.createEllipse()
@@ -647,7 +669,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   dotLight.fills = [spRgb(0.85)]
   const grp = figma.group([dotDark, dotLight], root)
   grp.name = 'Group 141'
-  const legendText = await txt('Each circle represents 1 hour', LEG_TEXT_X, tlLegY + 35, 12, 'Regular', '#333333')
+  const legendText = await txt('Each circle represents 1 hour', LEG_TEXT_X, tlLegY + 35, TYPE.meta, 'Regular', INK.primary)
   const boldStart = 'Each circle represents '.length
   legendText.setRangeFontName(boldStart, legendText.characters.length, { family: 'Inter', style: 'Bold' })
 
@@ -657,7 +679,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   dotNight.x = PAD_LEFT - 2
   dotNight.y = tlLegY + 57
   dotNight.fills = [spRgb(0.12)]
-  const nightLabel = await txt(`Black = Night (${NIGHT_RANGE})`, LEG_TEXT_X, tlLegY + 59, 12, 'Regular', '#333333')
+  const nightLabel = await txt(`Black = Night (${NIGHT_RANGE})`, LEG_TEXT_X, tlLegY + 59, TYPE.meta, 'Regular', INK.primary)
   nightLabel.setRangeFontName('Black = '.length, 'Black = Night'.length, { family: 'Inter', style: 'Bold' })
 
   const dotDay = figma.createEllipse()
@@ -666,12 +688,12 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   dotDay.x = PAD_LEFT - 2
   dotDay.y = tlLegY + 81
   dotDay.fills = [spRgb(0.75)]
-  const dayLabel2 = await txt(`Gray = Day (${DAY_RANGE})`, LEG_TEXT_X, tlLegY + 83, 12, 'Regular', '#333333')
+  const dayLabel2 = await txt(`Gray = Day (${DAY_RANGE})`, LEG_TEXT_X, tlLegY + 83, TYPE.meta, 'Regular', INK.primary)
   dayLabel2.setRangeFontName('Gray = '.length, 'Gray = Day'.length, { family: 'Inter', style: 'Bold' })
 
   // Colored segments legend (solid = city stay)
   rect(PAD_LEFT, tlLegY + 112, 40, 4, '#E53935')
-  const colorLabel = await txt('Colored segments = Staying in the city', LEG_TEXT_X, tlLegY + 106, 12, 'Regular', '#333333')
+  const colorLabel = await txt('Colored segments = Staying in the city', LEG_TEXT_X, tlLegY + 106, TYPE.meta, 'Regular', INK.primary)
   colorLabel.setRangeFontName('Colored segments = '.length, colorLabel.characters.length, { family: 'Inter', style: 'Bold' })
 
   // Muted segments legend (transit/commute)
@@ -681,7 +703,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   mutedRect.x = PAD_LEFT
   mutedRect.y = tlLegY + 133
   mutedRect.fills = [{ type: 'SOLID', color: hexToRgb('#E53935'), opacity: 0.4 } as SolidPaint]
-  const mutedLabel = await txt('Muted color = In transit / commute', LEG_TEXT_X, tlLegY + 127, 12, 'Regular', '#333333')
+  const mutedLabel = await txt('Muted color = In transit / commute', LEG_TEXT_X, tlLegY + 127, TYPE.meta, 'Regular', INK.primary)
   mutedLabel.setRangeFontName('Muted color = '.length, mutedLabel.characters.length, { family: 'Inter', style: 'Bold' })
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -692,8 +714,8 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   rect(SECTION_BG_X, CLOCK_DAY_TITLE_Y - 56, SECTION_BG_W, 201, '#F5FBFE', 24)
 
   // Section title and description
-  await txt('Clock Day', PAD_LEFT - 1, CLOCK_DAY_TITLE_Y, 48, 'Bold', '#000000')
-  await txt('A 24-hour donut chart representing one calendar day.', PAD_LEFT - 1, CLOCK_DAY_DESC_Y, 24, 'Regular', '#000000')
+  await txt('Clock Day', PAD_LEFT - 1, CLOCK_DAY_TITLE_Y, TYPE.section, 'Bold', INK.title)
+  await txt('A 24-hour donut chart representing one calendar day.', PAD_LEFT - 1, CLOCK_DAY_DESC_Y, TYPE.lead, 'Regular', INK.title)
 
   // ═══════════════════════════════════════════════════════════════════════
   // 4. DAILY CLOCK DIAGRAMS
@@ -707,25 +729,25 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
 
     // All positions relative to cy (donut top edge)
     // Date label — centered above clock (month Regular, day number Bold)
-    const dateLabel = await txt(dStr, cx + CLOCK_D / 2 - 20, cy - 81, 14, 'Regular', '#333333')
+    const dateLabel = await txt(dStr, cx + CLOCK_D / 2 - 20, cy - 81, TYPE.label, 'Regular', INK.primary)
     const spaceIdx = dStr.indexOf(' ')
     if (spaceIdx >= 0) {
       dateLabel.setRangeFontName(spaceIdx, dStr.length, { family: 'Inter', style: 'Bold' })
     }
 
     // "00" centered above clock
-    await txt('00', cx + CLOCK_D / 2 - 8, cy - 61, 12, 'Bold', '#1F1F1F')
+    await txt('00', cx + CLOCK_D / 2 - 8, cy - 61, TYPE.meta, 'Bold', INK.primary)
 
     // p/a labels at TOP (flanking center, above the donut)
-    await txt('p', cx + CLOCK_D / 2 - 12, cy - 31, 10, 'Regular', '#999999')
-    await txt('a', cx + CLOCK_D / 2 + 5, cy - 31, 10, 'Regular', '#999999')
+    await txt('p', cx + CLOCK_D / 2 - 12, cy - 31, TYPE.micro, 'Regular', INK.muted)
+    await txt('a', cx + CLOCK_D / 2 + 5, cy - 31, TYPE.micro, 'Regular', INK.muted)
 
     // p/a labels at BOTTOM (flanking center, below the donut)
-    await txt('p', cx + CLOCK_D / 2 - 12, cy + CLOCK_D + 12, 10, 'Regular', '#999999')
-    await txt('a', cx + CLOCK_D / 2 + 5, cy + CLOCK_D + 12, 10, 'Regular', '#999999')
+    await txt('p', cx + CLOCK_D / 2 - 12, cy + CLOCK_D + 12, TYPE.micro, 'Regular', INK.muted)
+    await txt('a', cx + CLOCK_D / 2 + 5, cy + CLOCK_D + 12, TYPE.micro, 'Regular', INK.muted)
 
     // "12" centered below clock
-    await txt('12', cx + CLOCK_D / 2 - 7, cy + CLOCK_D + 42, 12, 'Bold', '#1F1F1F')
+    await txt('12', cx + CLOCK_D / 2 - 7, cy + CLOCK_D + 42, TYPE.meta, 'Bold', INK.primary)
 
     // Determine city-stay hours (arrival of leg[i] → departure of leg[i+1])
     const stayHours: Map<number, string> = new Map()
@@ -786,8 +808,12 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
       const angle = (h / 24) * 2 * Math.PI - Math.PI / 2
       const lx = clockCenterX + labelRadius * Math.cos(angle)
       const ly = clockCenterY + labelRadius * Math.sin(angle)
-      const label = await txt(String(displayNum), lx - 4, ly - 4, 7, 'Regular', '#000000')
+      const label = await txt(String(displayNum), lx, ly, TYPE.micro, 'Regular', INK.muted)
       label.textAutoResize = 'WIDTH_AND_HEIGHT'
+      /* Centre on the tick: a one digit hour and a two digit one have
+         different widths, so a fixed nudge left the ring lopsided. */
+      label.x = lx - label.width / 2
+      label.y = ly - label.height / 2
     }
 
     // Vertical center line through the donut (midnight/noon divider)
@@ -894,14 +920,14 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   dividerLine(CL_DIVIDER_Y)
 
   const clLegY = CLOCK_TOP + 375  // Clock Day legend Y position
-  await txt('How to read', PAD_LEFT - 1, clLegY, 16, 'Bold', '#333333')
+  await txt('How to read', PAD_LEFT - 1, clLegY, TYPE.label, 'Bold', INK.primary)
 
   // Descriptive paragraph with mixed bold formatting
   const clockLegendText = `Each of the 24 pie slices is one hour:  Dark slices for nighttime (${NIGHT_RANGE_SP}), light Gray for daytime (${DAY_RANGE_SP}). Colored slices overlay the hours you're staying in a city, so you can see at a glance how much of each day is spent in transit versus on the ground.   Sun-cycle icons (moon → sunrise → sun → sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.`
   const clPara = figma.createText()
   clPara.fontName = { family: 'Inter', style: 'Regular' }
   clPara.characters = clockLegendText
-  clPara.fontSize = 12
+  clPara.fontSize = TYPE.meta
   clPara.fills = [sp('#000000')]
   clPara.textAutoResize = 'NONE'
   clPara.resize(351, 10)
