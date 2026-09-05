@@ -121,6 +121,12 @@ device you have not set up. `?nocount` needs none of that.
 
 Use it as your bookmark for the site.
 
+It has a second advantage. A query string is enough to bypass a cached copy,
+and Pages caches hard: a device holding yesterday's copy of the page does not
+have any of this in it yet. The `#goatcounter-` switches below are only a
+hash, which does not bypass the cache, so on a device that has been here
+before, open `?nocount` once first.
+
 ## Stop counting a browser for good
 
 **If you are not sure whether you already did it, do not open that URL to
