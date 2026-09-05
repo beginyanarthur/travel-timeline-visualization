@@ -246,7 +246,9 @@ h1 {
   border-radius: 50%;
   background: var(--surface);
   color: var(--ink-2);
-  display: grid; place-items: center;
+  /* Off on the desk, where the window is already the size you want and the
+     panel does not eat the canvas. It exists for the sheet. */
+  display: none; place-items: center;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(10, 14, 20, 0.18);
   transition: color 0.12s ease, border-color 0.12s ease;
@@ -1048,6 +1050,9 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
      would rather they took. */
   .se-sample { border: 1px solid var(--rule-firm); color: var(--ink-2); }
   .se-sample:active { background: var(--surface-2); }
+
+  /* Only here. On the desk the canvas is already as big as the window. */
+  .fab { display: grid; }
 
   /* The small controls are targets too. The close button was 20px, the
      zoom toolbar 26px and the drag grip 12px wide, none of which a finger
@@ -3232,7 +3237,14 @@ wrap.addEventListener('pointerdown', function () {
   if (sheetMQ.matches && isOpen()) sheetOpen(false);
 });
 
-sheetMQ.addEventListener('change', function () { sheetOpen(false); rail.style.height = ''; });
+sheetMQ.addEventListener('change', function () {
+  sheetOpen(false);
+  rail.style.height = '';
+  /* Turning an iPad to landscape crosses this line. Without the exit, the
+     button that leaves full screen has just disappeared and there is no
+     other way out. */
+  if (!sheetMQ.matches) fullscreen(false);
+});
 
 /* The dates are the only fields reachable while the sheet is collapsed.
    Touching one opens it, so Generate comes into view and the rule that
