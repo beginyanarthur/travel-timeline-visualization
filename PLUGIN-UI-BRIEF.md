@@ -250,10 +250,8 @@ is being worked on:
 - the legend reading `Night (6pm - 5am)` and `Day (6am - 5pm)` while the code
   beside it says `hour < 6 || hour >= 21`, which is 9pm to 6am
 
-The corrected values were kept. If these keep coming back, the fix is
-probably to make the legend read its own rule rather than repeat it in prose:
-derive the hours from the same constant the dots use, and it can never
-disagree again.
+The corrected values were kept, and the third one is now fixed at the root
+rather than corrected again. See section 12.
 
 **One difference worth knowing.** Figma measures each city name and advances
 by its width to build the route line. The web draws the whole line as one
@@ -277,3 +275,29 @@ which is an offset of 62, and that relationship is what actually mattered.
 
 Worth remembering when the layout next moves: the legend has two columns, and
 only one of them is anchored to PAD_LEFT.
+
+
+## 12. Night is defined once
+
+The legend used to restate the rule in prose, so the two could drift, and
+they did three times. There is now a single definition at the top of both
+files:
+
+```
+NIGHT_FROM = 21
+NIGHT_TO   = 6
+nightHour(h)  ->  h < NIGHT_TO || h >= NIGHT_FROM
+```
+
+The hour dots read it, the clock slices read it, and all four sentences about
+it are built from it: both legend labels and both halves of the clock
+paragraph. `hourLabel()` turns an hour into "9pm", and the ranges fall out of
+the constants, the last night hour being the one before day begins.
+
+Proved by moving it. Setting night to 22:00 and 07:00 and rebuilding changed
+the legend to "Night (10pm - 6am)" and "Day (7am - 9pm)" with nothing else
+touched, and the dark dots went from 9 a day to 9 a day at the new hours,
+72 across the trip. Restored afterwards.
+
+**Worth copying to the plugin exactly.** The prose is now generated, so
+editing the words by hand puts the drift back.

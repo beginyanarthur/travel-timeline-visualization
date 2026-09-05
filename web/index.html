@@ -1409,6 +1409,22 @@ var TRANSPORT = {
 };
 function mode(t) { return TRANSPORT[t] || TRANSPORT.flight; }
 
+/* Night is defined once, here. The dots read it, the clock slices read it,
+   and every sentence about them is built from it, so the drawing and the
+   words describing it cannot drift apart. They had, three times. */
+var NIGHT_FROM = 21, NIGHT_TO = 6;
+function nightHour(h) { return h < NIGHT_TO || h >= NIGHT_FROM; }
+function hourLabel(h, spaced) {
+  var n = h % 12;
+  if (n === 0) n = 12;
+  return n + (spaced ? ' ' : '') + (h >= 12 ? 'pm' : 'am');
+}
+/* The last night hour is the one before day starts, and the other way round. */
+var NIGHT_RANGE = hourLabel(NIGHT_FROM) + ' - ' + hourLabel(NIGHT_TO - 1);
+var DAY_RANGE = hourLabel(NIGHT_TO) + ' - ' + hourLabel(NIGHT_FROM - 1);
+var NIGHT_RANGE_SP = hourLabel(NIGHT_FROM, 1) + '\u2013' + hourLabel(NIGHT_TO - 1, 1);
+var DAY_RANGE_SP = hourLabel(NIGHT_TO, 1) + '\u2013' + hourLabel(NIGHT_FROM - 1, 1);
+
 var DOT = 22, DOT_GAP = 2, HOUR_W = DOT + DOT_GAP;
 var MARGIN = 243, PAD_LEFT = 359;
 var TITLE_Y = 248, CITY_LIST_Y = 358;
@@ -1661,7 +1677,7 @@ function renderItinerary(data) {
       var hourMs = dayMs + hour * 3600000;
       if (hourMs >= t1.getTime()) break;
       var hx = xMs(hourMs);
-      var isNight = hour < 6 || hour >= 21;   /* 9pm to 6am */
+      var isNight = nightHour(hour);
 
       circle(hx, TIMELINE_Y, DOT, gr(isNight ? 0.15 : 0.75));
 
@@ -1769,10 +1785,10 @@ function renderItinerary(data) {
   txtMixed('Each circle represents <tspan font-weight="700">1 hour</tspan>',
            LEG_TEXT_X, tlLegY + 35, 12, 400, '#333333');
   circle(PAD_LEFT - 2, tlLegY + 57, 18, gr(0.12));
-  txtMixed('Black = <tspan font-weight="700">Night</tspan> (9pm - 5am)',
+  txtMixed('Black = <tspan font-weight="700">Night</tspan> (' + NIGHT_RANGE + ')',
            LEG_TEXT_X, tlLegY + 59, 12, 400, '#333333');
   circle(PAD_LEFT - 2, tlLegY + 81, 18, gr(0.75));
-  txtMixed('Gray = <tspan font-weight="700">Day</tspan> (6am - 8pm)',
+  txtMixed('Gray = <tspan font-weight="700">Day</tspan> (' + DAY_RANGE + ')',
            LEG_TEXT_X, tlLegY + 83, 12, 400, '#333333');
   rect(PAD_LEFT, tlLegY + 112, 40, 4, '#E53935');
   txtMixed('Colored segments = <tspan font-weight="700">Staying in the city</tspan>',
@@ -1846,7 +1862,7 @@ function renderItinerary(data) {
       /* A city stay wins over transit, transit over plain day or night. */
       if (dayStayHours[hr]) donut(ccx, ccy, rOut, rIn, sa, ea, dayStayHours[hr]);
       else if (dayTransitHours[hr]) donut(ccx, ccy, rOut, rIn, sa, ea, dayTransitHours[hr], 0.4);
-      else donut(ccx, ccy, rOut, rIn, sa, ea, gr((hr < 6 || hr >= 21) ? 0.12 : 0.75));
+      else donut(ccx, ccy, rOut, rIn, sa, ea, gr(nightHour(hr) ? 0.12 : 0.75));
     }
 
     var labelRadius = CLOCK_D / 2 + 10;
@@ -1897,7 +1913,7 @@ function renderItinerary(data) {
   var clLegY = CLOCK_TOP + 375;
   txt('How to read', PAD_LEFT - 1, clLegY, 16, 700, '#333333');
   paragraph(
-    "Each of the 24 pie slices is one hour:  Dark slices for nighttime (9 pm\u20135 am), light Gray for daytime (6 am\u20138 pm). Colored slices overlay the hours you're staying in a city, so you can see at a glance how much of each day is spent in transit versus on the ground.   Sun-cycle icons (moon \u2192 sunrise \u2192 sun \u2192 sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.",
+    "Each of the 24 pie slices is one hour:  Dark slices for nighttime (" + NIGHT_RANGE_SP + "), light Gray for daytime (" + DAY_RANGE_SP + "). Colored slices overlay the hours you're staying in a city, so you can see at a glance how much of each day is spent in transit versus on the ground.   Sun-cycle icons (moon \u2192 sunrise \u2192 sun \u2192 sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.",
     ['Dark slices', 'light', 'Gray', 'Colored slices', 'Sun-cycle'],
     PAD_LEFT - 1, clLegY + 33, 351, 12, '#000000');
 
