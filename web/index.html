@@ -1765,9 +1765,13 @@ function renderItinerary(data) {
 
     var htx = hx + 18;
     txt('🏨', htx, HOTEL_TOP, 22, 400, '#333333');
-    txt(hotel.name, htx, HOTEL_TOP + 30, 11, 400, '#333333');
-    txt('In ' + fmt12(hotel.checkInTime), htx, HOTEL_TOP + 46, 9, 400, '#999999');
-    txt('Out ' + fmt12(hotel.checkOutTime), htx, HOTEL_TOP + 58, 9, 400, '#999999');
+    /* A hotel name and a city name are the same kind of thing, the name of
+       a place you are, so they read at the same size and weight. It used to
+       be 11px regular under a 14px bold city, a hierarchy that was not real.
+       The times move down to make room for the taller line. */
+    txt(hotel.name, htx, HOTEL_TOP + 30, 14, 700, '#333333');
+    txt('In ' + fmt12(hotel.checkInTime), htx, HOTEL_TOP + 50, 9, 400, '#999999');
+    txt('Out ' + fmt12(hotel.checkOutTime), htx, HOTEL_TOP + 63, 9, 400, '#999999');
   }
 
   /* Timeline legend ──────────────────────────────────────────── */

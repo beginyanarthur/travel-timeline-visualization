@@ -606,12 +606,15 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
     // Hotel icon + text aligned at same x, right of connector line
     const hotelTextX = hx + 18
     await txt('\u{1F3E8}', hotelTextX, HOTEL_TOP, 22, 'Regular', '#333333')
-    const nameNode = await txt(hotel.name, hotelTextX, HOTEL_TOP + 30, 11, 'Regular', '#333333')
+    // Same size and weight as a city name: both are the name of a place you
+    // are. It was 11px regular under a 14px bold city, a hierarchy that was
+    // not real.
+    const nameNode = await txt(hotel.name, hotelTextX, HOTEL_TOP + 30, 14, 'Bold', '#333333')
     nameNode.textAutoResize = 'WIDTH_AND_HEIGHT'
 
     // Check-in / check-out times
-    await txt(`In ${fmt12(hotel.checkInTime)}`, hotelTextX, HOTEL_TOP + 46, 9, 'Regular', '#999999')
-    await txt(`Out ${fmt12(hotel.checkOutTime)}`, hotelTextX, HOTEL_TOP + 58, 9, 'Regular', '#999999')
+    await txt(`In ${fmt12(hotel.checkInTime)}`, hotelTextX, HOTEL_TOP + 50, 9, 'Regular', '#999999')
+    await txt(`Out ${fmt12(hotel.checkOutTime)}`, hotelTextX, HOTEL_TOP + 63, 9, 'Regular', '#999999')
   }
 
   // ═══════════════════════════════════════════════════════════════════════
