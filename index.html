@@ -2620,7 +2620,68 @@ function stageEmpty(on, title, body) {
 }
 var scale = 1, fitMode = false, lastSize = { w: 900, h: 820 };
 
+/* The drawing is a passage of time, so it arrives in time order: the hours
+   sweep in from the left and everything hanging off them fades up
+   underneath. Nothing is waiting on this. Even a forty day trip renders in
+   25ms, so this is confirmation that the press landed rather than a
+   progress bar, and it never holds anything up.
+
+   The first drawing gets the full sweep. Every redraw after it gets a
+   short one, because the fifth Apply changes while nudging a time does not
+   want a performance between you and your answer. */
+var REVEAL_FIRST = 560, REVEAL_AGAIN = 240;
+var revealTimer = null;
+
+function revealDrawing(span) {
+  var svg = artboard.querySelector('svg');
+  if (!svg) return;
+  /* Asked not to be animated at, do not animate at them. */
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  clearTimeout(revealTimer);
+  var all = svg.querySelectorAll('*');
+  var dots = [], rest = [], i, n, x, minX = Infinity, maxX = -Infinity;
+  for (i = 0; i < all.length; i++) {
+    n = all[i];
+    if (n.nodeName === 'circle' && Math.abs(parseFloat(n.getAttribute('r')) - DOT / 2) < 0.6) {
+      dots.push(n);
+      x = parseFloat(n.getAttribute('cx'));
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+    } else rest.push(n);
+  }
+  if (!dots.length) return;
+  var spread = Math.max(1, maxX - minX);
+
+  for (i = 0; i < all.length; i++) all[i].style.opacity = '0';
+  /* Make the browser take the hidden state before transitioning away from
+     it. Without this it folds both writes into one frame, sees no change to
+     animate, and everything simply appears. A frame's grace is not enough;
+     it has to be a real style flush. */
+  void svg.getBoundingClientRect();
+
+  for (i = 0; i < rest.length; i++) {
+    rest[i].style.transition = 'opacity 200ms ease';
+    rest[i].style.opacity = '1';
+  }
+  for (i = 0; i < dots.length; i++) {
+    dots[i].style.transition = 'opacity 150ms ease ' +
+      Math.round((parseFloat(dots[i].getAttribute('cx')) - minX) / spread * span) + 'ms';
+    dots[i].style.opacity = '1';
+  }
+
+  /* Take the inline styles back off once it has played, so nothing lingers
+     on two thousand nodes and the next draw starts from clean. */
+  revealTimer = setTimeout(function () {
+    for (i = 0; i < all.length; i++) {
+      all[i].style.transition = '';
+      all[i].style.opacity = '';
+    }
+  }, span + 340);
+}
+
 function render() {
+  var wasDrawn = hasDrawn;
   var data = collectData();
   var problem = null;
   if (!data.startDate || !data.endDate) problem = 'Set trip start and end dates';
@@ -2663,6 +2724,7 @@ function render() {
   lastSize = { w: res.w, h: res.h };
   artboard.innerHTML = res.svg;
   applyScale();
+  revealDrawing(wasDrawn ? REVEAL_AGAIN : REVEAL_FIRST);
   hasDrawn = true;
   dirty = false;
   setGenerate();
