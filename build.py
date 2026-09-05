@@ -46,6 +46,23 @@ HEAD = '''<!doctype html>
 <meta name="twitter:description" content="See your whole trip on one timeline. Every hour is one circle.">
 <meta name="twitter:image" content="%(url)sog.png">
 
+<script>
+/* Runs before the counter, so it can stop the pageview being sent at all.
+   Anything opened with ?nocount stays out of the stats for the rest of this
+   browsing session, which is the only thing that works in a fresh in-app
+   browser: those do not share Safari's storage, so the per-device setting
+   does not exist there and your own tap on your own post would count. */
+(function () {
+  try {
+    if (location.search.indexOf('nocount') > -1) sessionStorage.setItem('gcskip', '1');
+    if (sessionStorage.getItem('gcskip') === '1' ||
+        localStorage.getItem('skipgc') === 't') {
+      window.goatcounter = { no_onload: true };
+    }
+  } catch (e) {}
+})();
+</script>
+
 <script data-goatcounter="https://traveltimeline.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 

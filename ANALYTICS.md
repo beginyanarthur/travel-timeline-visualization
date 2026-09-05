@@ -103,6 +103,26 @@ from then on. Verified: after visiting it, the counter reports
 `disabled with #toggle-goatcounter` instead of counting, and it survives
 later plain visits with no hash on the URL.
 
+## The link to use when you are testing
+
+```
+https://beginyanarthur.github.io/travel-timeline-visualization/?nocount
+```
+
+Open that and nothing is reported for the rest of that browsing session: not
+the visit, not Generate, not the sample. Reloads and navigation inside the
+session stay silent too, so the query string only has to be there once.
+
+This is the one that works everywhere. The per browser setting below lives in
+that browser's storage, and a fresh in-app browser does not share it, so
+tapping your own link from inside the LinkedIn app counts you as a visitor no
+matter what you set in Safari. Same for a private window, and same for any
+device you have not set up. `?nocount` needs none of that.
+
+Use it as your bookmark for the site.
+
+## Stop counting a browser for good
+
 **If you are not sure whether you already did it, do not open that URL to
 check.** It toggles, so checking undoes it. Open one of these instead. They
 set the state outright, they say what they did, and they are safe to open

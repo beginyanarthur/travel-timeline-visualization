@@ -2772,6 +2772,11 @@ var SAMPLE_TRIP = {
 
 function track(path, title) {
   try {
+    /* The head guard stops the pageview; this stops the events with it, so a
+       session opened with ?nocount reports nothing at all. */
+    if (sessionStorage.getItem('gcskip') === '1') return;
+  } catch (e) {}
+  try {
     if (window.goatcounter && window.goatcounter.count) {
       window.goatcounter.count({ path: path, title: title, event: true });
     }
