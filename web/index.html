@@ -2057,10 +2057,10 @@ function createLegCard(skipCompute) {
     '<div class="card-body"><div class="card-body-inner">' +
     '<div class="route-indicator">' +
       '<div class="route-city"><div class="f-label">From</div>' +
-        '<input class="f-input" data-field="departureCity" placeholder="City"></div>' +
+        '<input class="f-input" data-field="departureCity" placeholder="City" autocomplete="off" autocapitalize="words" enterkeyhint="done"></div>' +
       '<div class="route-arrow"><span class="flight-icon">✈️</span></div>' +
       '<div class="route-city"><div class="f-label">To</div>' +
-        '<input class="f-input" data-field="arrivalCity" placeholder="City"></div>' +
+        '<input class="f-input" data-field="arrivalCity" placeholder="City" autocomplete="off" autocapitalize="words" enterkeyhint="done"></div>' +
     '</div>' +
     '<div class="f-row">' +
       '<div style="flex:1"><div class="f-label">Type</div>' +
@@ -2070,7 +2070,7 @@ function createLegCard(skipCompute) {
           }).join('') +
         '</select></div>' +
       '<div style="flex:1" class="ref-field"><div class="f-label ref-label">Flight no.</div>' +
-        '<input class="f-input" data-field="flightNumber" placeholder="W67805"></div>' +
+        '<input class="f-input" data-field="flightNumber" placeholder="W67805" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done"></div>' +
       '<div class="swatch-field"><div class="f-label">Colour</div>' +
         '<input type="color" class="color-swatch" data-field="color" value="' + color + '" aria-label="Leg colour"></div>' +
     '</div>' +
@@ -2184,7 +2184,7 @@ function createHotelCard() {
     '</div>' +
     '<div class="card-body"><div class="card-body-inner">' +
     '<div class="f-row"><div><div class="f-label">Hotel name</div>' +
-      '<input class="f-input" data-field="name" placeholder="Novotel Hamburg"></div></div>' +
+      '<input class="f-input" data-field="name" placeholder="Novotel Hamburg" autocomplete="off" autocapitalize="words" enterkeyhint="done"></div></div>' +
     '<div class="pair-grid">' +
       '<div>' +
         '<div class="section-label">Check in</div>' +
@@ -3089,6 +3089,17 @@ sheetMQ.addEventListener('change', function () { sheetOpen(false); rail.style.he
    the panel now says something the drawing does not. */
 ['input', 'change'].forEach(function (ev) {
   $('plugin-root').addEventListener(ev, markDirty);
+});
+
+/* Return closes the keyboard rather than doing nothing, which is what a
+   single line field does by default. The footer comes back on its own once
+   the keyboard is gone, so this alone puts Apply changes back in reach. */
+$('plugin-root').addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter') return;
+  var el = e.target;
+  if (el.tagName !== 'INPUT' || el.type === 'date' || el.type === 'time') return;
+  e.preventDefault();
+  el.blur();
 });
 
 $('se-open').addEventListener('click', function () { sheetOpen(true); });
