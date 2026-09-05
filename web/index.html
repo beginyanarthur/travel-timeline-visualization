@@ -1060,14 +1060,15 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
   .remove-btn { width: 40px; height: 40px; font-size: 20px; margin-right: -6px; }
   .card-header { padding: 6px 10px; gap: 6px; }
   .drag-handle { padding: 13px 12px; margin: -13px -4px; }
-  /* Full size, like everything else you can tap. On a phone the toolbar
-     sits above the canvas rather than beside the sheet header, so it is
-     free to be taller than the 48px head the two share on the desk. */
-  .tool { height: 44px; font-size: 13.5px; padding: 0 14px; display: inline-flex;
+  /* Sized like Drive's filter chips, which Arthur pointed at: about 30px
+     tall with 13px text. Deliberately under the 44px touch minimum every
+     other control here keeps. This is a view preference, not an action, and
+     at full size it sat on the canvas like a second header. */
+  .tool { height: 30px; font-size: 13px; padding: 0 12px; display: inline-flex;
           align-items: center; }
-  .tool.icon { min-width: 48px; font-size: 16px; justify-content: center; }
-  .toolbar { padding: 6px clamp(10px, 2vw, 16px); gap: 6px; }
-  .zoom-readout { font-size: var(--fs-small); min-width: 56px; }
+  .tool.icon { min-width: 34px; font-size: 15px; justify-content: center; }
+  .toolbar { padding: 7px clamp(10px, 2vw, 16px); gap: 8px; min-height: 0; }
+  .zoom-readout { font-size: 12.5px; min-width: 46px; }
 
   /* The main action gets the whole width, rather than a small target in a
      corner next to a status line nobody taps. */
