@@ -2442,12 +2442,18 @@ function setGenerate() {
 }
 
 function markDirty() {
+  /* Outside the early return: the panel is worth storing on every
+     keystroke, while the button only has to change state once. */
+  scheduleSave();
   if (dirty) return;
   dirty = true;
   setGenerate();
 }
 
 function updateStatus() {
+  /* Adding, removing, reordering and importing all land here without
+     firing an input event, so this is the second half of the coverage. */
+  scheduleSave();
   var legCards = document.querySelectorAll('#legs-list .entry-card');
   var anyCards = legCards.length ||
     document.querySelectorAll('#hotels-list .entry-card').length;
@@ -2474,6 +2480,60 @@ function updateStatus() {
 
 $('tripStart').addEventListener('change', function () { updateStatus(); });
 $('tripEnd').addEventListener('change', function () { updateStatus(); });
+
+/* ── Keeping the trip ──────────────────────────────────────────────
+   Someone can spend ten minutes entering eight legs, and until now a
+   refresh threw all of it away. The panel is written to this browser
+   after every change and read back on load, so a reload, a crash or a
+   closed tab costs nothing.
+
+   It stays in the browser. Nothing is sent anywhere, which is also why
+   Clear trip has to erase it: otherwise clearing and reloading would
+   bring the trip back from the dead. */
+var SAVE_KEY = 'ttv.trip.v1';
+var saveTimer = 0;
+
+/* Every wrapper is guarded. localStorage throws rather than returning
+   null in a locked-down Safari, in private mode on older iOS, and
+   whenever a browser is set to block site data, and none of that is a
+   reason for the page to stop working. */
+function saveTrip() {
+  try {
+    var data = collectData();
+    /* An untouched panel is not worth restoring, and writing it would
+       overwrite a real trip with an empty one after a Clear. */
+    if (!data.legs.length && !data.hotels.length) { forgetTrip(); return; }
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, drawn: hasDrawn, trip: data }));
+  } catch (e) { /* full, blocked, or unavailable: carry on unsaved */ }
+}
+
+/* Typing fires on every keystroke; the write does not need to. */
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveTrip, 400);
+}
+
+function forgetTrip() {
+  clearTimeout(saveTimer);
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+}
+
+/* Anything unreadable is dropped rather than repaired. A stored trip is
+   a convenience, so a bad one must never be able to stop the page
+   loading. */
+function readSavedTrip() {
+  var raw;
+  try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { return null; }
+  if (!raw) return null;
+  try {
+    var got = JSON.parse(raw);
+    if (!got || got.v !== 1 || !got.trip) return null;
+    var t = got.trip;
+    if (!Array.isArray(t.legs) || !Array.isArray(t.hotels)) return null;
+    if (!t.legs.length && !t.hotels.length) return null;
+    return got;
+  } catch (e) { forgetTrip(); return null; }
+}
 
 function collectData() {
   var legs = [];
@@ -2563,6 +2623,9 @@ function clearTrip() {
   updateBadges();
   updateStatus();
   stageEmpty(true);
+  /* After updateStatus, whose scheduled save would otherwise run next
+     and write the panel back out again. */
+  forgetTrip();
   toast('Trip cleared.');
 }
 
@@ -3421,6 +3484,28 @@ $('tripEnd').value = new Date(boot.getTime() + 7 * 86400000).toISOString().slice
 updateBadges();
 updateStatus();
 stageEmpty(true);
+
+/* Then put back whatever was here last time. This runs after the empty
+   boot rather than instead of it, so a browser that cannot read storage
+   still opens on a clean panel. */
+function restoreTrip() {
+  var saved = readSavedTrip();
+  if (!saved) return;
+  loadTripData(saved.trip);
+  /* Back exactly where they left off. Someone who had drawn returns to
+     their drawing; someone who was still filling the panel returns to a
+     panel, not to a picture they never asked for. */
+  if (saved.drawn) {
+    hasDrawn = true;      /* the shorter reveal: this is a return, not a first draw */
+    if (!render()) hasDrawn = false;
+  }
+  dirty = false;
+  setGenerate();
+  /* Said once, quietly, because silence here reads as a cache bug rather
+     than as a feature. */
+  toast('Picked up where you left off.');
+}
+restoreTrip();
 </script>
 
 </body>
