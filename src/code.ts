@@ -158,7 +158,27 @@ const LEG_ICONS: { [k: string]: string } = {
   bike: '\u{1F6B2}',
   walk: '\u{1F6B6}',
 }
-function legIcon(type: string): string { return LEG_ICONS[type] || LEG_ICONS.flight }
+/* A departure and an arrival are two different events, so in the drawing
+   they do not wear the same mark. Only a flight has a real pair to wear:
+   Unicode gives a plane taking off and a plane landing, and nothing else
+   here has an equivalent. A train is the same train at both ends, so it
+   keeps its one icon rather than borrowing something that means a
+   different vehicle.
+
+   Neither of these needs a variation selector the way the plain aeroplane
+   does. U+2708 defaults to text and has to be told to be an emoji; these
+   two are emoji already. */
+const LEG_ICONS_DIRECTED: { [k: string]: [string, string] } = {
+  flight: ['\u{1F6EB}', '\u{1F6EC}'],
+}
+
+/* Without a direction it answers for the leg as a whole, which is what the
+   mode summary line above wants. */
+function legIcon(type: string, arriving?: boolean): string {
+  const pair = LEG_ICONS_DIRECTED[type]
+  if (pair) return arriving ? pair[1] : pair[0]
+  return LEG_ICONS[type] || LEG_ICONS.flight
+}
 
 // ── Clock zone icon vector paths (Material Design: clear_day & wb_twilight) ──
 const ICON_SUNSET_PATH = 'M 6.86 2.48 C 6.73 2.35 6.67 2.19 6.67 2.0 L 6.67 0.67 C 6.67 0.48 6.73 0.32 6.86 0.19 C 6.99 0.06 7.14 0 7.33 0 C 7.52 0 7.68 0.06 7.81 0.19 C 7.94 0.32 8.0 0.48 8.0 0.67 L 8.0 2.0 C 8.0 2.19 7.94 2.35 7.81 2.48 C 7.68 2.6 7.52 2.67 7.33 2.67 C 7.14 2.67 6.99 2.6 6.86 2.48 Z M 10.63 4.03 C 10.51 3.91 10.45 3.76 10.45 3.58 C 10.45 3.39 10.51 3.23 10.63 3.1 L 11.57 2.15 C 11.7 2.02 11.86 1.95 12.04 1.95 C 12.23 1.95 12.38 2.02 12.52 2.15 C 12.64 2.27 12.7 2.43 12.7 2.62 C 12.7 2.81 12.64 2.96 12.52 3.08 L 11.57 4.03 C 11.44 4.16 11.29 4.22 11.1 4.22 C 10.91 4.22 10.76 4.16 10.63 4.03 Z M 12.67 8.0 C 12.48 8.0 12.32 7.94 12.19 7.81 C 12.06 7.68 12.0 7.52 12.0 7.33 C 12.0 7.14 12.06 6.99 12.19 6.86 C 12.32 6.73 12.48 6.67 12.67 6.67 L 14.0 6.67 C 14.19 6.67 14.35 6.73 14.48 6.86 C 14.6 6.99 14.67 7.14 14.67 7.33 C 14.67 7.52 14.6 7.68 14.48 7.81 C 14.35 7.94 14.19 8.0 14.0 8.0 L 12.67 8.0 Z M 6.86 14.48 C 6.73 14.35 6.67 14.19 6.67 14.0 L 6.67 12.67 C 6.67 12.48 6.73 12.32 6.86 12.19 C 6.99 12.06 7.14 12.0 7.33 12.0 C 7.52 12.0 7.68 12.06 7.81 12.19 C 7.94 12.32 8.0 12.48 8.0 12.67 L 8.0 14.0 C 8.0 14.19 7.94 14.35 7.81 14.48 C 7.68 14.6 7.52 14.67 7.33 14.67 C 7.14 14.67 6.99 14.6 6.86 14.48 Z M 3.1 4.03 L 2.15 3.1 C 2.02 2.97 1.95 2.81 1.95 2.62 C 1.95 2.43 2.02 2.27 2.15 2.15 C 2.27 2.03 2.43 1.97 2.62 1.97 C 2.81 1.97 2.96 2.03 3.08 2.15 L 4.03 3.1 C 4.16 3.22 4.22 3.38 4.22 3.57 C 4.22 3.76 4.16 3.91 4.03 4.03 C 3.9 4.16 3.74 4.22 3.57 4.22 C 3.39 4.22 3.23 4.16 3.1 4.03 Z M 11.57 12.52 L 10.63 11.57 C 10.51 11.43 10.45 11.28 10.45 11.09 C 10.45 10.91 10.51 10.76 10.63 10.63 C 10.76 10.51 10.91 10.45 11.09 10.45 C 11.28 10.45 11.43 10.51 11.57 10.63 L 12.52 11.57 C 12.65 11.69 12.71 11.84 12.71 12.03 C 12.7 12.22 12.64 12.38 12.52 12.52 C 12.38 12.65 12.22 12.72 12.03 12.72 C 11.84 12.72 11.69 12.65 11.57 12.52 Z M 0.67 8.0 C 0.48 8.0 0.32 7.94 0.19 7.81 C 0.06 7.68 0 7.52 0 7.33 C 0 7.14 0.06 6.99 0.19 6.86 C 0.32 6.73 0.48 6.67 0.67 6.67 L 2.0 6.67 C 2.19 6.67 2.35 6.73 2.48 6.86 C 2.6 6.99 2.67 7.14 2.67 7.33 C 2.67 7.52 2.6 7.68 2.48 7.81 C 2.35 7.94 2.19 8.0 2.0 8.0 L 0.67 8.0 Z M 2.15 12.52 C 2.03 12.39 1.97 12.24 1.97 12.05 C 1.97 11.86 2.03 11.71 2.15 11.58 L 3.1 10.63 C 3.22 10.51 3.38 10.45 3.56 10.45 C 3.74 10.45 3.9 10.51 4.03 10.63 C 4.17 10.77 4.23 10.93 4.23 11.11 C 4.23 11.29 4.17 11.45 4.03 11.58 L 3.1 12.52 C 2.97 12.65 2.81 12.72 2.62 12.72 C 2.43 12.72 2.27 12.65 2.15 12.52 Z M 4.5 10.17 C 3.72 9.39 3.33 8.44 3.33 7.33 C 3.33 6.22 3.72 5.28 4.5 4.5 C 5.28 3.72 6.22 3.33 7.33 3.33 C 8.44 3.33 9.39 3.72 10.17 4.5 C 10.94 5.28 11.33 6.22 11.33 7.33 C 11.33 8.44 10.94 9.39 10.17 10.17 C 9.39 10.94 8.44 11.33 7.33 11.33 C 6.22 11.33 5.28 10.94 4.5 10.17 Z M 9.22 9.22 C 9.74 8.69 10.0 8.07 10.0 7.33 C 10.0 6.6 9.74 5.97 9.22 5.45 C 8.69 4.93 8.07 4.67 7.33 4.67 C 6.6 4.67 5.97 4.93 5.45 5.45 C 4.93 5.97 4.67 6.6 4.67 7.33 C 4.67 8.07 4.93 8.69 5.45 9.22 C 5.97 9.74 6.6 10.0 7.33 10.0 C 8.07 10.0 8.69 9.74 9.22 9.22 Z'
@@ -545,7 +565,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
     dy += 24
     await txt(fmtUtc(leg.departureUtc), depLblX, dy, TYPE.micro, 'Regular', INK.muted)
     dy += 18
-    const depIcon = legIcon(leg.type)
+    const depIcon = legIcon(leg.type, false)
     await txt(depIcon, depLblX, dy, TYPE.icon, 'Regular', INK.primary)
     dy += 28
     if (leg.flightNumber) {
@@ -565,7 +585,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
       ay += 24
       await txt(fmtUtc(leg.arrivalUtc), arrLblX, ay, TYPE.micro, 'Regular', INK.muted)
       ay += 18
-      const arrIcon = legIcon(leg.type)
+      const arrIcon = legIcon(leg.type, true)
       await txt(arrIcon, arrLblX, ay, TYPE.icon, 'Regular', INK.primary)
     }
   }

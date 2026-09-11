@@ -1398,7 +1398,10 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
 /* Every way of getting between two places. 'flight' and 'train' keep their
    ids so trips exported before the others existed still import. */
 var TRANSPORT = {
-  flight: { label: 'Flight', icon: '\u2708\ufe0f', ref: { label: 'Flight no.', ph: 'W67805' } },
+  flight: { label: 'Flight', icon: '\u2708\ufe0f',
+            /* A plane leaving the ground and a plane meeting it. */
+            out: '\ud83d\udeeb', in: '\ud83d\udeec',
+            ref: { label: 'Flight no.', ph: 'W67805' } },
   train:  { label: 'Train',  icon: '\ud83d\ude86', ref: { label: 'Train no.',  ph: 'ICE 573' } },
   bus:    { label: 'Bus',    icon: '\ud83d\ude8c', ref: { label: 'Route',      ph: 'FlixBus 006' } },
   boat:   { label: 'Boat',   icon: '\ud83d\udea2', ref: { label: 'Ferry',      ph: 'Color Line' } },
@@ -1408,6 +1411,20 @@ var TRANSPORT = {
   walk:   { label: 'Walk',   icon: '\ud83d\udeb6', ref: null }
 };
 function mode(t) { return TRANSPORT[t] || TRANSPORT.flight; }
+
+/* A departure and an arrival are two different events, so in the drawing
+   they do not wear the same mark. Only a flight has a real pair to wear:
+   Unicode gives a plane taking off and a plane landing, and nothing else
+   here has an equivalent. A train is the same train at both ends, so it
+   keeps its one icon rather than borrowing something that means a
+   different vehicle.
+
+   The card headers in the panel still use .icon directly, because a card
+   names the whole leg rather than either end of it. */
+function modeIcon(t, arriving) {
+  var m = mode(t);
+  return (arriving ? m.in : m.out) || m.icon;
+}
 
 /* Night is defined once, here. The dots read it, the clock slices read it,
    and every sentence about them is built from it, so the drawing and the
@@ -1756,7 +1773,7 @@ function renderItinerary(data) {
     txt(leg.departureCity, dx, dy, TYPE.label, 700, INK.primary);            dy += 20;
     txt(fmt12(leg.departureTime), dx, dy, TYPE.time, 700, col);           dy += 24;
     txt(fmtUtc(leg.departureUtc), dx, dy, TYPE.micro, 400, INK.muted);     dy += 18;
-    txt(mode(leg.type).icon, dx, dy, TYPE.icon, 400, INK.primary); dy += 28;
+    txt(modeIcon(leg.type, false), dx, dy, TYPE.icon, 400, INK.primary); dy += 28;
     if (leg.flightNumber) { txt(leg.flightNumber, dx, dy, TYPE.meta, 700, INK.primary); dy += 16; }
     txt('Duration ' + fmtDur(leg.durationHours, leg.durationMinutes), dx, dy, TYPE.meta, 400, INK.secondary);
 
@@ -1765,7 +1782,7 @@ function renderItinerary(data) {
       txt(leg.arrivalCity, ax, ay, TYPE.label, 700, col);                  ay += 20;
       txt(fmt12(leg.arrivalTime), ax, ay, TYPE.time, 700, INK.primary);     ay += 24;
       txt(fmtUtc(leg.arrivalUtc), ax, ay, TYPE.micro, 400, INK.muted);     ay += 18;
-      txt(mode(leg.type).icon, ax, ay, TYPE.icon, 400, INK.primary);
+      txt(modeIcon(leg.type, true), ax, ay, TYPE.icon, 400, INK.primary);
     }
   }
 
