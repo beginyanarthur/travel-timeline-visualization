@@ -434,3 +434,26 @@ CSS were reverted on purpose:
 
 **One ink was added, not fifteen sizes.** That is the test for the next
 change to this section.
+
+---
+
+## 15. The band is measured, not declared
+
+The timeline used to take its width from the trip's two dates and nothing
+else. Anything happening after the end date was still drawn, at a position
+past the right edge of its own section, outside the container and with no
+hour dots beneath it.
+
+It is not bad data. A return leg crossing midnight, or flying west over
+enough time zones, lands on a date nobody thinks of as part of the trip. The
+Stockholm sample ends on 10 October and its last flight touches down at
+03:55 on the 11th.
+
+So the extent is measured from what will actually be drawn: every departure,
+every arrival, every hotel check out, then `ARR_COL_WIDTH` of room past the
+last of them, because a final arrival carries a column of labels to the
+right of its own position. The declared end date is a floor, not a ceiling.
+
+Checked across all three sample trips: no text outside any container, no
+overlaps, and the canvas unchanged at 5367 for the trips that already fitted,
+growing to 5607 only for the one that did not.

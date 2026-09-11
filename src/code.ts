@@ -230,9 +230,40 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
 
   // t0 = midnight in the display timezone (not midnight UTC)
   const t0 = new Date(new Date(data.startDate + 'T00:00:00Z').getTime() - displayUtcOffset * 3600000)
+  const LABEL_OFFSET = 10 // space between guide line and labels
+  const ARR_COL_WIDTH = 130 // approximate width needed for arrival label column
   const t1End = new Date(new Date(data.endDate + 'T00:00:00Z').getTime() - displayUtcOffset * 3600000)
   t1End.setUTCDate(t1End.getUTCDate() + 1)
-  const t1 = t1End
+  let t1 = t1End
+
+  /* The band used to be sized from the trip's end date alone, so anything
+     that happened after it was drawn past the right edge of its own section:
+     a flight that lands at 03:55 the morning after a trip "ends" put its
+     arrival column outside the container, with no dots under it.
+
+     It is legitimate data. A return leg crossing midnight, or west over
+     enough time zones, lands on a date nobody thinks of as part of the trip.
+     So the drawing measures what it is actually going to draw and stretches
+     to hold it, rather than trusting the two dates in the panel.
+
+     ARR_COL_WIDTH of room past the last event, because the final arrival
+     carries a column of labels to the right of its own position. */
+  let lastEventMs = t1.getTime()
+  for (const leg of data.legs) {
+    const a = localToAbsoluteMs(leg.arrivalDate, leg.arrivalTime, displayUtcOffset)
+    const d = localToAbsoluteMs(leg.departureDate, leg.departureTime, displayUtcOffset)
+    if (a && a > lastEventMs) lastEventMs = a
+    if (d && d > lastEventMs) lastEventMs = d
+  }
+  for (const h of data.hotels) {
+    const o = localToAbsoluteMs(h.checkOutDate, h.checkOutTime || '12:00', displayUtcOffset)
+    if (o && o > lastEventMs) lastEventMs = o
+  }
+  if (lastEventMs > t1.getTime()) {
+    t1 = new Date(Math.ceil(lastEventMs / 3600000) * 3600000 +
+                  Math.ceil(ARR_COL_WIDTH / HOUR_W) * 3600000)
+  }
+
   const totalHours = Math.ceil((t1.getTime() - t0.getTime()) / 3600000)
   const numDays = Math.ceil(totalHours / 24)
   const W = PAD_LEFT + totalHours * HOUR_W + PAD_LEFT + 41
@@ -621,8 +652,6 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   const LINE_H = 152              // height of vertical guide lines
   const MIN_LABEL_GAP = 120       // minimum px between departure and arrival label columns
 
-  const LABEL_OFFSET = 10 // space between guide line and labels
-  const ARR_COL_WIDTH = 130 // approximate width needed for arrival label column
 
   // Draw transit info labels + vertical guide lines + brackets for each leg
   for (let i = 0; i < data.legs.length; i++) {
