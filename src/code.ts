@@ -107,7 +107,8 @@ const INK = {
   title:     '#000000',  // titles and the sentences under them
   primary:   '#333333',  // anything you are meant to read
   secondary: '#666666',  // supporting detail
-  muted:     '#999999',  // chrome
+  muted:     '#737373',  // chrome, and the lightest grey that still
+                         // clears 4.5:1 on white and on the section band
 }
 
 // ── Layout ─────────────────────────────────────────────────────────────
@@ -421,7 +422,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
 
       // "12" label centered on noon dot
       if (hour === 12) {
-        const label = await txt('12', 0, 0, TYPE.micro, 'Bold', '#FFFFFF')
+        const label = await txt('12', 0, 0, TYPE.micro, 'Bold', INK.primary)
         label.x = cx + DOT / 2 - label.width / 2
         label.y = TIMELINE_Y + DOT / 2 - label.height / 2
       }
