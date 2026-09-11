@@ -2752,7 +2752,6 @@ function fullscreen(on) {
 $('fab-full').addEventListener('click', function () {
   var on = !document.body.classList.contains('canvas-full');
   fullscreen(on);
-  if (on) track('fullscreen', 'Filled the screen');
 });
 
 document.addEventListener('keydown', function (e) {
@@ -2965,7 +2964,6 @@ $('generate').addEventListener('click', function () {
      question: after an earlier success one is, and a failed press would
      then close the sheet over the footer explaining the failure. */
   var drew = render();
-  if (drew) track('generated', 'Generated a trip');
   if (drew && sheetMQ.matches) sheetOpen(false);
   wrap.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
 });
@@ -3024,8 +3022,6 @@ window.addEventListener('resize', function () { if (fitMode) fitWidth(); });
 /* ═══════════════════════════════════════════════════════════════
    JSON in and out
    ═══════════════════════════════════════════════════════════════ */
-/* GoatCounter is added by build.py on Pages only. In the Artifact there is
-   no script to load it, so this quietly does nothing. */
 /* A real trip, so the drawing shows what it is for: two flights and two
    trains across a week, four hotels, and a timezone that moves twice. The
    copy on disk in samples/ has a couple of faults that would read badly as
@@ -3067,64 +3063,7 @@ var SAMPLE_TRIP = {
   ]
 };
 
-function track(path, title) {
-  try {
-    /* The head guard stops the pageview; this stops the events with it, so a
-       session opened with ?nocount reports nothing at all. */
-    if (sessionStorage.getItem('gcskip') === '1') return;
-  } catch (e) {}
-  try {
-    if (window.goatcounter && window.goatcounter.count) {
-      window.goatcounter.count({ path: path, title: title, event: true });
-    }
-  } catch (e) {}
-}
 
-/* GoatCounter's own switch is a toggle, so checking whether you set it turns
-   it back on if you had. And there is no console on a phone to look with.
-   These three set it outright instead, and say what they did:
-
-     #goatcounter-status   what is this browser doing right now
-     #goatcounter-off      stop counting me here, safe to open twice
-     #goatcounter-on       count me here again
-
-   Harmless to anyone who does not know the words are there. */
-(function () {
-  function counted() {
-    try { return localStorage.getItem('skipgc') !== 't'; }
-    catch (e) { return null; }   /* storage blocked, so nothing can be stored */
-  }
-  function apply() {
-    var h = location.hash;
-    if (h.indexOf('#goatcounter-') !== 0) return;
-    try {
-      if (h === '#goatcounter-off') localStorage.setItem('skipgc', 't');
-      if (h === '#goatcounter-on') localStorage.removeItem('skipgc');
-    } catch (e) {}
-    var on = counted();
-    var msg = on === null
-      ? 'This browser blocks local storage, so the setting cannot be kept here.'
-      : on
-        ? 'Counted. Your visits DO show up in the stats.'
-        : 'Not counted. Your visits are skipped on this browser.';
-    function show() {
-      var t = document.getElementById('toast');
-      if (!t) { setTimeout(show, 60); return; }
-      t.textContent = msg;
-      t.classList.add('show');
-      clearTimeout(t._timer);
-      t._timer = setTimeout(function () { t.classList.remove('show'); }, 6000);
-    }
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', show);
-    } else { show(); }
-  }
-  apply();
-  /* Editing only the hash of a URL you are already on does not reload the
-     page, so without this the switches silently do nothing for anyone who
-     is already looking at the site. */
-  window.addEventListener('hashchange', apply);
-})();
 
 function toast(msg) {
   var t = $('toast');
@@ -3213,7 +3152,6 @@ function feedbackAnswers() {
 }
 
 function feedbackDone(msg) {
-  track('feedback-sent', 'Sent feedback');
   var form = $('feedback');
   var p = document.createElement('p');
   p.className = 'fb-done';
@@ -3389,9 +3327,6 @@ function useSampleTrip() {
      makes the drawing appear, and someone who has never done it once has
      not really learned how the page works. */
   promptReady();
-  /* Its own event. Counting it as "generated" would flatter the one ratio
-     that says whether people build something of their own. */
-  track('sample-loaded', 'Loaded the sample trip');
   /* On a phone the Generate button lives in the sheet footer, which is not
      on screen while the sheet is shut. */
   if (sheetMQ.matches) sheetOpen(true);
