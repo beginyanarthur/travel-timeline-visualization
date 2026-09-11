@@ -1211,12 +1211,12 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
         <div class="trip-dates" style="margin-bottom:8px;">
           <div class="date-field">
             <div class="date-label">Start</div>
-            <input type="date" class="f-input" id="tripStart">
+            <input type="date" class="f-input" id="tripStart" aria-label="Trip start date">
           </div>
           <span class="arrow">&rarr;</span>
           <div class="date-field">
             <div class="date-label">End</div>
-            <input type="date" class="f-input" id="tripEnd">
+            <input type="date" class="f-input" id="tripEnd" aria-label="Trip end date">
           </div>
         </div>
 
@@ -1250,11 +1250,11 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
         </div>
 
         <button class="sample-btn" id="sample-btn" type="button">Use a sample trip</button>
-        <input type="file" id="import-file" accept=".json" style="display:none;">
+        <input type="file" id="import-file" accept=".json" aria-label="Choose a trip JSON file" style="display:none;">
       </div>
     </div>
     <div class="plugin-footer">
-      <label id="status">Add flights to get started</label>
+      <p id="status" role="status" aria-live="polite">Add flights to get started</p>
       <button id="generate" type="button" disabled>Generate</button>
     </div>
   </aside>
@@ -1339,11 +1339,11 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
     <form class="feedback" id="feedback" novalidate>
       <div class="ask">
         <span class="ask-q">What do you think?</span>
-        <textarea class="free" rows="4" placeholder="Anything at all. What worked, what confused you, what you would change."></textarea>
+        <textarea class="free" rows="4" aria-label="What do you think?" placeholder="Anything at all. What worked, what confused you, what you would change."></textarea>
       </div>
       <div class="ask">
         <span class="ask-q">Who are you, if you want a reply? <span class="opt">optional</span></span>
-        <input type="text" class="free" placeholder="Name, LinkedIn, email, anything">
+        <input type="text" class="free" aria-label="How to reach you, optional" placeholder="Name, LinkedIn, email, anything">
       </div>
       <div class="fb-actions">
         <button type="button" class="fb-send" id="fb-send">Send feedback</button>
@@ -1369,7 +1369,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
   <form method="dialog" class="paste-in">
     <h3>Paste a trip</h3>
     <p>Drop in JSON exported from the plugin, or anything matching the same shape.</p>
-    <textarea id="paste-text" spellcheck="false" placeholder='{ "startDate": "2026-10-03", "endDate": "2026-10-10", "legs": [ ... ], "hotels": [ ... ] }'></textarea>
+    <textarea id="paste-text" spellcheck="false" aria-label="Paste trip JSON" placeholder='{ "startDate": "2026-10-03", "endDate": "2026-10-10", "legs": [ ... ], "hotels": [ ... ] }'></textarea>
     <div class="paste-actions">
       <button class="btn" value="cancel" type="submit">Cancel</button>
       <button class="btn primary" id="paste-load" value="load" type="submit">Load trip</button>
@@ -1963,9 +1963,31 @@ function renderItinerary(data) {
 
   var totalH = clLegY + 456;
 
+  /* The drawing is the whole point of the tool, and to a screen reader it was
+     nothing at all: no role, no name, just 351 loose strings that read as a
+     word salad of cities and times in painting order. role="img" makes it one
+     picture and stops the inner text being announced; the title and the
+     description then say what the picture shows, in the order someone would
+     ask. Both are built from the trip, so they cannot drift from it, and both
+     travel with an exported SVG. */
+  var a11yTitle = 'Travel itinerary: ' +
+    (routeCities.length ? routeCities[0] + ' to ' + routeCities[routeCities.length - 1] : 'empty trip') +
+    ', ' + numDays + (numDays === 1 ? ' day' : ' days');
+  var a11yDesc = stats.map(function (st) {
+      return st.value + ' ' + st.label.toLowerCase();
+    }).join(', ') +
+    '. Route: ' + routeCities.join(', ') +
+    '. Every hour of the trip is drawn as one circle, dark through the night (' +
+    NIGHT_RANGE + ') and pale through the day (' + DAY_RANGE +
+    '), with a coloured bar over the hours spent in a city and a muted one over ' +
+    'the hours in transit. Below, each day repeats as a 24 hour ring.';
+
   var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + Math.ceil(totalW) +
     '" height="' + Math.ceil(totalH) + '" viewBox="0 0 ' + Math.ceil(totalW) + ' ' +
-    Math.ceil(totalH) + '" font-family="Inter, system-ui, sans-serif">' +
+    Math.ceil(totalH) + '" font-family="Inter, system-ui, sans-serif"' +
+    ' role="img" aria-labelledby="tt-title tt-desc">' +
+    '<title id="tt-title">' + esc(a11yTitle) + '</title>' +
+    '<desc id="tt-desc">' + esc(a11yDesc) + '</desc>' +
     '<rect width="100%" height="100%" fill="#FFFFFF"/>' + out.join('') + '</svg>';
 
   return { svg: svg, w: Math.ceil(totalW), h: Math.ceil(totalH) };
@@ -1989,8 +2011,9 @@ document.querySelectorAll('.tab-btn').forEach(function (btn) {
   });
 });
 
-function utcSelectHtml(fieldName, defaultVal) {
-  var html = '<select class="f-input" data-field="' + fieldName + '">';
+function utcSelectHtml(fieldName, defaultVal, label) {
+  var html = '<select class="f-input" data-field="' + fieldName +
+             '" aria-label="' + esc(label || 'Time zone') + '">';
   for (var tz = -12; tz <= 14; tz++) {
     html += '<option value="' + tz + '"' + (tz === defaultVal ? ' selected' : '') +
             '>UTC' + (tz >= 0 ? '+' : '') + tz + '</option>';
@@ -2103,6 +2126,10 @@ function setRefField(card) {
   }
   wrap.hidden = false;
   card.querySelector('.ref-label').textContent = ref.label;
+  /* A train has a train number, a ferry has a ferry name. The spoken name
+     has to follow the visible one or it goes on saying "flight number". */
+  var refInput = card.querySelector('[data-field="flightNumber"]');
+  if (refInput) refInput.setAttribute('aria-label', ref.label);
   input.placeholder = ref.ph;
 }
 
@@ -2217,20 +2244,20 @@ function createLegCard(skipCompute) {
     '<div class="card-body"><div class="card-body-inner">' +
     '<div class="route-indicator">' +
       '<div class="route-city"><div class="f-label">From</div>' +
-        '<input class="f-input" data-field="departureCity" placeholder="City" autocomplete="off" autocapitalize="words" enterkeyhint="done"></div>' +
+        '<input class="f-input" data-field="departureCity" placeholder="City" aria-label="Departure city" autocomplete="off" autocapitalize="words" enterkeyhint="done"></div>' +
       '<div class="route-arrow"><span class="flight-icon">✈️</span></div>' +
       '<div class="route-city"><div class="f-label">To</div>' +
-        '<input class="f-input" data-field="arrivalCity" placeholder="City" autocomplete="off" autocapitalize="words" enterkeyhint="done"></div>' +
+        '<input class="f-input" data-field="arrivalCity" placeholder="City" aria-label="Arrival city" autocomplete="off" autocapitalize="words" enterkeyhint="done"></div>' +
     '</div>' +
     '<div class="f-row">' +
       '<div style="flex:1"><div class="f-label">Type</div>' +
-        '<select class="f-input" data-field="type">' +
+        '<select class="f-input" data-field="type" aria-label="Mode of transport">' +
           Object.keys(TRANSPORT).map(function (k) {
             return '<option value="' + k + '">' + mode(k).icon + ' ' + mode(k).label + '</option>';
           }).join('') +
         '</select></div>' +
       '<div style="flex:1" class="ref-field"><div class="f-label ref-label">Flight no.</div>' +
-        '<input class="f-input" data-field="flightNumber" placeholder="W67805" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done"></div>' +
+        '<input class="f-input" data-field="flightNumber" placeholder="W67805" aria-label="Flight number" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done"></div>' +
       '<div class="swatch-field"><div class="f-label">Colour</div>' +
         '<input type="color" class="color-swatch" data-field="color" value="' + color + '" aria-label="Leg colour"></div>' +
     '</div>' +
@@ -2238,9 +2265,9 @@ function createLegCard(skipCompute) {
       '<div style="grid-area:dep">' +
         '<div class="section-label">Departure</div>' +
         '<div class="f-row">' +
-          '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="departureDate" value="' + tripStart + '"></div>' +
-          '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="departureTime" value="06:30"></div>' +
-          '<div class="zone-col"><div class="f-label">Zone</div>' + utcSelectHtml('departureUtc', 4) + '</div>' +
+          '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="departureDate" value="' + tripStart + '" aria-label="Departure date"></div>' +
+          '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="departureTime" value="06:30" aria-label="Departure time"></div>' +
+          '<div class="zone-col"><div class="f-label">Zone</div>' + utcSelectHtml('departureUtc', 4, 'Departure time zone') + '</div>' +
         '</div>' +
       '</div>' +
       '<div style="grid-area:dur">' +
@@ -2257,9 +2284,9 @@ function createLegCard(skipCompute) {
       '<div style="grid-area:arr">' +
         '<div class="section-label">Arrival<span class="auto-tag">auto</span></div>' +
         '<div class="f-row">' +
-          '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="arrivalDate"></div>' +
-          '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="arrivalTime"></div>' +
-          '<div class="zone-col"><div class="f-label">Zone</div>' + utcSelectHtml('arrivalUtc', 2) + '</div>' +
+          '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="arrivalDate" aria-label="Arrival date"></div>' +
+          '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="arrivalTime" aria-label="Arrival time"></div>' +
+          '<div class="zone-col"><div class="f-label">Zone</div>' + utcSelectHtml('arrivalUtc', 2, 'Arrival time zone') + '</div>' +
         '</div>' +
       '</div>' +
       '<div class="arrival-info">Fill in departure and duration.</div>' +
@@ -2344,20 +2371,20 @@ function createHotelCard() {
     '</div>' +
     '<div class="card-body"><div class="card-body-inner">' +
     '<div class="f-row"><div><div class="f-label">Hotel name</div>' +
-      '<input class="f-input" data-field="name" placeholder="Novotel Hamburg" autocomplete="off" autocapitalize="words" enterkeyhint="done"></div></div>' +
+      '<input class="f-input" data-field="name" placeholder="Novotel Hamburg" aria-label="Hotel name" autocomplete="off" autocapitalize="words" enterkeyhint="done"></div></div>' +
     '<div class="pair-grid">' +
       '<div>' +
         '<div class="section-label">Check in</div>' +
         '<div class="f-row">' +
-          '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="checkInDate" value="' + tripStart + '"></div>' +
-          '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="checkInTime" value="14:00"></div>' +
+          '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="checkInDate" value="' + tripStart + '" aria-label="Check in date"></div>' +
+          '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="checkInTime" value="14:00" aria-label="Check in time"></div>' +
         '</div>' +
       '</div>' +
       '<div>' +
         '<div class="section-label">Check out</div>' +
         '<div class="f-row">' +
-          '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="checkOutDate"></div>' +
-          '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="checkOutTime" value="11:00"></div>' +
+          '<div><div class="f-label">Date</div><input type="date" class="f-input" data-field="checkOutDate" aria-label="Check out date"></div>' +
+          '<div class="time-col"><div class="f-label">Time</div><input type="time" class="f-input" data-field="checkOutTime" value="11:00" aria-label="Check out time"></div>' +
         '</div>' +
       '</div>' +
     '</div>' +
