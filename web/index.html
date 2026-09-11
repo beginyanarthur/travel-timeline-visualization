@@ -1772,7 +1772,12 @@ function renderItinerary(data) {
 
     var dx = x1 + LABEL_OFFSET, dy = LEG_TOP + 16;
     txt(leg.departureCity, dx, dy, TYPE.label, 700, INK.primary);            dy += 20;
-    txt(fmt12(leg.departureTime), dx, dy, TYPE.time, 700, col);           dy += 24;
+    /* The city and the time used to be set in the leg's own colour, which
+       tied them to their bar but put yellow text at 1.46:1 and orange at
+       2.06 against a 4.5 requirement. The bar sits directly above the name,
+       so the tie is spatial and does not need repeating in ink. Colour stays
+       where it carries no reading load: the bars and the clock arcs. */
+    txt(fmt12(leg.departureTime), dx, dy, TYPE.time, 700, INK.primary); dy += 24;
     txt(fmtUtc(leg.departureUtc), dx, dy, TYPE.micro, 400, INK.muted);     dy += 18;
     txt(modeIcon(leg.type, false), dx, dy, TYPE.icon, 400, INK.primary); dy += 28;
     if (leg.flightNumber) { txt(leg.flightNumber, dx, dy, TYPE.meta, 700, INK.primary); dy += 16; }
@@ -1780,7 +1785,7 @@ function renderItinerary(data) {
 
     if (drawArrivalLabels) {
       var ax = arrLabelX + LABEL_OFFSET, ay = LEG_TOP + 16;
-      txt(leg.arrivalCity, ax, ay, TYPE.label, 700, col);                  ay += 20;
+      txt(leg.arrivalCity, ax, ay, TYPE.label, 700, INK.primary);          ay += 20;
       txt(fmt12(leg.arrivalTime), ax, ay, TYPE.time, 700, INK.primary);     ay += 24;
       txt(fmtUtc(leg.arrivalUtc), ax, ay, TYPE.micro, 400, INK.muted);     ay += 18;
       txt(modeIcon(leg.type, true), ax, ay, TYPE.icon, 400, INK.primary);

@@ -562,7 +562,12 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
     let dy = LEG_TOP + 16
     await txt(leg.departureCity, depLblX, dy, TYPE.label, 'Bold', INK.primary)
     dy += 20
-    await txt(fmt12(leg.departureTime), depLblX, dy, TYPE.time, 'Bold', col)
+    /* The city and the time used to be set in the leg's own colour, which
+       tied them to their bar but put yellow text at 1.46:1 and orange at
+       2.06 against a 4.5 requirement. The bar sits directly above the name,
+       so the tie is spatial and does not need repeating in ink. Colour stays
+       where it carries no reading load: the bars and the clock arcs. */
+    await txt(fmt12(leg.departureTime), depLblX, dy, TYPE.time, 'Bold', INK.primary)
     dy += 24
     await txt(fmtUtc(leg.departureUtc), depLblX, dy, TYPE.micro, 'Regular', INK.muted)
     dy += 18
@@ -580,7 +585,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
     if (drawArrivalLabels) {
       const arrLblX = arrLabelX + LABEL_OFFSET
       let ay = LEG_TOP + 16
-      await txt(leg.arrivalCity, arrLblX, ay, TYPE.label, 'Bold', col)
+      await txt(leg.arrivalCity, arrLblX, ay, TYPE.label, 'Bold', INK.primary)
       ay += 20
       await txt(fmt12(leg.arrivalTime), arrLblX, ay, TYPE.time, 'Bold', INK.primary)
       ay += 24
