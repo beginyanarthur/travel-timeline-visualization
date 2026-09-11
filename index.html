@@ -1775,19 +1775,17 @@ function renderItinerary(data) {
      like this that gap is a city stay rather than an airport layover, which
      is why it is not called one. Both ends are pulled back to real UTC
      first, or a stay that crosses a zone reads hours out. */
-  var longestStayMin = 0;
+  var longestLayoverMin = 0;
   for (var li = 1; li < legs.length; li++) {
     var prev = legs[li - 1], next = legs[li];
     if (!prev.arrivalDate || !next.departureDate) continue;
-    var aMs = Date.parse(prev.arrivalDate + 'T' + (prev.arrivalTime || '00:00') + ':00Z')
-              - (prev.arrivalUtc || 0) * 3600000;
-    var dMs = Date.parse(next.departureDate + 'T' + (next.departureTime || '00:00') + ':00Z')
-              - (next.departureUtc || 0) * 3600000;
+    var aMs = localToAbsoluteMs(prev.arrivalDate, prev.arrivalTime || '00:00', prev.arrivalUtc || 0);
+    var dMs = localToAbsoluteMs(next.departureDate, next.departureTime || '00:00', next.departureUtc || 0);
     var gap = Math.round((dMs - aMs) / 60000);
-    if (gap > longestStayMin) longestStayMin = gap;
+    if (gap > longestLayoverMin) longestLayoverMin = gap;
   }
-  function fmtStay(min) {
-    if (min <= 0) return '0h';
+  function fmtLayover(min) {
+    if (min <= 0) return 'N/A';
     var d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), m = min % 60;
     if (d > 0) return h > 0 ? d + 'd ' + h + 'h' : d + 'd';
     return m > 0 ? h + 'h ' + m + 'm' : h + 'h';
@@ -1798,7 +1796,8 @@ function renderItinerary(data) {
   var nights = 0;
   (data.hotels || []).forEach(function (h) {
     if (!h.checkInDate || !h.checkOutDate) return;
-    var n = Math.round((Date.parse(h.checkOutDate) - Date.parse(h.checkInDate)) / 86400000);
+    var n = Math.round((Date.parse(h.checkOutDate + 'T00:00:00Z') -
+                        Date.parse(h.checkInDate + 'T00:00:00Z')) / 86400000);
     nights += Math.max(1, n);
   });
 
@@ -1811,10 +1810,10 @@ function renderItinerary(data) {
     { icon: '\ud83d\udeeb', value: String(legs.length), label: 'Transport legs' },
     { icon: '\ud83c\udfe8', value: String((data.hotels || []).length), label: 'Hotels' },
     { icon: '\ud83d\udecf\ufe0f', value: String(nights), label: 'Hotel nights' },
-    { icon: '\u23f1\ufe0f', value: hm(totalTransitMin), label: 'Total travel time' },
+    { icon: '\u23f1\ufe0f', value: hm(totalTransitMin), label: 'Total travel time', lift: 1 },
     { icon: '\ud83c\udfc6', value: fmtDur(longestLeg.durationHours, longestLeg.durationMinutes),
       label: 'Longest leg', lift: 1 },
-    { icon: '\u23f3', value: fmtStay(longestStayMin), label: 'Longest stay' },
+    { icon: '\u23f3', value: fmtLayover(longestLayoverMin), label: 'Longest layover' },
     { icon: '\ud83d\udd52', value: earliest ? fmt12(earliest) : '\u2014',
       label: 'Earliest departure', lift: 1 },
     { icon: '\ud83d\udcca', value: hm(avgMin), label: 'Avg leg duration' },

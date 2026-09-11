@@ -418,18 +418,18 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
      like this that gap is a city stay rather than an airport layover, which
      is why it is not called one. Both ends are pulled back to real UTC
      first, or a stay that crosses a zone reads hours out. */
-  let longestStayMin = 0
+  let longestLayoverMin = 0
   for (let li = 1; li < data.legs.length; li++) {
     const prev = data.legs[li - 1]
     const next = data.legs[li]
     if (!prev.arrivalDate || !next.departureDate) continue
-    const aMs = Date.parse(`${prev.arrivalDate}T${prev.arrivalTime || '00:00'}:00Z`) - prev.arrivalUtc * 3600000
-    const dMs = Date.parse(`${next.departureDate}T${next.departureTime || '00:00'}:00Z`) - next.departureUtc * 3600000
+    const aMs = localToAbsoluteMs(prev.arrivalDate, prev.arrivalTime || '00:00', prev.arrivalUtc)
+    const dMs = localToAbsoluteMs(next.departureDate, next.departureTime || '00:00', next.departureUtc)
     const gap = Math.round((dMs - aMs) / 60000)
-    if (gap > longestStayMin) longestStayMin = gap
+    if (gap > longestLayoverMin) longestLayoverMin = gap
   }
-  function fmtStay(min: number): string {
-    if (min <= 0) return '0h'
+  function fmtLayover(min: number): string {
+    if (min <= 0) return 'N/A'
     const d = Math.floor(min / 1440)
     const h = Math.floor((min % 1440) / 60)
     const m = min % 60
@@ -442,7 +442,8 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   let nights = 0
   for (const h of data.hotels) {
     if (!h.checkInDate || !h.checkOutDate) continue
-    nights += Math.max(1, Math.round((Date.parse(h.checkOutDate) - Date.parse(h.checkInDate)) / 86400000))
+    nights += Math.max(1, Math.round((Date.parse(`${h.checkOutDate}T00:00:00Z`) -
+                                      Date.parse(`${h.checkInDate}T00:00:00Z`)) / 86400000))
   }
 
   const avgMin = data.legs.length ? Math.round(totalTransitMin / data.legs.length) : 0
@@ -454,10 +455,10 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
     { icon: '\u{1F6EB}', value: `${data.legs.length}`, label: 'Transport legs' },
     { icon: '\u{1F3E8}', value: `${data.hotels.length}`, label: 'Hotels' },
     { icon: '\u{1F6CF}\uFE0F', value: `${nights}`, label: 'Hotel nights' },
-    { icon: '\u23F1\uFE0F', value: hm(totalTransitMin), label: 'Total travel time' },
+    { icon: '\u23F1\uFE0F', value: hm(totalTransitMin), label: 'Total travel time', lift: true },
     { icon: '\u{1F3C6}', value: fmtDur(longestLeg.durationHours, longestLeg.durationMinutes),
       label: 'Longest leg', lift: true },
-    { icon: '\u23F3', value: fmtStay(longestStayMin), label: 'Longest stay' },
+    { icon: '\u23F3', value: fmtLayover(longestLayoverMin), label: 'Longest layover' },
     { icon: '\u{1F552}', value: earliest ? fmt12(earliest) : '\u2014',
       label: 'Earliest departure', lift: true },
     { icon: '\u{1F4CA}', value: hm(avgMin), label: 'Avg leg duration' },
