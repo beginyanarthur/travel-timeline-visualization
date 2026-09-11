@@ -1478,13 +1478,17 @@ var DOT = 22, DOT_GAP = 2, HOUR_W = DOT + DOT_GAP;
 var MARGIN = 243, PAD_LEFT = 359;
 var TITLE_Y = 248, CITY_LIST_Y = 358;
 var INSIGHTS_TITLE_Y = 607, INSIGHTS_DESC_Y = 681;
-var INSIGHTS_CONTAINER_Y = 653, INSIGHTS_CONTAINER_H = 350, INSIGHTS_STAT_Y = 829;
-var TIMELINE_CONTAINER_Y = 1268, TIMELINE_CONTAINER_H = 905, TL_DIVIDER_Y = 1914;
-var CL_CONTAINER_Y = 2448, CL_CONTAINER_H = 781, CL_DIVIDER_Y = 2941;
-var TIMELINE_TITLE_Y = 1210, TIMELINE_DESC_Y = 1284;
-var HOTEL_TOP = 1465, TIMELINE_Y = 1615, LEG_TOP = 1655;
-var CLOCK_DAY_TITLE_Y = 2390, CLOCK_DAY_DESC_Y = 2464;
-var CLOCK_TOP = 2646, CLOCK_D = 140, CLOCK_GAP = 90;
+var INSIGHTS_CONTAINER_Y = 653, INSIGHTS_CONTAINER_H = 680, INSIGHTS_STAT_Y = 829;
+/* Eleven statistics as cards, four to a row, so three rows deep. Every Y
+   below Insights moved down by the difference this made to the band, which
+   is the one number to change if the card grid ever changes shape. */
+var CARD_W = 220, CARD_H = 132, CARD_GAP = 18, CARD_COLS = 4;
+var TIMELINE_CONTAINER_Y = 1598, TIMELINE_CONTAINER_H = 905, TL_DIVIDER_Y = 2244;
+var CL_CONTAINER_Y = 2778, CL_CONTAINER_H = 781, CL_DIVIDER_Y = 3271;
+var TIMELINE_TITLE_Y = 1540, TIMELINE_DESC_Y = 1614;
+var HOTEL_TOP = 1795, TIMELINE_Y = 1945, LEG_TOP = 1985;
+var CLOCK_DAY_TITLE_Y = 2720, CLOCK_DAY_DESC_Y = 2794;
+var CLOCK_TOP = 2976, CLOCK_D = 140, CLOCK_GAP = 90;
 
 /* Type scale. Every size and ink in the drawing is named here, so a new
    label picks a role instead of a number. It replaced fifteen sizes that
@@ -1506,6 +1510,7 @@ var INK = {
   title:     '#000000',  /* titles and the sentences under them */
   primary:   '#333333',  /* anything you are meant to read */
   secondary: '#666666',  /* supporting detail */
+  lift:      '#C2410C',  /* the one or two figures worth looking at first */
   muted:     '#737373'   /* chrome, and the lightest grey that still
                             clears 4.5:1 on white and on the section band */
 };
@@ -1565,10 +1570,17 @@ function dayLabel(dateStr) {
 
 function renderItinerary(data) {
   var out = [];
-  function txt(text, x, y, size, weight, color) {
+  function txt(text, x, y, size, weight, color, tracking) {
     out.push('<text x="' + n2(x) + '" y="' + n2(y) + '" font-size="' + size +
-             '" font-weight="' + weight + '" fill="' + color +
-             '" dominant-baseline="text-before-edge">' + esc(text) + '</text>');
+             '" font-weight="' + weight + '" fill="' + color + '"' +
+             (tracking ? ' letter-spacing="' + tracking + '"' : '') +
+             ' dominant-baseline="text-before-edge">' + esc(text) + '</text>');
+  }
+  /* A card is a filled rect with a hairline, which rect() has no stroke for. */
+  function card(x, y, w, h, fill, stroke, rx) {
+    out.push('<rect x="' + n2(x) + '" y="' + n2(y) + '" width="' + n2(w) +
+             '" height="' + n2(h) + '" rx="' + rx + '" fill="' + fill +
+             '" stroke="' + stroke + '" stroke-width="1"/>');
   }
   function txtCentre(text, cx, cy, size, weight, color) {
     out.push('<text x="' + n2(cx) + '" y="' + n2(cy) + '" font-size="' + size +
@@ -1713,25 +1725,91 @@ function renderItinerary(data) {
   var modeCounts = {};
   legs.forEach(function (leg) { modeCounts[leg.type] = (modeCounts[leg.type] || 0) + 1; });
 
-  var stats = [
-    { value: String(numDays), label: 'Days' },
-    { value: String(Object.keys(uniqueCities).length), label: 'Cities' },
-    { value: String(legs.length), label: 'Legs' },
-    { value: String((data.hotels || []).length), label: 'Hotels' },
-    { value: Math.floor(totalTransitMin / 60) + 'h ' + (totalTransitMin % 60) + 'm', label: 'In Transit' },
-    { value: fmtDur(longestLeg.durationHours, longestLeg.durationMinutes), label: 'Longest Leg' }
-  ];
-  var statX = PAD_LEFT;
-  stats.forEach(function (st) {
-    txt(st.value, statX, INSIGHTS_STAT_Y, TYPE.figure, 700, INK.primary);
-    txt(st.label, statX, INSIGHTS_STAT_Y + 44, TYPE.label, 700, INK.muted);
-    statX += 180;
+  /* Distinct UTC offsets, not distinct countries: two cities can share an
+     offset and the clock does not care which is which. */
+  var zones = {};
+  legs.forEach(function (leg) {
+    zones[leg.departureUtc] = 1;
+    zones[leg.arrivalUtc] = 1;
   });
+
+  /* Earliest by the clock the traveller actually woke up to, so local time
+     compared as a string. Comparing absolute instants would answer a
+     different question and a less useful one. */
+  var earliest = '';
+  legs.forEach(function (leg) {
+    if (leg.departureTime && (!earliest || leg.departureTime < earliest)) earliest = leg.departureTime;
+  });
+
+  /* The longest gap between one arrival and the next departure. On a trip
+     like this that gap is a city stay rather than an airport layover, which
+     is why it is not called one. Both ends are pulled back to real UTC
+     first, or a stay that crosses a zone reads hours out. */
+  var longestStayMin = 0;
+  for (var li = 1; li < legs.length; li++) {
+    var prev = legs[li - 1], next = legs[li];
+    if (!prev.arrivalDate || !next.departureDate) continue;
+    var aMs = Date.parse(prev.arrivalDate + 'T' + (prev.arrivalTime || '00:00') + ':00Z')
+              - (prev.arrivalUtc || 0) * 3600000;
+    var dMs = Date.parse(next.departureDate + 'T' + (next.departureTime || '00:00') + ':00Z')
+              - (next.departureUtc || 0) * 3600000;
+    var gap = Math.round((dMs - aMs) / 60000);
+    if (gap > longestStayMin) longestStayMin = gap;
+  }
+  function fmtStay(min) {
+    if (min <= 0) return '0h';
+    var d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), m = min % 60;
+    if (d > 0) return h > 0 ? d + 'd ' + h + 'h' : d + 'd';
+    return m > 0 ? h + 'h ' + m + 'm' : h + 'h';
+  }
+
+  /* A stay of one calendar night counts as one, so a same day check in and
+     out is not reported as zero nights slept. */
+  var nights = 0;
+  (data.hotels || []).forEach(function (h) {
+    if (!h.checkInDate || !h.checkOutDate) return;
+    var n = Math.round((Date.parse(h.checkOutDate) - Date.parse(h.checkInDate)) / 86400000);
+    nights += Math.max(1, n);
+  });
+
+  var avgMin = legs.length ? Math.round(totalTransitMin / legs.length) : 0;
+  function hm(min) { return Math.floor(min / 60) + 'h ' + (min % 60) + 'm'; }
+
+  var stats = [
+    { icon: '\ud83d\udcc5', value: String(numDays), label: 'Days' },
+    { icon: '\ud83c\udf0d', value: String(Object.keys(uniqueCities).length), label: 'Cities' },
+    { icon: '\ud83d\udeeb', value: String(legs.length), label: 'Transport legs' },
+    { icon: '\ud83c\udfe8', value: String((data.hotels || []).length), label: 'Hotels' },
+    { icon: '\ud83d\udecf\ufe0f', value: String(nights), label: 'Hotel nights' },
+    { icon: '\u23f1\ufe0f', value: hm(totalTransitMin), label: 'Total travel time' },
+    { icon: '\ud83c\udfc6', value: fmtDur(longestLeg.durationHours, longestLeg.durationMinutes),
+      label: 'Longest leg', lift: 1 },
+    { icon: '\u23f3', value: fmtStay(longestStayMin), label: 'Longest stay' },
+    { icon: '\ud83d\udd52', value: earliest ? fmt12(earliest) : '\u2014',
+      label: 'Earliest departure', lift: 1 },
+    { icon: '\ud83d\udcca', value: hm(avgMin), label: 'Avg leg duration' },
+    { icon: '\ud83c\udf0f', value: String(Object.keys(zones).length), label: 'Timezones' }
+  ];
+
+  stats.forEach(function (st, i) {
+    var cx = PAD_LEFT + (i % CARD_COLS) * (CARD_W + CARD_GAP);
+    var cy = INSIGHTS_STAT_Y + Math.floor(i / CARD_COLS) * (CARD_H + CARD_GAP);
+    card(cx, cy, CARD_W, CARD_H, '#FFFFFF', '#E4E7EA', 16);
+    /* The badge sits behind the emoji rather than tinting it, so every icon
+       keeps the colour it ships with. */
+    card(cx + 16, cy + 16, 30, 30, '#F4F6F8', '#F4F6F8', 8);
+    txtCentre(st.icon, cx + 31, cy + 31, 16, 400, INK.primary);
+    txt(st.value, cx + 16, cy + 56, TYPE.figure, 700, st.lift ? INK.lift : INK.primary);
+    txt(st.label.toUpperCase(), cx + 16, cy + 104, TYPE.label, 700, INK.muted, '0.06em');
+  });
+
+  var statsBottom = INSIGHTS_STAT_Y +
+    Math.ceil(stats.length / CARD_COLS) * (CARD_H + CARD_GAP) - CARD_GAP;
 
   var modeLine = Object.keys(modeCounts).map(function (k) {
     return mode(k).icon + ' ' + modeCounts[k] + ' ' + k + (modeCounts[k] > 1 ? 's' : '');
   }).join('   ');
-  txt(modeLine, PAD_LEFT, INSIGHTS_STAT_Y + 90, TYPE.label, 400, INK.secondary);
+  txt(modeLine, PAD_LEFT, statsBottom + 26, TYPE.label, 400, INK.secondary);
 
   /* Section 2: Timeline */
   rect(SECTION_BG_X, TIMELINE_TITLE_Y - 46, SECTION_BG_W, 201, '#F5FBFE', 0, 24);

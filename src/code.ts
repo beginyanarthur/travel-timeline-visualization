@@ -107,6 +107,7 @@ const INK = {
   title:     '#000000',  // titles and the sentences under them
   primary:   '#333333',  // anything you are meant to read
   secondary: '#666666',  // supporting detail
+  lift:      '#C2410C',  // the one or two figures worth looking at first
   muted:     '#737373',  // chrome, and the lightest grey that still
                          // clears 4.5:1 on white and on the section band
 }
@@ -126,28 +127,34 @@ const CITY_LIST_Y = 358
 const INSIGHTS_TITLE_Y = 607
 const INSIGHTS_DESC_Y = 681
 const INSIGHTS_CONTAINER_Y = 653
-const INSIGHTS_CONTAINER_H = 350
+const INSIGHTS_CONTAINER_H = 680
 const INSIGHTS_STAT_Y = 829
+/* Eleven statistics as cards, four to a row, so three rows deep. Every Y
+   below Insights moved down by the difference this made to the band. */
+const CARD_W = 220
+const CARD_H = 132
+const CARD_GAP = 18
+const CARD_COLS = 4
 
 // Section 2: Timeline
-const TIMELINE_TITLE_Y = 1210
-const TIMELINE_DESC_Y = 1284
-const TIMELINE_CONTAINER_Y = 1268
+const TIMELINE_TITLE_Y = 1540
+const TIMELINE_DESC_Y = 1614
+const TIMELINE_CONTAINER_Y = 1598
 const TIMELINE_CONTAINER_H = 905
-const HOTEL_TOP = 1465
-const TIMELINE_Y = 1615
-const LEG_TOP = 1655
-const TL_DIVIDER_Y = 1914
+const HOTEL_TOP = 1795
+const TIMELINE_Y = 1945
+const LEG_TOP = 1985
+const TL_DIVIDER_Y = 2244
 
 // Section 3: Clock Day
-const CLOCK_DAY_TITLE_Y = 2390
-const CLOCK_DAY_DESC_Y = 2464
-const CL_CONTAINER_Y = 2448
+const CLOCK_DAY_TITLE_Y = 2720
+const CLOCK_DAY_DESC_Y = 2794
+const CL_CONTAINER_Y = 2778
 const CL_CONTAINER_H = 781
-const CLOCK_TOP = 2646
+const CLOCK_TOP = 2976
 const CLOCK_D = 140
 const CLOCK_GAP = 90
-const CL_DIVIDER_Y = 2941
+const CL_DIVIDER_Y = 3271
 
 // Leg icons, keyed by transport type
 const LEG_ICONS: { [k: string]: string } = {
@@ -264,6 +271,15 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
     return r
   }
 
+  /* A card is a filled rect with a hairline, which rect() has no stroke for. */
+  function card(x: number, y: number, w: number, h: number,
+                fill: string, stroke: string, radius: number): RectangleNode {
+    const r = rect(x, y, w, h, fill, radius)
+    r.strokes = [sp(stroke)]
+    r.strokeWeight = 1
+    return r
+  }
+
   // ── Section layout dimensions (depend on totalW) ──
   const SECTION_BG_X = MARGIN + 67
   const CONTENT_END_X = totalW - PAD_LEFT + 4
@@ -351,28 +367,97 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
     modeCounts[leg.type] = (modeCounts[leg.type] || 0) + 1
   }
 
+  /* Distinct UTC offsets, not distinct countries: two cities can share an
+     offset and the clock does not care which is which. */
+  const zones = new Set<number>()
+  for (const leg of data.legs) {
+    zones.add(leg.departureUtc)
+    zones.add(leg.arrivalUtc)
+  }
+
+  /* Earliest by the clock the traveller actually woke up to, so local time
+     compared as a string. Comparing absolute instants would answer a
+     different question and a less useful one. */
+  let earliest = ''
+  for (const leg of data.legs) {
+    if (leg.departureTime && (!earliest || leg.departureTime < earliest)) earliest = leg.departureTime
+  }
+
+  /* The longest gap between one arrival and the next departure. On a trip
+     like this that gap is a city stay rather than an airport layover, which
+     is why it is not called one. Both ends are pulled back to real UTC
+     first, or a stay that crosses a zone reads hours out. */
+  let longestStayMin = 0
+  for (let li = 1; li < data.legs.length; li++) {
+    const prev = data.legs[li - 1]
+    const next = data.legs[li]
+    if (!prev.arrivalDate || !next.departureDate) continue
+    const aMs = Date.parse(`${prev.arrivalDate}T${prev.arrivalTime || '00:00'}:00Z`) - prev.arrivalUtc * 3600000
+    const dMs = Date.parse(`${next.departureDate}T${next.departureTime || '00:00'}:00Z`) - next.departureUtc * 3600000
+    const gap = Math.round((dMs - aMs) / 60000)
+    if (gap > longestStayMin) longestStayMin = gap
+  }
+  function fmtStay(min: number): string {
+    if (min <= 0) return '0h'
+    const d = Math.floor(min / 1440)
+    const h = Math.floor((min % 1440) / 60)
+    const m = min % 60
+    if (d > 0) return h > 0 ? `${d}d ${h}h` : `${d}d`
+    return m > 0 ? `${h}h ${m}m` : `${h}h`
+  }
+
+  /* A stay of one calendar night counts as one, so a same day check in and
+     out is not reported as zero nights slept. */
+  let nights = 0
+  for (const h of data.hotels) {
+    if (!h.checkInDate || !h.checkOutDate) continue
+    nights += Math.max(1, Math.round((Date.parse(h.checkOutDate) - Date.parse(h.checkInDate)) / 86400000))
+  }
+
+  const avgMin = data.legs.length ? Math.round(totalTransitMin / data.legs.length) : 0
+  const hm = (min: number) => `${Math.floor(min / 60)}h ${min % 60}m`
+
   const stats = [
-    { value: `${numDays}`, label: 'Days' },
-    { value: `${uniqueCities.size}`, label: 'Cities' },
-    { value: `${data.legs.length}`, label: 'Legs' },
-    { value: `${data.hotels.length}`, label: 'Hotels' },
-    { value: `${Math.floor(totalTransitMin / 60)}h ${totalTransitMin % 60}m`, label: 'In Transit' },
-    { value: fmtDur(longestLeg.durationHours, longestLeg.durationMinutes), label: 'Longest Leg' },
+    { icon: '\u{1F4C5}', value: `${numDays}`, label: 'Days' },
+    { icon: '\u{1F30D}', value: `${uniqueCities.size}`, label: 'Cities' },
+    { icon: '\u{1F6EB}', value: `${data.legs.length}`, label: 'Transport legs' },
+    { icon: '\u{1F3E8}', value: `${data.hotels.length}`, label: 'Hotels' },
+    { icon: '\u{1F6CF}\uFE0F', value: `${nights}`, label: 'Hotel nights' },
+    { icon: '\u23F1\uFE0F', value: hm(totalTransitMin), label: 'Total travel time' },
+    { icon: '\u{1F3C6}', value: fmtDur(longestLeg.durationHours, longestLeg.durationMinutes),
+      label: 'Longest leg', lift: true },
+    { icon: '\u23F3', value: fmtStay(longestStayMin), label: 'Longest stay' },
+    { icon: '\u{1F552}', value: earliest ? fmt12(earliest) : '\u2014',
+      label: 'Earliest departure', lift: true },
+    { icon: '\u{1F4CA}', value: hm(avgMin), label: 'Avg leg duration' },
+    { icon: '\u{1F30F}', value: `${zones.size}`, label: 'Timezones' },
   ]
 
-  let statX = PAD_LEFT
-  for (const stat of stats) {
-    await txt(stat.value, statX, INSIGHTS_STAT_Y, TYPE.figure, 'Bold', INK.primary)
-    await txt(stat.label, statX, INSIGHTS_STAT_Y + 44, TYPE.label, 'Bold', INK.muted)
-    statX += 180
+  for (let i = 0; i < stats.length; i++) {
+    const st = stats[i]
+    const cx = PAD_LEFT + (i % CARD_COLS) * (CARD_W + CARD_GAP)
+    const cy = INSIGHTS_STAT_Y + Math.floor(i / CARD_COLS) * (CARD_H + CARD_GAP)
+    card(cx, cy, CARD_W, CARD_H, '#FFFFFF', '#E4E7EA', 16)
+    /* The badge sits behind the emoji rather than tinting it, so every icon
+       keeps the colour it ships with. */
+    card(cx + 16, cy + 16, 30, 30, '#F4F6F8', '#F4F6F8', 8)
+    const ic = await txt(st.icon, 0, 0, 16, 'Regular', INK.primary)
+    ic.x = cx + 31 - ic.width / 2
+    ic.y = cy + 31 - ic.height / 2
+    await txt(st.value, cx + 16, cy + 56, TYPE.figure, 'Bold', st.lift ? INK.lift : INK.primary)
+    const lb = await txt(st.label.toUpperCase(), cx + 16, cy + 104, TYPE.label, 'Bold', INK.muted)
+    lb.letterSpacing = { value: 6, unit: 'PERCENT' }
   }
+
+  const statsBottom = INSIGHTS_STAT_Y +
+    Math.ceil(stats.length / CARD_COLS) * (CARD_H + CARD_GAP) - CARD_GAP
 
   /* One table drives the icons, so a seventh mode is one new entry there and
      nothing here. */
   const modeLine = Object.keys(modeCounts)
     .map((k) => `${LEG_ICONS[k] || ''} ${modeCounts[k]} ${k}${modeCounts[k] > 1 ? 's' : ''}`)
     .join('   ')
-  await txt(modeLine, PAD_LEFT, INSIGHTS_STAT_Y + 90, TYPE.label, 'Regular', INK.secondary)
+  await txt(modeLine, PAD_LEFT, statsBottom + 26, TYPE.label, 'Regular', INK.secondary)
 
   // ═══════════════════════════════════════════════════════════════════════
   // SECTION 2: TIMELINE

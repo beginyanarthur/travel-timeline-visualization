@@ -371,3 +371,66 @@ none touching a donut ring, and the legend swatches still ending at 375 and
 collision risk, which is how the hotel name going 11 → 14 once pushed its In
 and Out lines from +46/+58 to +50/+63. Measure the boxes after changing a
 size. Do not eyeball it.
+
+---
+
+## 14. The Insights cards
+
+Six statistics on one flat row became eleven on cards, four to a row, three
+rows deep. The five new ones are hotel nights, longest stay, earliest
+departure, average leg duration and timezones crossed.
+
+Three of them need saying out loud, because the obvious implementation of
+each is wrong.
+
+**Longest stay is not a layover.** It measures the gap between one arrival
+and the next departure, and on a trip like this that gap is a city stay: the
+sample returns 2d 1h, which is the two days in Nuremberg. Calling that a
+layover would be a lie about what the number means. Both ends are pulled
+back to real UTC before subtracting, or a stay that crosses a zone reads
+hours out.
+
+**Earliest departure compares local clock times as strings,** not absolute
+instants. That is deliberate. A traveller asking which morning was the
+cruellest means the clock they woke up to, not a moment in UTC.
+
+**Hotel nights floors at one per stay.** A check in and out on the same date
+is still a night somebody slept somewhere, and reporting zero would be
+wrong more often than it would be right.
+
+### The reflow this caused
+
+The card grid is 934 x 432, which pushed the Insights band from 350 to 680.
+**Every Y below Insights moved down by exactly 330.** They are constants in
+both files and they must stay in step:
+
+```
+TIMELINE_TITLE_Y  1210 -> 1540      CLOCK_DAY_TITLE_Y  2390 -> 2720
+TIMELINE_CONT_Y   1268 -> 1598      CL_CONTAINER_Y     2448 -> 2778
+HOTEL_TOP         1465 -> 1795      CLOCK_TOP          2646 -> 2976
+TIMELINE_Y        1615 -> 1945      CL_DIVIDER_Y       2941 -> 3271
+LEG_TOP           1655 -> 1985      TL_DIVIDER_Y       1914 -> 2244
+```
+
+If the grid ever changes shape, change `INSIGHTS_CONTAINER_H` and move every
+one of those by the same difference. Nothing computes them.
+
+Checked the way the type pass was checked: 372 labels, zero overlaps, eleven
+cards, no text escaping its card, and the canvas grown from 3477 to 3807.
+
+### What the cards do not borrow
+
+The card treatment came in as CSS, which could not apply, because Insights
+is drawn inside the SVG rather than laid out in HTML. The colours in that
+CSS were reverted on purpose:
+
+- `#AAAAAA` labels measure 2.32:1. They use `INK.muted` at 4.74:1 instead,
+  which is the value section 13's contrast pass had just landed on.
+- `#E8590C` highlights measure 3.58:1. `INK.lift` is `#C2410C`, which clears
+  4.5:1 and is now the fourth ink with a job: the one or two figures worth
+  reading first.
+- `26px` and `11px` are not roles. Values wear `figure`, labels wear `label`,
+  and the icon sits at 16 inside a 30px badge.
+
+**One ink was added, not fifteen sizes.** That is the test for the next
+change to this section.
