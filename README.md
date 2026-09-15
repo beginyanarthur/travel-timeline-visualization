@@ -78,15 +78,17 @@ so there it always falls back to copying.
 
 ## Printing
 
-**Print** in the canvas toolbar, **Print or save as PDF** in the ⋯ menu, and
-Cmd+P all produce the same A4 landscape pages. Every browser's print dialog
+**Print** in the canvas toolbar (a printer icon on phones), **Print or save as
+PDF** in the ⋯ menu, and Cmd+P all produce the same A4 landscape pages. Every browser's print dialog
 offers Save as PDF, so this is also how a drawing leaves the page.
 
 The drawing is never shrunk onto a sheet. Squeezed onto one A4, an eight day
 trip puts a city name at 2pt. Instead:
 
 - **Page one** is the overview: the title, the route, the Insights cards six
-  across, and the day rings.
+  across, the day rings, and the key that explains them.
+- **The first timeline sheet opens with a one line key** for the dots and bars.
+  Both keys read the same wording the screen legends draw, defined once.
 - **Then the timeline, two days per row**, at the same scale on every sheet,
   so an hour always prints 4.9mm long. It wraps onto the next row the way text
   wraps onto the next line.

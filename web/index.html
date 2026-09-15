@@ -440,7 +440,15 @@ body.canvas-full .stage { height: 100svh; }
 .fb-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 
 .tool-print[hidden] { display: none; }
-@media (max-width: 900px) { .tool-print { display: none; } }
+.tool-print .tool { display: inline-flex; align-items: center; gap: 6px; }
+/* On a phone Print lives on the toolbar too, as a printer alone, because the
+   menu it was hidden in opens from the sheet, away from the drawing. It is
+   kept to 32px so the toolbar still fits one row at 360px, the narrowest
+   common phone, where a wrapped toolbar would take a row off the canvas. */
+@media (max-width: 900px) {
+  .tool-print .print-label { display: none; }
+  .tool-print .tool { min-width: 32px; padding: 0; justify-content: center; }
+}
 #print-pages { display: none; }
 
 /* Paper. A4 landscape, page one for the title, the Insights cards and the
@@ -466,6 +474,16 @@ body.canvas-full .stage { height: 100svh; }
   .pp-route { font-size: 10pt; margin: 1.5mm 0 0; color: #333; }
   .pp-kicker { font-size: 8pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #737373; margin: 0 0 2mm; }
   .pp-rows { display: flex; flex-direction: column; gap: 6mm; }
+  .pp-key {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1.2mm 5.5mm;
+    margin: 0 0 4mm; font-size: 7.5pt; color: #333;
+  }
+  .pp-key .k { display: inline-flex; align-items: center; gap: 1.6mm; white-space: nowrap; }
+  .pp .pp-key svg { display: inline-block; width: auto; height: 2.6mm; flex: 0 0 auto; }
+  .pp .pp-key .k-stay svg, .pp .pp-key .k-transit svg { height: 2.6mm; }
+  .pp-keylabel { font-weight: 700; margin-right: 1.5mm; color: #000; }
+  .pp-ckey { font-size: 7.5pt; line-height: 1.45; color: #333; margin: 3mm 0 0; }
+  .pp-ckey b, .pp-key b { font-weight: 700; color: #000; }
   .pp-foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 7.5pt; color: #737373; }
   .pp-empty { justify-content: center; align-items: center; font-size: 14pt; }
 }
@@ -1407,7 +1425,8 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
         <button class="tool" id="view-fit" aria-pressed="false">Fit width</button>
       </div>
       <div class="tool-group tool-print" role="group" aria-label="Print" hidden>
-        <button class="tool" id="print-btn" type="button" title="Print, or save as PDF">Print</button>
+        <button class="tool" id="print-btn" type="button" title="Print, or save as PDF"
+                aria-label="Print or save as PDF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span class="print-label">Print</span></button>
       </div>
     </div>
     <!-- Asked once, straight after the first drawing someone makes, because
@@ -1762,7 +1781,7 @@ function renderItinerary(data, opts) {
   /* Figma sets the clock legend as one text node with bold ranges and a
      fixed 351px width. foreignObject gives real wrapping and real bold
      runs, which tspans cannot do without measuring the font by hand. */
-  function paragraph(text, bolds, x, y, w, size, color) {
+  function boldRuns(text, bolds) {
     var marks = [];
     bolds.forEach(function (b) {
       var i = text.indexOf(b);
@@ -1776,6 +1795,10 @@ function renderItinerary(data, opts) {
       at = m[1];
     });
     html += esc(text.slice(at));
+    return html;
+  }
+  function paragraph(text, bolds, x, y, w, size, color) {
+    var html = boldRuns(text, bolds);
     out.push('<foreignObject x="' + n2(x) + '" y="' + n2(y) + '" width="' + w + '" height="220">' +
       '<div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Inter,system-ui,sans-serif;font-size:' +
       size + 'px;line-height:' + n2(size * 1.21) + 'px;color:' + color +
@@ -2221,6 +2244,21 @@ function renderItinerary(data, opts) {
   /* Timeline legend ──────────────────────────────────────────── */
   dividerLine(TL_DIVIDER_Y);
 
+  /* The words of both keys, written once. The screen draws them into the
+     SVG and the printout sets them as text, and both read these, so the two
+     can never say different things about the same drawing. The night and day
+     hours come from the one definition of night, as before. */
+  var TIMELINE_KEY = [
+    { swatch: 'hour',    before: 'Each circle represents ', bold: '1 hour', after: '' },
+    { swatch: 'night',   before: 'Black = ', bold: 'Night', after: ' (' + NIGHT_RANGE + ')' },
+    { swatch: 'day',     before: 'Gray = ', bold: 'Day', after: ' (' + DAY_RANGE + ')' },
+    { swatch: 'stay',    before: 'Colored segments = ', bold: 'Staying in the city', after: '' },
+    { swatch: 'transit', before: 'Muted color = ', bold: 'In transit / commute', after: '' }
+  ];
+  function keyRun(k, open, close) { return esc(k.before) + open + esc(k.bold) + close + esc(k.after); }
+  var CLOCK_KEY = "Each of the 24 pie slices is one hour:  Dark slices for nighttime (" + NIGHT_RANGE_SP + "), light Gray for daytime (" + DAY_RANGE_SP + "). Colored slices overlay the hours you're staying in a city, so you can see at a glance how much of each day is spent in transit versus on the ground.   Sun-cycle icons (moon \u2192 sunrise \u2192 sun \u2192 sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.";
+  var CLOCK_KEY_BOLDS = ['Dark slices', 'light', 'Gray', 'Colored slices', 'Sun-cycle'];
+
   var tlLegY = LEG_TOP + 309;
   /* The swatches occupy PAD_LEFT-2 to PAD_LEFT+40, so the text has to start
      clear of them. This was a fixed 202 against a PAD_LEFT of 140, a 62px
@@ -2230,19 +2268,19 @@ function renderItinerary(data, opts) {
   txt('How to read', PAD_LEFT - 1, tlLegY, TYPE.label, 700, INK.primary);
   circle(PAD_LEFT - 1, tlLegY + 40, 7, gr(0.02));
   circle(PAD_LEFT + 7, tlLegY + 40, 7, gr(0.85));
-  txtMixed('Each circle represents <tspan font-weight="700">1 hour</tspan>',
+  txtMixed(keyRun(TIMELINE_KEY[0], '<tspan font-weight="700">', '</tspan>'),
            LEG_TEXT_X, tlLegY + 35, TYPE.meta, 400, INK.primary);
   circle(PAD_LEFT - 2, tlLegY + 57, 18, gr(0.12));
-  txtMixed('Black = <tspan font-weight="700">Night</tspan> (' + NIGHT_RANGE + ')',
+  txtMixed(keyRun(TIMELINE_KEY[1], '<tspan font-weight="700">', '</tspan>'),
            LEG_TEXT_X, tlLegY + 59, TYPE.meta, 400, INK.primary);
   circle(PAD_LEFT - 2, tlLegY + 81, 18, gr(0.75));
-  txtMixed('Gray = <tspan font-weight="700">Day</tspan> (' + DAY_RANGE + ')',
+  txtMixed(keyRun(TIMELINE_KEY[2], '<tspan font-weight="700">', '</tspan>'),
            LEG_TEXT_X, tlLegY + 83, TYPE.meta, 400, INK.primary);
   rect(PAD_LEFT, tlLegY + 112, 40, 4, '#E53935');
-  txtMixed('Colored segments = <tspan font-weight="700">Staying in the city</tspan>',
+  txtMixed(keyRun(TIMELINE_KEY[3], '<tspan font-weight="700">', '</tspan>'),
            LEG_TEXT_X, tlLegY + 106, TYPE.meta, 400, INK.primary);
   rect(PAD_LEFT, tlLegY + 133, 40, 4, '#E53935', 0.4);
-  txtMixed('Muted color = <tspan font-weight="700">In transit / commute</tspan>',
+  txtMixed(keyRun(TIMELINE_KEY[4], '<tspan font-weight="700">', '</tspan>'),
            LEG_TEXT_X, tlLegY + 127, TYPE.meta, 400, INK.primary);
 
   /* Section 3: Clock Day */
@@ -2360,10 +2398,7 @@ function renderItinerary(data, opts) {
 
   var clLegY = CLOCK_TOP + 375;
   txt('How to read', PAD_LEFT - 1, clLegY, TYPE.label, 700, INK.primary);
-  paragraph(
-    "Each of the 24 pie slices is one hour:  Dark slices for nighttime (" + NIGHT_RANGE_SP + "), light Gray for daytime (" + DAY_RANGE_SP + "). Colored slices overlay the hours you're staying in a city, so you can see at a glance how much of each day is spent in transit versus on the ground.   Sun-cycle icons (moon \u2192 sunrise \u2192 sun \u2192 sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.",
-    ['Dark slices', 'light', 'Gray', 'Colored slices', 'Sun-cycle'],
-    PAD_LEFT - 1, clLegY + 33, 351, TYPE.meta, INK.primary);
+  paragraph(CLOCK_KEY, CLOCK_KEY_BOLDS, PAD_LEFT - 1, clLegY + 33, 351, TYPE.meta, INK.primary);
 
   var totalH = clLegY + 456;
 
@@ -2401,6 +2436,22 @@ function renderItinerary(data, opts) {
       route: routeCities,
       days: numDays,
       cards: printCards,
+      /* The keys as text for paper. Swatches are small inline SVGs in the
+         same greys and reds the screen legend draws, so they print reliably
+         where CSS backgrounds and shadows might not. */
+      keys: {
+        timeline: TIMELINE_KEY.map(function (k) {
+          var sw = {
+            hour:    '<svg viewBox="0 0 16 8"><circle cx="4" cy="4" r="3.5" fill="' + gr(0.02) + '"/><circle cx="12" cy="4" r="3.5" fill="' + gr(0.85) + '"/></svg>',
+            night:   '<svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="' + gr(0.12) + '"/></svg>',
+            day:     '<svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="' + gr(0.75) + '"/></svg>',
+            stay:    '<svg viewBox="0 0 20 8"><rect x="0" y="2" width="20" height="4" rx="2" fill="#E53935"/></svg>',
+            transit: '<svg viewBox="0 0 20 8"><rect x="0" y="2" width="20" height="4" rx="2" fill="#E53935" fill-opacity="0.4"/></svg>'
+          }[k.swatch];
+          return '<span class="k k-' + k.swatch + '">' + sw + '<span>' + keyRun(k, '<b>', '</b>') + '</span></span>';
+        }).join(''),
+        clock: boldRuns(CLOCK_KEY, CLOCK_KEY_BOLDS)
+      },
       /* A window onto the screen drawing for the day rings, which do not wrap. */
       clock: function (fromDay, count) {
         return { x: PAD_LEFT + fromDay * (CLOCK_D + CLOCK_GAP) - 44, y: CLOCK_TOP - 62,
@@ -3336,7 +3387,13 @@ function render() {
 
   var res = renderItinerary(data);
   lastDrawnData = data;
-  document.querySelector('.tool-print').hidden = false;
+  var printGroup = document.querySelector('.tool-print');
+  if (printGroup.hidden) {
+    printGroup.hidden = false;
+    /* The toolbar just got wider. If that wrapped it on a very narrow
+       phone, the measured heights the canvas depends on are now stale. */
+    if (typeof setMastHeight === 'function') setMastHeight();
+  }
   $('print-menu').disabled = false;
   lastSize = { w: res.w, h: res.h };
   artboard.innerHTML = res.svg;
@@ -3666,15 +3723,18 @@ function buildPrintPages() {
   var ringRows = [];
   for (var d = 0; d < P.days; d += 10) ringRows.push(crop(P.clock(d, Math.min(10, P.days - d))));
   var RINGS = '<div><p class="pp-kicker">Clock day</p><div class="pp-rows">';
+  var CLOCK_KEY_HTML = '<p class="pp-ckey"><span class="pp-keylabel">How to read</span>' + P.keys.clock + '</p>';
 
   /* Every row prints at the same scale, the sheet's width over the row's
      width, so an hour is the same length on every page. Rows are packed onto
      a sheet until the next would not fit under the heading and footer. */
-  var MM_WIDE = 277, MM_FREE = 160, MM_GAP = 6, MM_KICKER = 7;
+  var MM_WIDE = 277, MM_FREE = 160, MM_GAP = 6, MM_KICKER = 7, MM_TLKEY = 10, MM_CKEY = 13;
   var sheets = [], sheet = null;
   P.rows.forEach(function (row) {
     var mm = row.h * MM_WIDE / row.w;
-    if (!sheet || sheet.used + MM_GAP + mm > MM_FREE) { sheet = { rows: [], used: 0 }; sheets.push(sheet); }
+    /* The first timeline sheet also carries the one line key. */
+    if (sheet && sheet.used + MM_GAP + mm > (sheets.length === 1 ? MM_FREE - MM_TLKEY : MM_FREE)) sheet = null;
+    if (!sheet) { sheet = { rows: [], used: 0 }; sheets.push(sheet); }
     sheet.used += (sheet.rows.length ? MM_GAP : 0) + mm;
     sheet.rows.push(row.svg);
   });
@@ -3688,7 +3748,7 @@ function buildPrintPages() {
   var ringsMm = 0;
   if (ringRows.length === 1) {
     var cb = P.clock(0, Math.min(10, P.days));
-    ringsMm = MM_KICKER + cb.h * MM_WIDE / cb.w;
+    ringsMm = MM_KICKER + cb.h * MM_WIDE / cb.w + MM_CKEY;
   }
   var last = sheets[sheets.length - 1];
   var ringsOnLast = ringRows.length === 1 && last &&
@@ -3698,15 +3758,18 @@ function buildPrintPages() {
   var cover = '<header class="pp-head"><h1>Your travel itinerary</h1>' +
               '<p class="pp-route">' + esc(P.route.join(' \u00b7 ')) + '</p></header>' +
               '<div><p class="pp-kicker">Insights</p><div class="pp-cards">' + P.cards + '</div></div>';
-  if (ringRows.length === 1 && !ringsOnLast) cover += RINGS + ringRows[0] + '</div></div>';
+  if (ringRows.length === 1 && !ringsOnLast) cover += RINGS + ringRows[0] + '</div>' + CLOCK_KEY_HTML + '</div>';
   pages.push(cover);
   if (ringRows.length > 1) {
-    for (var r = 0; r < ringRows.length; r += 3) pages.push(RINGS + ringRows.slice(r, r + 3).join('') + '</div></div>');
+    for (var r = 0; r < ringRows.length; r += 3) {
+      pages.push(RINGS + ringRows.slice(r, r + 3).join('') + '</div>' + (r === 0 ? CLOCK_KEY_HTML : '') + '</div>');
+    }
   }
   sheets.forEach(function (sh, i) {
-    var body = '<div><p class="pp-kicker">Timeline, one dot per hour</p><div class="pp-rows pp-tl">' +
-               sh.rows.join('') + '</div></div>';
-    if (ringsOnLast && i === sheets.length - 1) body += RINGS + ringRows[0] + '</div></div>';
+    var body = '<div><p class="pp-kicker">Timeline</p>' +
+               (i === 0 ? '<div class="pp-key"><span class="pp-keylabel">How to read</span>' + P.keys.timeline + '</div>' : '') +
+               '<div class="pp-rows pp-tl">' + sh.rows.join('') + '</div></div>';
+    if (ringsOnLast && i === sheets.length - 1) body += RINGS + ringRows[0] + '</div>' + CLOCK_KEY_HTML + '</div>';
     pages.push(body);
   });
 
