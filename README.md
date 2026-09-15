@@ -44,8 +44,10 @@ previews need an absolute URL, so a relative one will not resolve.
 
 ## Collecting the feedback
 
-The form at the bottom of the page emails each answer to Arthur through
-Formspree. The endpoint is set near the bottom of `web/index.html`:
+The feedback form emails each answer to Arthur through Formspree. It lives
+in one dialog, opened from a button in the header, from a short prompt that
+appears once after someone's first drawing, and from the invitation at the
+foot of the page. On a phone it opens as a bottom sheet. The endpoint is set near the bottom of `web/index.html`:
 
 ```js
 var FORM_ENDPOINT = 'https://formspree.io/f/xzebnlql';

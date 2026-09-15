@@ -438,6 +438,107 @@ body.canvas-full .stage { height: 100svh; }
 .free::placeholder { color: var(--ink-3); }
 .free:focus { outline: none; border-color: var(--accent); }
 .fb-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+/* Feedback, reachable from anywhere rather than below the fold. */
+.mast-fb {
+  appearance: none; align-self: center;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: var(--btn-h-2); padding: 0 16px;
+  font-family: var(--body); font-size: var(--btn-fs-2); font-weight: 600;
+  border: 1px solid var(--accent); border-radius: 8px;
+  background: transparent; color: var(--accent); cursor: pointer;
+  transition: background 0.12s ease;
+}
+.mast-fb:hover { background: var(--accent-soft); }
+.mast-fb svg { flex: 0 0 auto; }
+
+.fb-invite { margin: 0 0 14px; font-size: 14px; line-height: 1.55; color: var(--ink-2); max-width: 46ch; }
+
+dialog.fb-dialog {
+  border: 1px solid var(--rule-firm); border-radius: 12px;
+  background: var(--surface); color: var(--ink);
+  padding: 0; width: min(520px, 94vw);
+  box-shadow: 0 18px 50px rgba(10, 14, 20, 0.28);
+}
+dialog.fb-dialog::backdrop { background: rgba(10, 14, 20, 0.45); }
+.fb-dialog-in { padding: 20px 22px 20px; }
+.fb-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.fb-dialog-head h3 { font-family: var(--display); font-size: 19px; font-weight: 600; margin: 0; }
+.fb-close {
+  appearance: none; flex: 0 0 auto; width: 36px; height: 36px; margin: -6px -8px 0 0;
+  border: 0; border-radius: 8px; background: transparent; color: var(--ink-3);
+  font-size: 24px; line-height: 1; cursor: pointer;
+}
+.fb-close:hover { background: var(--surface-2); color: var(--ink); }
+.fb-dialog-sub { margin: 4px 0 16px; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.fb-dialog .fb-done { margin: 6px 0 2px; }
+
+.fb-nudge {
+  position: absolute; right: 16px; bottom: 16px; z-index: 30;
+  width: min(300px, calc(100% - 32px));
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 14px 16px; border-radius: 12px;
+  border: 1px solid var(--rule-firm); background: var(--surface);
+  box-shadow: 0 12px 32px rgba(10, 14, 20, 0.18);
+  animation: fb-nudge-in 0.28s ease-out;
+}
+.fb-nudge[hidden] { display: none; }
+.fb-nudge-q { margin: 0; font-family: var(--display); font-size: 15px; font-weight: 600; color: var(--ink); }
+.fb-nudge-s { margin: 0 0 8px; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.fb-nudge-actions { display: flex; gap: 8px; }
+.fb-nudge-go, .fb-nudge-no {
+  appearance: none; height: var(--btn-h-3); padding: 0 14px; border-radius: 8px;
+  font-family: var(--body); font-size: var(--btn-fs-2); font-weight: 600; cursor: pointer;
+}
+.fb-nudge-go { border: 1px solid var(--accent); background: var(--accent); color: #fff; }
+.fb-nudge-go:hover { filter: brightness(1.06); }
+.fb-nudge-no { border: 1px solid var(--rule-firm); background: transparent; color: var(--ink-2); }
+.fb-nudge-no:hover { background: var(--surface-2); }
+@keyframes fb-nudge-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fb-grip { display: none; }
+
+/* On a phone the form rises as a sheet, the same shape as Trip details,
+   instead of a card floating in the middle of the screen. Same element,
+   same form: only the geometry changes, so desktop keeps its centred
+   dialog. */
+@media (max-width: 900px) {
+  dialog.fb-dialog {
+    margin: auto 0 0; width: 100%; max-width: none; max-height: 92svh;
+    border-radius: 18px 18px 0 0; border-bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -12px 40px rgba(10, 14, 20, 0.22);
+    overflow: auto; overscroll-behavior: contain;
+  }
+  dialog.fb-dialog[open] { animation: fb-sheet-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  dialog.fb-dialog.dragging { animation: none; transition: none; }
+  dialog.fb-dialog.settling { transition: transform 0.22s ease-out; }
+  .fb-grip {
+    display: flex; justify-content: center; align-items: center;
+    height: 26px; cursor: grab; touch-action: none;
+  }
+  .fb-grip i { display: block; width: 44px; height: 5px; border-radius: 3px; background: var(--rule-firm); }
+  .fb-dialog-head { touch-action: none; }
+  .fb-dialog-in { padding: 2px 20px 22px; }
+}
+@keyframes fb-sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { dialog.fb-dialog[open] { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .fb-nudge { animation: none; } }
+/* Where the sheet layout applies, the expand button sits halfway down the
+   right edge of the canvas, and on a short phone canvas the prompt reached
+   it. So the prompt keeps out of that button's column entirely, which holds
+   however tall or short the canvas turns out to be. */
+@media (max-width: 900px) {
+  .fb-nudge { left: 16px; right: 72px; width: auto; bottom: 14px; }
+}
+
+/* On a phone the header keeps its height: the button drops its words rather
+   than wrapping onto a line of its own, which would take that line out of
+   the canvas. */
+@media (max-width: 600px) {
+  .masthead { flex-wrap: nowrap; align-items: flex-start; }
+  .mast-fb { padding: 0; width: var(--btn-h-2); justify-content: center; flex: 0 0 auto; }
+  .mast-fb-label { display: none; }
+}
 .fb-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 2px; }
 /* Secondary: the primary's colour, carried by the border and the label
    rather than a fill, so Generate stays the only filled action. */
@@ -1185,6 +1286,8 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
       <p class="mast-sub">See your whole trip on one timeline.</p>
     </div>
   </div>
+  <button class="mast-fb" type="button" data-open-feedback aria-haspopup="dialog"
+          aria-label="Send feedback" title="Send feedback"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="mast-fb-label">Send feedback</span></button>
 </header>
 
 <main class="workbench">
@@ -1272,6 +1375,17 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
         <button class="tool" id="view-fit" aria-pressed="false">Fit width</button>
       </div>
     </div>
+    <!-- Asked once, straight after the first drawing someone makes, because
+         that is the moment they have an opinion. Never on an empty page, never
+         on a restored trip, and gone for good after either button. -->
+    <div class="fb-nudge" id="fb-nudge" role="region" aria-label="Feedback" hidden>
+      <p class="fb-nudge-q">How does your trip look?</p>
+      <p class="fb-nudge-s">Tell me what worked and what didn't. It goes straight to my inbox.</p>
+      <div class="fb-nudge-actions">
+        <button type="button" class="fb-nudge-go" id="fb-nudge-go">Tell me</button>
+        <button type="button" class="fb-nudge-no" id="fb-nudge-no">Not now</button>
+      </div>
+    </div>
     <div class="canvas-wrap" id="canvas-wrap">
       <div class="canvas-pad" id="canvas-pad" hidden>
         <div class="artboard" id="artboard"></div>
@@ -1337,6 +1451,22 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
 <section class="reading">
   <div>
     <h2>What would help most</h2>
+    <p class="fb-invite">Tried it? Tell me what worked and what didn't. It takes a minute and goes straight to my inbox.</p>
+    <button type="button" class="fb-send" data-open-feedback aria-haspopup="dialog">Send feedback</button>
+  </div>
+</section>
+
+<!-- One form, opened from the header, the prompt after a first drawing, and
+     the invitation at the foot of the page, so there is nothing to keep in
+     step between copies. -->
+<dialog class="fb-dialog" id="feedback-dialog" aria-labelledby="fb-title">
+  <div class="fb-grip" id="fb-grip" aria-hidden="true"><i></i></div>
+  <div class="fb-dialog-in">
+    <div class="fb-dialog-head">
+      <h3 id="fb-title">What would help most</h3>
+      <button type="button" class="fb-close" id="fb-close" aria-label="Close">&times;</button>
+    </div>
+    <p class="fb-dialog-sub">Tried it? Tell me what worked and what didn't. It goes straight to my inbox.</p>
     <form class="feedback" id="feedback" novalidate>
       <div class="ask">
         <span class="ask-q">What do you think?</span>
@@ -1359,7 +1489,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
       </div>
     </form>
   </div>
-</section>
+</dialog>
 
 
 <dialog class="confirm" id="confirm-clear">
@@ -3129,6 +3259,7 @@ $('generate').addEventListener('click', function () {
      then close the sheet over the footer explaining the failure. */
   var drew = render();
   if (drew && sheetMQ.matches) sheetOpen(false);
+  if (drew) maybeAskForFeedback();
   wrap.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
 });
 
@@ -3337,7 +3468,81 @@ function feedbackPayload() {
   return out;
 }
 
+/* Whether this browser has already been asked. Either answer to the prompt
+   counts, and so does sending feedback any other way. Guarded, because
+   storage can throw, and an unreadable flag just means asking again. */
+var FB_ASKED = 'ttv.feedback.asked';
+function fbAsked() { try { return localStorage.getItem(FB_ASKED) === '1'; } catch (e) { return false; } }
+function markFbAsked() { try { localStorage.setItem(FB_ASKED, '1'); } catch (e) {} }
+function hideNudge() { $('fb-nudge').hidden = true; }
+
+function openFeedback() {
+  hideNudge();
+  markFbAsked();
+  var d = $('feedback-dialog');
+  if (typeof d.showModal === 'function') { if (!d.open) d.showModal(); }
+  else d.setAttribute('open', '');
+  var ta = d.querySelector('textarea');
+  if (ta && !sheetMQ.matches) ta.focus();
+}
+
+/* Drag the sheet down to put it away, like Trip details. From the grip or
+   the header only, so dragging inside the text box still selects text. */
+(function () {
+  var d = $('feedback-dialog'), startY = 0, dy = 0, dragging = false;
+  function down(e) {
+    if (!sheetMQ.matches || !e.target.closest('#fb-grip, .fb-dialog-head')) return;
+    if (e.target.closest('.fb-close')) return;
+    dragging = true; startY = e.clientY; dy = 0;
+    d.classList.add('dragging');
+    try { d.setPointerCapture(e.pointerId); } catch (err) {}
+  }
+  function move(e) {
+    if (!dragging) return;
+    dy = Math.max(0, e.clientY - startY);
+    d.style.transform = 'translateY(' + dy + 'px)';
+  }
+  function up() {
+    if (!dragging) return;
+    dragging = false;
+    d.classList.remove('dragging');
+    d.classList.add('settling');
+    if (dy > 90) {
+      d.style.transform = 'translateY(100%)';
+      setTimeout(function () { d.close(); d.style.transform = ''; d.classList.remove('settling'); }, 200);
+    } else {
+      d.style.transform = '';
+      setTimeout(function () { d.classList.remove('settling'); }, 230);
+    }
+  }
+  d.addEventListener('pointerdown', down);
+  d.addEventListener('pointermove', move);
+  d.addEventListener('pointerup', up);
+  d.addEventListener('pointercancel', up);
+})();
+
+/* Called only from a Generate press that drew, so never on an empty page and
+   never on a trip restored from the last visit. The pause lets the drawing
+   finish arriving before anything is laid over it. */
+function maybeAskForFeedback() {
+  if (fbAsked() || !$('fb-nudge').hidden) return;
+  setTimeout(function () { if (!fbAsked()) $('fb-nudge').hidden = false; }, 900);
+}
+
+document.querySelectorAll('[data-open-feedback]').forEach(function (b) {
+  b.addEventListener('click', openFeedback);
+});
+$('fb-nudge-go').addEventListener('click', openFeedback);
+$('fb-nudge-no').addEventListener('click', function () { markFbAsked(); hideNudge(); });
+$('fb-close').addEventListener('click', function () { $('feedback-dialog').close(); });
+/* A click on the dimmed backdrop lands on the dialog element itself. */
+$('feedback-dialog').addEventListener('click', function (e) {
+  if (e.target === this) this.close();
+});
+
 function feedbackDone(msg) {
+  markFbAsked();
+  hideNudge();
   var form = $('feedback');
   var p = document.createElement('p');
   p.className = 'fb-done';
