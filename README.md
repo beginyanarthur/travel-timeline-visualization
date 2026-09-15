@@ -44,20 +44,35 @@ previews need an absolute URL, so a relative one will not resolve.
 
 ## Collecting the feedback
 
-The form at the bottom of the page works with no backend: it copies the
-answers to the clipboard so people can paste them into a comment or a message.
-That costs nothing and keeps your address out of the page source.
-
-To have answers arrive on their own, create a free form endpoint (Formspree,
-Formspark, Basin, all fine) and set it in `web/index.html`:
+The form at the bottom of the page emails each answer to Arthur through
+Formspree. The endpoint is set near the bottom of `web/index.html`:
 
 ```js
-var FORM_ENDPOINT = 'https://formspree.io/f/YOURID';
+var FORM_ENDPOINT = 'https://formspree.io/f/xzebnlql';
 ```
 
-Then run `python3 build.py`. The button switches from copying to posting, and
-falls back to copying if the request fails, so a dead endpoint never swallows
-someone's answer.
+The id names a form, not an address, so it is safe in a public page and no
+email address appears in the source.
+
+What arrives in the inbox:
+
+- a fixed subject, **Travel Timeline feedback**, so it can be filtered
+- the answer and the contact line as separate fields
+- a reply address, but only when the contact line actually contains an email
+  address, because Formspree rejects the whole submission if that field is
+  anything else
+
+A hidden trap field catches bots, since the endpoint is public. It is off
+screen, out of the tab order and hidden from screen readers, so no person can
+fill it by accident and lose their message.
+
+If a send fails, the answer is copied to the clipboard and the note says so,
+so nothing anyone writes is lost. Empty `FORM_ENDPOINT` to go back to copying
+only.
+
+Formspree's free plan allows 50 submissions a month. The Claude Artifact copy
+of the page cannot send at all, because its sandbox blocks outside requests,
+so there it always falls back to copying.
 
 ## Regenerating the preview card
 

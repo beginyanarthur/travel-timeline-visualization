@@ -437,6 +437,7 @@ body.canvas-full .stage { height: 100svh; }
 }
 .free::placeholder { color: var(--ink-3); }
 .free:focus { outline: none; border-color: var(--accent); }
+.fb-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .fb-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 2px; }
 /* Secondary: the primary's colour, carried by the border and the label
    rather than a fill, so Generate stays the only filled action. */
@@ -1344,6 +1345,13 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
       <div class="ask">
         <span class="ask-q">Who are you, if you want a reply? <span class="opt">optional</span></span>
         <input type="text" class="free" aria-label="How to reach you, optional" placeholder="Name, LinkedIn, email, anything">
+      </div>
+      <!-- A trap for bots. The endpoint is public, so anything that fills every
+           field it can find gets dropped. Kept away from people completely:
+           off screen, out of the tab order, and hidden from screen readers,
+           so nobody using assistive tech fills it and loses their message. -->
+      <div class="fb-trap" aria-hidden="true">
+        <label>Leave this empty <input type="text" id="fb-trap" name="_gotcha" tabindex="-1" autocomplete="off" aria-label="Leave this empty"></label>
       </div>
       <div class="fb-actions">
         <button type="button" class="fb-send" id="fb-send">Send feedback</button>
@@ -3294,7 +3302,9 @@ $('import-file').addEventListener('change', function (e) {
    the form is useful from the first minute and no address sits in the
    page source waiting to be scraped.
    ═══════════════════════════════════════════════════════════════ */
-var FORM_ENDPOINT = '';
+/* Answers arrive in Arthur's inbox through Formspree. The id is safe to
+   publish: it names a form, not an address. Empty it to go back to copying. */
+var FORM_ENDPOINT = 'https://formspree.io/f/xzebnlql';
 
 function feedbackAnswers() {
   var parts = [];
@@ -3305,6 +3315,26 @@ function feedbackAnswers() {
     if (a) parts.push(q + '\n    ' + a);
   });
   return parts.join('\n\n');
+}
+
+/* Separate fields read far better in an inbox than one pasted block, and
+   the subject is fixed so it can be filtered. Formspree treats a field
+   called email as the reply address, but it rejects the whole submission if
+   that field is not a real address, so it is only sent when the contact line
+   actually contains one. Anything else they wrote still arrives as contact. */
+function feedbackPayload() {
+  var form = $('feedback');
+  var message = form.querySelector('textarea').value.trim();
+  var contact = form.querySelector('.ask input[type="text"]').value.trim();
+  var found = contact.match(/[^\s@<>()]+@[^\s@<>()]+\.[A-Za-z]{2,}/);
+  var out = {
+    _subject: 'Travel Timeline feedback',
+    message: message || '(left blank)',
+    contact: contact || '(not given)',
+    page: location.href.split('#')[0]
+  };
+  if (found) out.email = found[0];
+  return out;
 }
 
 function feedbackDone(msg) {
@@ -3336,19 +3366,28 @@ $('fb-send').addEventListener('click', function () {
     return;
   }
 
+  /* A bot filled the trap. Tell it everything went fine and send nothing. */
+  if ($('fb-trap').value) { feedbackDone('Sent. Thank you for actually trying it.'); return; }
+
   btn.disabled = true;
   $('fb-note').textContent = 'Sending...';
   fetch(FORM_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ page: 'Travel Timeline Visualization', feedback: body })
+    body: JSON.stringify(feedbackPayload())
   }).then(function (r) {
     if (!r.ok) throw new Error('rejected');
     feedbackDone('Sent. Thank you for actually trying it.');
   }).catch(function () {
     btn.disabled = false;
-    $('fb-note').textContent = 'That did not send. Copy it instead and paste it in the comments.';
-    if (navigator.clipboard) navigator.clipboard.writeText(body);
+    /* Nothing is lost: the answer goes to the clipboard, and the note says so
+       rather than asking them to copy something already copied. */
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText('Feedback on Travel Timeline Visualization\n\n' + body);
+      $('fb-note').textContent = 'That did not send, so it is copied instead. Paste it in the comments or message me.';
+    } else {
+      $('fb-note').textContent = 'That did not send. Please paste your answer in the comments or message me.';
+    }
   });
 });
 
