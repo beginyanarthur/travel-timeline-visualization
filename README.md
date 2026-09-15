@@ -76,6 +76,31 @@ Formspree's free plan allows 50 submissions a month. The Claude Artifact copy
 of the page cannot send at all, because its sandbox blocks outside requests,
 so there it always falls back to copying.
 
+## Printing
+
+**Print** in the canvas toolbar, **Print or save as PDF** in the ⋯ menu, and
+Cmd+P all produce the same A4 landscape pages. Every browser's print dialog
+offers Save as PDF, so this is also how a drawing leaves the page.
+
+The drawing is never shrunk onto a sheet. Squeezed onto one A4, an eight day
+trip puts a city name at 2pt. Instead:
+
+- **Page one** is the overview: the title, the route, the Insights cards six
+  across, and the day rings.
+- **Then the timeline, two days per row**, at the same scale on every sheet,
+  so an hour always prints 4.9mm long. It wraps onto the next row the way text
+  wraps onto the next line.
+- **Each label prints whole in the row where its moment falls.** Stays,
+  flights and hotel stays that cross a row edge are cut there with a small
+  arrow and pick up on the next row.
+- Rows are trimmed to what they hold and packed onto sheets by height.
+- When a trip runs a few hours past a two day boundary and the last sheet is
+  mostly empty, the day rings move there from page one rather than leaving a
+  sheet with a single short row.
+
+The print rows come from the same function that draws the timeline on screen,
+`drawBand`, so print cannot drift from the drawing.
+
 ## Regenerating the preview card
 
 ```

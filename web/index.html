@@ -439,6 +439,37 @@ body.canvas-full .stage { height: 100svh; }
 .free:focus { outline: none; border-color: var(--accent); }
 .fb-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 
+.tool-print[hidden] { display: none; }
+@media (max-width: 900px) { .tool-print { display: none; } }
+#print-pages { display: none; }
+
+/* Paper. A4 landscape, page one for the title, the Insights cards and the
+   day rings, then the timeline two days to a row, two rows to a sheet, all
+   at one scale so an hour is the same length on every page. */
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  html, body { background: #fff !important; height: auto !important; overflow: visible !important; }
+  body > *:not(#print-pages) { display: none !important; }
+  #print-pages {
+    display: block; color: #000;
+    font-family: Inter, system-ui, sans-serif;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .pp {
+    width: 277mm; height: 190mm; box-sizing: border-box;
+    display: flex; flex-direction: column; gap: 5mm;
+    break-after: page; page-break-after: always; overflow: hidden;
+  }
+  .pp:last-child { break-after: auto; page-break-after: auto; }
+  .pp svg { display: block; width: 100%; height: auto; }
+  .pp-head h1 { font-family: Inter, system-ui, sans-serif; font-size: 22pt; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .pp-route { font-size: 10pt; margin: 1.5mm 0 0; color: #333; }
+  .pp-kicker { font-size: 8pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #737373; margin: 0 0 2mm; }
+  .pp-rows { display: flex; flex-direction: column; gap: 6mm; }
+  .pp-foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 7.5pt; color: #737373; }
+  .pp-empty { justify-content: center; align-items: center; font-size: 14pt; }
+}
+
 /* Feedback, reachable from anywhere rather than below the fold. */
 .mast-fb {
   appearance: none; align-self: center;
@@ -1305,6 +1336,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
         <div class="more-menu" id="more-menu" hidden>
           <button class="more-item export" id="copy-btn" type="button">Copy JSON</button>
           <button class="more-item" id="file-btn" type="button">↑ Import JSON</button>
+          <button class="more-item" id="print-menu" type="button" disabled>Print or save as PDF</button>
           <div class="more-sep"></div>
           <button class="more-item danger" id="clear-trip" type="button" disabled>Clear trip</button>
         </div>
@@ -1373,6 +1405,9 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
       <div class="tool-group" role="group" aria-label="View">
         <button class="tool" id="view-actual" aria-pressed="true">Actual size</button>
         <button class="tool" id="view-fit" aria-pressed="false">Fit width</button>
+      </div>
+      <div class="tool-group tool-print" role="group" aria-label="Print" hidden>
+        <button class="tool" id="print-btn" type="button" title="Print, or save as PDF">Print</button>
       </div>
     </div>
     <!-- Asked once, straight after the first drawing someone makes, because
@@ -1447,6 +1482,9 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
     </div>
   </section>
 </main>
+
+<!-- Filled only when printing. On screen it stays empty and hidden. -->
+<div id="print-pages" aria-hidden="true"></div>
 
 <section class="reading">
   <div>
@@ -1674,7 +1712,7 @@ function dayLabel(dateStr) {
   return m[d.getMonth()] + ' ' + d.getDate();
 }
 
-function renderItinerary(data) {
+function renderItinerary(data, opts) {
   var out = [];
   function txt(text, x, y, size, weight, color, tracking) {
     out.push('<text x="' + n2(x) + '" y="' + n2(y) + '" font-size="' + size +
@@ -1926,20 +1964,25 @@ function renderItinerary(data) {
     { icon: '\ud83c\udf0f', value: String(Object.keys(zones).length), label: 'Timezones' }
   ];
 
-  stats.forEach(function (st, i) {
-    var cx = PAD_LEFT + (i % CARD_COLS) * (CARD_W + CARD_GAP);
-    var cy = INSIGHTS_STAT_Y + Math.floor(i / CARD_COLS) * (CARD_H + CARD_GAP);
-    card(cx, cy, CARD_W, CARD_H, '#FFFFFF', '#E4E7EA', 16);
-    /* The badge sits behind the emoji rather than tinting it, so every icon
-       keeps the colour it ships with. */
-    card(cx + 16, cy + 16, 30, 30, '#F4F6F8', '#F4F6F8', 8);
-    txtCentre(st.icon, cx + 31, cy + 31, 16, 400, INK.primary);
-    txt(st.value, cx + 16, cy + 56, TYPE.figure, 700, st.lift ? INK.lift : INK.primary);
-    txt(st.label.toUpperCase(), cx + 16, cy + 104, TYPE.label, 700, INK.muted, '0.06em');
-  });
+  /* The cards, in any number of columns from any origin. The screen sets
+     four across; the printed cover sets six, which spans an A4 landscape
+     sheet at the same card size instead of leaving its right third empty. */
+  function drawCards(cols, x0, y0) {
+    stats.forEach(function (st, i) {
+      var cx = x0 + (i % cols) * (CARD_W + CARD_GAP);
+      var cy = y0 + Math.floor(i / cols) * (CARD_H + CARD_GAP);
+      card(cx, cy, CARD_W, CARD_H, '#FFFFFF', '#E4E7EA', 16);
+      /* The badge sits behind the emoji rather than tinting it, so every icon
+         keeps the colour it ships with. */
+      card(cx + 16, cy + 16, 30, 30, '#F4F6F8', '#F4F6F8', 8);
+      txtCentre(st.icon, cx + 31, cy + 31, 16, 400, INK.primary);
+      txt(st.value, cx + 16, cy + 56, TYPE.figure, 700, st.lift ? INK.lift : INK.primary);
+      txt(st.label.toUpperCase(), cx + 16, cy + 104, TYPE.label, 700, INK.muted, '0.06em');
+    });
+    return y0 + Math.ceil(stats.length / cols) * (CARD_H + CARD_GAP) - CARD_GAP;
+  }
 
-  var statsBottom = INSIGHTS_STAT_Y +
-    Math.ceil(stats.length / CARD_COLS) * (CARD_H + CARD_GAP) - CARD_GAP;
+  var statsBottom = drawCards(CARD_COLS, PAD_LEFT, INSIGHTS_STAT_Y);
 
   var modeLine = Object.keys(modeCounts).map(function (k) {
     return mode(k).icon + ' ' + modeCounts[k] + ' ' + k + (modeCounts[k] > 1 ? 's' : '');
@@ -1951,117 +1994,228 @@ function renderItinerary(data) {
   txt('Timeline', PAD_LEFT - 1, TIMELINE_TITLE_Y, TYPE.section, 700, INK.title);
   txt('A linear hour-by-hour strip spanning the entire trip.', PAD_LEFT - 1, TIMELINE_DESC_Y, TYPE.lead, 400, INK.title);
 
-  /* 1. Hourly dot timeline. Dots carry day and night only; the stay
-     colour lives on the bar below and in the day rings. */
-  for (var day = 0; day <= numDays; day++) {
-    var dayMs = t0.getTime() + day * 86400000;
-    if (dayMs > t1.getTime()) break;
-    var localDate = new Date(dayMs + displayUtcOffset * 3600000);
-    txt(dayLabel(localDate.toISOString().slice(0, 10)), xMs(dayMs), TIMELINE_Y - 30, TYPE.label, 700, INK.primary);
+  /* The band: hour dots, bars, legs and hotels for one window of time.
 
-    for (var hour = 0; hour < 24; hour++) {
-      var hourMs = dayMs + hour * 3600000;
-      if (hourMs >= t1.getTime()) break;
-      var hx = xMs(hourMs);
-      var isNight = nightHour(hour);
+     The screen draws a single window covering the whole trip, which owns
+     every event and clips nothing, so its output is exactly what this code
+     produced before it became a function. Print draws it once per row. There
+     each window owns only the events that begin inside it: a label is drawn
+     whole in the row where its moment falls, never cut at a row edge and
+     never printed twice, and a bar or a stay that runs past the edge is cut
+     there with a small arrow saying it carries on. */
+  function drawBand(W) {
+    var X = function (ms) { return W.left + ((ms - W.start) / 3600000) * HOUR_W; };
+    var owns = W.whole ? function () { return true; }
+                       : function (ms) { return ms >= W.start && ms < W.end; };
+    var TY = TIMELINE_Y + W.dy, LT = LEG_TOP + W.dy, HT = HOTEL_TOP + W.dy;
+    var endMs = Math.min(t1.getTime(), W.end);
+    var drew = { hotels: 0, legs: 0 };
 
-      circle(hx, TIMELINE_Y, DOT, gr(isNight ? 0.15 : 0.75));
-
-      if (hour === 0) txtCentre('00', hx + DOT / 2, TIMELINE_Y + DOT / 2, TYPE.micro, 700, '#BFBFBF');
-      if (hour === 12) txtCentre('12', hx + DOT / 2, TIMELINE_Y + DOT / 2, TYPE.micro, 700, INK.primary);
+    /* A bar reaching a row edge gets a small arrowhead there, pointing on. */
+    function carries(x, y, colour, op) {
+      out.push('<path d="M ' + n2(x) + ' ' + n2(y - 5) + ' L ' + n2(x + 7) + ' ' + n2(y + 2) +
+               ' L ' + n2(x) + ' ' + n2(y + 9) + ' Z" fill="' + colour + '"' +
+               (op ? ' fill-opacity="' + op + '"' : '') + '/>');
     }
-  }
-
-  /* Departure and arrival markers ────────────────────────────── */
-  var MARKER_DOT = 10, markerY = TIMELINE_Y + DOT + 5;
-  for (var m = 0; m < legs.length; m++) {
-    circle(xMs(legTimes[m].depMs) - MARKER_DOT / 2, markerY, MARKER_DOT, '#BFBFBF');
-    circle(xMs(legTimes[m].arrMs) - MARKER_DOT / 2, markerY, MARKER_DOT, '#BFBFBF');
-  }
-
-  /* 2. Transit first, muted, then the solid city stays over it ─── */
-  for (var tb = 0; tb < legTimes.length; tb++) {
-    var tS = legTimes[tb].depMs, tE = legTimes[tb].arrMs;
-    if (tE > tS) rect(xMs(tS), LEG_TOP + 4, Math.max(4, xMs(tE) - xMs(tS)), 4, legTimes[tb].col, 0.4);
-  }
-
-  for (var b = 0; b < legTimes.length - 1; b++) {
-    var sStart = legTimes[b].arrMs, sEnd = legTimes[b + 1].depMs;
-    if (sEnd > sStart) rect(xMs(sStart), LEG_TOP + 4, Math.max(4, xMs(sEnd) - xMs(sStart)), 4, legTimes[b].col);
-  }
-
-  function vLine(x, yStart, height) {
-    stroked('M 0.5 0.5 L 0.5 ' + (height + 0.5), x, yStart, '#BFBFBF', 1);
-  }
-  function bracket(depX, arrLabelX, yStart, height) {
-    var w = arrLabelX - depX;
-    if (w < 5) return;
-    var r = Math.min(10, w * 0.08);
-    stroked('M 0.5 0.5 L ' + n2(w - r + 0.5) + ' 0.5 C ' + n2(w + 0.5) + ' 0.5 ' +
-            n2(w + 0.5) + ' ' + n2(r + 0.5) + ' ' + n2(w + 0.5) + ' ' + n2(r + 0.5) +
-            ' L ' + n2(w + 0.5) + ' ' + (height + 0.5), depX, yStart, '#BFBFBF', 1);
-  }
-
-  var LINE_TOP = LEG_TOP - 8, LINE_H = 152, MIN_LABEL_GAP = 120;
-
-  for (var L = 0; L < legs.length; L++) {
-    var leg = legs[L], col = legTimes[L].col;
-    var x1 = xMs(legTimes[L].depMs), x2 = xMs(legTimes[L].arrMs);
-    var arrLabelX = Math.max(x2, x1 + MIN_LABEL_GAP);
-    var nextDepX = L < legs.length - 1 ? xMs(legTimes[L + 1].depMs) : Infinity;
-    var drawArrivalLabels = (arrLabelX + ARR_COL_WIDTH) < nextDepX;
-
-    vLine(x1, LINE_TOP, LINE_H);
-    bracket(x1, arrLabelX, LINE_TOP, LINE_H - 20);
-
-    var dx = x1 + LABEL_OFFSET, dy = LEG_TOP + 16;
-    txt(leg.departureCity, dx, dy, TYPE.label, 700, INK.primary);            dy += 20;
-    /* The city and the time used to be set in the leg's own colour, which
-       tied them to their bar but put yellow text at 1.46:1 and orange at
-       2.06 against a 4.5 requirement. The bar sits directly above the name,
-       so the tie is spatial and does not need repeating in ink. Colour stays
-       where it carries no reading load: the bars and the clock arcs. */
-    txt(fmt12(leg.departureTime), dx, dy, TYPE.time, 700, INK.primary); dy += 24;
-    txt(fmtUtc(leg.departureUtc), dx, dy, TYPE.micro, 400, INK.muted);     dy += 18;
-    txt(modeIcon(leg.type, false), dx, dy, TYPE.icon, 400, INK.primary); dy += 28;
-    if (leg.flightNumber) { txt(leg.flightNumber, dx, dy, TYPE.meta, 700, INK.primary); dy += 16; }
-    txt('Duration ' + fmtDur(leg.durationHours, leg.durationMinutes), dx, dy, TYPE.meta, 400, INK.secondary);
-
-    if (drawArrivalLabels) {
-      var ax = arrLabelX + LABEL_OFFSET, ay = LEG_TOP + 16;
-      txt(leg.arrivalCity, ax, ay, TYPE.label, 700, INK.primary);          ay += 20;
-      txt(fmt12(leg.arrivalTime), ax, ay, TYPE.time, 700, INK.primary);     ay += 24;
-      txt(fmtUtc(leg.arrivalUtc), ax, ay, TYPE.micro, 400, INK.muted);     ay += 18;
-      txt(modeIcon(leg.type, true), ax, ay, TYPE.icon, 400, INK.primary);
-    }
-  }
-
-  /* 3. Hotels ────────────────────────────────────────────────── */
-  for (var h2 = 0; h2 < hotels.length; h2++) {
-    var hotel = hotels[h2];
-    var hx = xMs(localToAbsoluteMs(hotel.checkInDate, hotel.checkInTime, displayUtcOffset));
-    var hx2 = xMs(localToAbsoluteMs(hotel.checkOutDate, hotel.checkOutTime, displayUtcOffset));
-
-    var connH = TIMELINE_Y - HOTEL_TOP - 14;
-    stroked('M 0.5 0.5 L 0.5 ' + (connH + 0.5), hx + 10, HOTEL_TOP + 4, '#BFBFBF', 1);
-
-    var hotelLineY = TIMELINE_Y - 10, hotelLineW = hx2 - (hx + 10);
-    if (hotelLineW > 0) {
-      stroked('M 0.5 0.5 L ' + n2(hotelLineW + 0.5) + ' 0.5', hx + 10, hotelLineY, '#BFBFBF', 1, '2 2');
+    function span(from, to, y, colour, op) {
+      var s0 = W.whole ? from : Math.max(from, W.start);
+      var s1 = W.whole ? to : Math.min(to, W.end);
+      if (!(s1 > s0)) return;
+      rect(X(s0), y, Math.max(4, X(s1) - X(s0)), 4, colour, op);
+      if (!W.whole && to > W.end) carries(X(W.end) + 3, y, colour, op);
+      if (!W.whole && from < W.start) carries(X(W.start) - 12, y, colour, op);
     }
 
-    circle((hx + 10) - 5, hotelLineY - 5, 10, '#BFBFBF');
-    circle(hx2 - 5, hotelLineY - 5, 10, '#BFBFBF');
+    /* 1. Hourly dot timeline. Dots carry day and night only; the stay
+       colour lives on the bar below and in the day rings. */
+    for (var day = 0; W.whole ? day <= numDays : true; day++) {
+      var dayMs = W.start + day * 86400000;
+      if (dayMs > t1.getTime()) break;
+      if (!W.whole && (dayMs >= W.end || dayMs >= t1.getTime())) break;
+      var localDate = new Date(dayMs + displayUtcOffset * 3600000);
+      txt(dayLabel(localDate.toISOString().slice(0, 10)), X(dayMs), TY - 30, TYPE.label, 700, INK.primary);
 
-    var htx = hx + 18;
-    txt('🏨', htx, HOTEL_TOP, TYPE.icon, 400, INK.primary);
-    /* A hotel name and a city name are the same kind of thing, the name of
-       a place you are, so they read at the same size and weight. It used to
-       be 11px regular under a 14px bold city, a hierarchy that was not real.
-       The times move down to make room for the taller line. */
-    txt(hotel.name, htx, HOTEL_TOP + 30, TYPE.label, 700, INK.primary);
-    txt('In ' + fmt12(hotel.checkInTime), htx, HOTEL_TOP + 50, TYPE.micro, 400, INK.muted);
-    txt('Out ' + fmt12(hotel.checkOutTime), htx, HOTEL_TOP + 63, TYPE.micro, 400, INK.muted);
+      for (var hour = 0; hour < 24; hour++) {
+        var hourMs = dayMs + hour * 3600000;
+        if (hourMs >= endMs) break;
+        var hx = X(hourMs);
+        var isNight = nightHour(hour);
+
+        circle(hx, TY, DOT, gr(isNight ? 0.15 : 0.75));
+
+        if (hour === 0) txtCentre('00', hx + DOT / 2, TY + DOT / 2, TYPE.micro, 700, '#BFBFBF');
+        if (hour === 12) txtCentre('12', hx + DOT / 2, TY + DOT / 2, TYPE.micro, 700, INK.primary);
+      }
+    }
+
+    /* Departure and arrival markers ────────────────────────────── */
+    var MARKER_DOT = 10, markerY = TY + DOT + 5;
+    for (var m = 0; m < legs.length; m++) {
+      if (owns(legTimes[m].depMs)) circle(X(legTimes[m].depMs) - MARKER_DOT / 2, markerY, MARKER_DOT, '#BFBFBF');
+      if (owns(legTimes[m].arrMs)) circle(X(legTimes[m].arrMs) - MARKER_DOT / 2, markerY, MARKER_DOT, '#BFBFBF');
+    }
+
+    /* 2. Transit first, muted, then the solid city stays over it ─── */
+    for (var tb = 0; tb < legTimes.length; tb++) {
+      var tS = legTimes[tb].depMs, tE = legTimes[tb].arrMs;
+      if (tE > tS) span(tS, tE, LT + 4, legTimes[tb].col, 0.4);
+    }
+
+    for (var b = 0; b < legTimes.length - 1; b++) {
+      var sStart = legTimes[b].arrMs, sEnd = legTimes[b + 1].depMs;
+      if (sEnd > sStart) span(sStart, sEnd, LT + 4, legTimes[b].col);
+    }
+
+    function vLine(x, yStart, height) {
+      stroked('M 0.5 0.5 L 0.5 ' + (height + 0.5), x, yStart, '#BFBFBF', 1);
+    }
+    function bracket(depX, arrLabelX, yStart, height) {
+      var w = arrLabelX - depX;
+      if (w < 5) return;
+      var r = Math.min(10, w * 0.08);
+      stroked('M 0.5 0.5 L ' + n2(w - r + 0.5) + ' 0.5 C ' + n2(w + 0.5) + ' 0.5 ' +
+              n2(w + 0.5) + ' ' + n2(r + 0.5) + ' ' + n2(w + 0.5) + ' ' + n2(r + 0.5) +
+              ' L ' + n2(w + 0.5) + ' ' + (height + 0.5), depX, yStart, '#BFBFBF', 1);
+    }
+
+    var LINE_TOP = LT - 8, LINE_H = 152, MIN_LABEL_GAP = 120;
+
+    for (var L = 0; L < legs.length; L++) {
+      var leg = legs[L], col = legTimes[L].col;
+      var depOwned = owns(legTimes[L].depMs), arrOwned = owns(legTimes[L].arrMs);
+      if (!depOwned && !arrOwned) continue;
+      drew.legs++;
+      var x1 = X(legTimes[L].depMs), x2 = X(legTimes[L].arrMs);
+      var arrLabelX = Math.max(x2, x1 + MIN_LABEL_GAP);
+      var nextDepX = L < legs.length - 1 ? X(legTimes[L + 1].depMs) : Infinity;
+      var drawArrivalLabels = (arrLabelX + ARR_COL_WIDTH) < nextDepX;
+
+      if (depOwned) vLine(x1, LINE_TOP, LINE_H);
+      if (depOwned && arrOwned) {
+        bracket(x1, arrLabelX, LINE_TOP, LINE_H - 20);
+      } else if (depOwned) {
+        /* Arrives in the next row: run to this row's edge and say so. */
+        var edge = X(W.end);
+        if (edge - x1 > 5) stroked('M 0.5 0.5 L ' + n2(edge - x1 + 0.5) + ' 0.5', x1, LINE_TOP, '#BFBFBF', 1);
+        carries(edge + 3, LINE_TOP - 3, '#BFBFBF');
+      } else {
+        /* Left in the previous row: pick the line up from this row's start. */
+        bracket(X(W.start), arrLabelX, LINE_TOP, LINE_H - 20);
+      }
+
+      if (depOwned) {
+        var dx = x1 + LABEL_OFFSET, dy = LT + 16;
+        txt(leg.departureCity, dx, dy, TYPE.label, 700, INK.primary);            dy += 20;
+        /* The city and the time used to be set in the leg's own colour, which
+           tied them to their bar but put yellow text at 1.46:1 and orange at
+           2.06 against a 4.5 requirement. The bar sits directly above the name,
+           so the tie is spatial and does not need repeating in ink. Colour stays
+           where it carries no reading load: the bars and the clock arcs. */
+        txt(fmt12(leg.departureTime), dx, dy, TYPE.time, 700, INK.primary); dy += 24;
+        txt(fmtUtc(leg.departureUtc), dx, dy, TYPE.micro, 400, INK.muted);     dy += 18;
+        txt(modeIcon(leg.type, false), dx, dy, TYPE.icon, 400, INK.primary); dy += 28;
+        if (leg.flightNumber) { txt(leg.flightNumber, dx, dy, TYPE.meta, 700, INK.primary); dy += 16; }
+        txt('Duration ' + fmtDur(leg.durationHours, leg.durationMinutes), dx, dy, TYPE.meta, 400, INK.secondary);
+      }
+
+      if (arrOwned && drawArrivalLabels) {
+        var ax = arrLabelX + LABEL_OFFSET, ay = LT + 16;
+        txt(leg.arrivalCity, ax, ay, TYPE.label, 700, INK.primary);          ay += 20;
+        txt(fmt12(leg.arrivalTime), ax, ay, TYPE.time, 700, INK.primary);     ay += 24;
+        txt(fmtUtc(leg.arrivalUtc), ax, ay, TYPE.micro, 400, INK.muted);     ay += 18;
+        txt(modeIcon(leg.type, true), ax, ay, TYPE.icon, 400, INK.primary);
+      }
+    }
+
+    /* 3. Hotels ────────────────────────────────────────────────── */
+    for (var h2 = 0; h2 < hotels.length; h2++) {
+      var hotel = hotels[h2];
+      var inMs = localToAbsoluteMs(hotel.checkInDate, hotel.checkInTime, displayUtcOffset);
+      var outMs = localToAbsoluteMs(hotel.checkOutDate, hotel.checkOutTime, displayUtcOffset);
+      var inOwned = owns(inMs), outOwned = owns(outMs);
+      /* A stay that began before this row and ends after it still shows as a
+         line across the whole row. */
+      var crosses = !W.whole && inMs < W.start && outMs >= W.end;
+      if (!inOwned && !outOwned && !crosses) continue;
+      var hx = X(inMs);
+      var hx2 = X(outMs);
+
+      var connH = TY - HT - 14;
+      if (inOwned) stroked('M 0.5 0.5 L 0.5 ' + (connH + 0.5), hx + 10, HT + 4, '#BFBFBF', 1);
+
+      var hotelLineY = TY - 10;
+      var lineFrom = inOwned ? hx + 10 : X(W.start);
+      var lineTo = outOwned ? hx2 : X(W.end);
+      var hotelLineW = lineTo - lineFrom;
+      if (hotelLineW > 0) {
+        stroked('M 0.5 0.5 L ' + n2(hotelLineW + 0.5) + ' 0.5', lineFrom, hotelLineY, '#BFBFBF', 1, '2 2');
+      }
+
+      if (inOwned) circle((hx + 10) - 5, hotelLineY - 5, 10, '#BFBFBF');
+      if (outOwned) circle(hx2 - 5, hotelLineY - 5, 10, '#BFBFBF');
+
+      if (inOwned) {
+        drew.hotels++;
+        var htx = hx + 18;
+        txt('🏨', htx, HT, TYPE.icon, 400, INK.primary);
+        /* A hotel name and a city name are the same kind of thing, the name of
+           a place you are, so they read at the same size and weight. It used to
+           be 11px regular under a 14px bold city, a hierarchy that was not real.
+           The times move down to make room for the taller line. */
+        txt(hotel.name, htx, HT + 30, TYPE.label, 700, INK.primary);
+        txt('In ' + fmt12(hotel.checkInTime), htx, HT + 50, TYPE.micro, 400, INK.muted);
+        txt('Out ' + fmt12(hotel.checkOutTime), htx, HT + 63, TYPE.micro, 400, INK.muted);
+      }
+    }
+    return drew;
+  }
+
+  drawBand({ start: t0.getTime(), end: Infinity, left: PAD_LEFT, dy: 0, whole: true });
+
+  /* Print rows: the same band, two days at a time, at the same 24px an hour.
+     On paper the trip wraps onto the next row the way a sentence wraps onto
+     the next line, instead of shrinking onto a sheet it cannot fit at any
+     readable size: the whole drawing on one A4 puts a city name at 2pt.
+     The smallest text is raised for paper only, where 9px would print at
+     5pt, under the 6pt a printed page can carry. */
+  var printRows = null, printCards = '';
+  if (opts && opts.print) {
+    printRows = [];
+    var ROW_MS = 48 * 3600000, ROW_L = 18, ROW_R = 236;
+    var rowTop = HOTEL_TOP - 14, rowBottom = LEG_TOP + 156;
+    var rowW = ROW_L + 48 * HOUR_W + ROW_R, rowH = rowBottom - rowTop;
+    var screenOut = out, screenMicro = TYPE.micro;
+    try {
+      TYPE.micro = 11;
+      for (var rs = t0.getTime(); rs < t1.getTime(); rs += ROW_MS) {
+        out = [];
+        var drew = drawBand({ start: rs, end: rs + ROW_MS, left: ROW_L, dy: -rowTop, whole: false });
+        /* A row with no hotel starting in it has nothing above its day labels,
+           and a row with no leg in it has nothing under its bar, so each is
+           cut to what it holds. Rows then pack onto sheets by height, and a
+           short tail no longer gets a sheet to itself. */
+        var cropTop = drew.hotels ? 0 : (TIMELINE_Y - 44) - rowTop;
+        var cropBottom = drew.legs ? rowH : (LEG_TOP + 24) - rowTop;
+        var fromDay = dayLabel(new Date(rs + displayUtcOffset * 3600000).toISOString().slice(0, 10));
+        printRows.push({
+          h: cropBottom - cropTop, w: rowW,
+          svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 ' + cropTop + ' ' + rowW + ' ' +
+               (cropBottom - cropTop) + '" font-family="Inter, system-ui, sans-serif" role="img" ' +
+               'aria-label="Timeline from ' + esc(fromDay) + '">' + out.join('') + '</svg>'
+        });
+      }
+      TYPE.micro = screenMicro;
+      out = [];
+      var PC = 6, PP = 12;
+      var pcBottom = drawCards(PC, PP, PP);
+      txt(modeLine, PP, pcBottom + 26, TYPE.label, 400, INK.secondary);
+      var pcW = PP * 2 + PC * CARD_W + (PC - 1) * CARD_GAP, pcH = pcBottom + 26 + 24 + PP;
+      printCards = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + pcW + ' ' + pcH +
+        '" font-family="Inter, system-ui, sans-serif" role="img" aria-label="Insights">' + out.join('') + '</svg>';
+    } finally {
+      out = screenOut;
+      TYPE.micro = screenMicro;
+    }
   }
 
   /* Timeline legend ──────────────────────────────────────────── */
@@ -2240,7 +2394,21 @@ function renderItinerary(data) {
     '<desc id="tt-desc">' + esc(a11yDesc) + '</desc>' +
     '<rect width="100%" height="100%" fill="#FFFFFF"/>' + out.join('') + '</svg>';
 
-  return { svg: svg, w: Math.ceil(totalW), h: Math.ceil(totalH) };
+  var result = { svg: svg, w: Math.ceil(totalW), h: Math.ceil(totalH) };
+  if (printRows) {
+    result.print = {
+      rows: printRows,
+      route: routeCities,
+      days: numDays,
+      cards: printCards,
+      /* A window onto the screen drawing for the day rings, which do not wrap. */
+      clock: function (fromDay, count) {
+        return { x: PAD_LEFT + fromDay * (CLOCK_D + CLOCK_GAP) - 44, y: CLOCK_TOP - 62,
+                 w: count * (CLOCK_D + CLOCK_GAP) - CLOCK_GAP + 88, h: CLOCK_D + 30 + 62 + 64 };
+      }
+    };
+  }
+  return result;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -3167,6 +3335,9 @@ function render() {
   updateStatus();
 
   var res = renderItinerary(data);
+  lastDrawnData = data;
+  document.querySelector('.tool-print').hidden = false;
+  $('print-menu').disabled = false;
   lastSize = { w: res.w, h: res.h };
   artboard.innerHTML = res.svg;
   applyScale();
@@ -3467,6 +3638,96 @@ function feedbackPayload() {
   if (found) out.email = found[0];
   return out;
 }
+
+/* ── Printing ─────────────────────────────────────────────────────
+   Built from the trip on the canvas at the moment of printing, not from
+   the panel, because unapplied edits in the panel are not the drawing
+   anyone is looking at. Nothing is built until someone prints. */
+var lastDrawnData = null;
+
+function buildPrintPages() {
+  var host = $('print-pages');
+  if (!lastDrawnData) {
+    host.innerHTML = '<section class="pp pp-empty"><p>Generate your trip first, then print it.</p></section>';
+    return;
+  }
+  var res = renderItinerary(lastDrawnData, { print: true });
+  var P = res.print;
+  var bare = res.svg
+    .replace(/ role="img" aria-labelledby="[^"]*"/, '')
+    .replace(/<title[^>]*>[\s\S]*?<\/title>/, '')
+    .replace(/<desc[^>]*>[\s\S]*?<\/desc>/, '')
+    .replace(/ width="\d+" height="\d+"/, '');
+  function crop(b) {
+    return bare.replace(/viewBox="[^"]*"/, 'viewBox="' + b.x + ' ' + b.y + ' ' + b.w + ' ' + b.h + '"');
+  }
+
+  /* Day rings in rows of up to ten, so a long trip does not shrink them. */
+  var ringRows = [];
+  for (var d = 0; d < P.days; d += 10) ringRows.push(crop(P.clock(d, Math.min(10, P.days - d))));
+  var RINGS = '<div><p class="pp-kicker">Clock day</p><div class="pp-rows">';
+
+  /* Every row prints at the same scale, the sheet's width over the row's
+     width, so an hour is the same length on every page. Rows are packed onto
+     a sheet until the next would not fit under the heading and footer. */
+  var MM_WIDE = 277, MM_FREE = 160, MM_GAP = 6, MM_KICKER = 7;
+  var sheets = [], sheet = null;
+  P.rows.forEach(function (row) {
+    var mm = row.h * MM_WIDE / row.w;
+    if (!sheet || sheet.used + MM_GAP + mm > MM_FREE) { sheet = { rows: [], used: 0 }; sheets.push(sheet); }
+    sheet.used += (sheet.rows.length ? MM_GAP : 0) + mm;
+    sheet.rows.push(row.svg);
+  });
+
+  /* A trip that runs a few hours past a two day boundary leaves a last sheet
+     holding almost nothing, the Stockholm sample's 03:55 landing on a page of
+     its own. When the rings fit there and that sheet is mostly empty, they
+     move from the cover to fill it, so no sheet is printed for a single row.
+     Otherwise they stay on the cover, where a trip that wraps evenly keeps
+     them. */
+  var ringsMm = 0;
+  if (ringRows.length === 1) {
+    var cb = P.clock(0, Math.min(10, P.days));
+    ringsMm = MM_KICKER + cb.h * MM_WIDE / cb.w;
+  }
+  var last = sheets[sheets.length - 1];
+  var ringsOnLast = ringRows.length === 1 && last &&
+                    last.used < MM_FREE * 0.45 && last.used + MM_GAP + ringsMm <= MM_FREE;
+
+  var pages = [];
+  var cover = '<header class="pp-head"><h1>Your travel itinerary</h1>' +
+              '<p class="pp-route">' + esc(P.route.join(' \u00b7 ')) + '</p></header>' +
+              '<div><p class="pp-kicker">Insights</p><div class="pp-cards">' + P.cards + '</div></div>';
+  if (ringRows.length === 1 && !ringsOnLast) cover += RINGS + ringRows[0] + '</div></div>';
+  pages.push(cover);
+  if (ringRows.length > 1) {
+    for (var r = 0; r < ringRows.length; r += 3) pages.push(RINGS + ringRows.slice(r, r + 3).join('') + '</div></div>');
+  }
+  sheets.forEach(function (sh, i) {
+    var body = '<div><p class="pp-kicker">Timeline, one dot per hour</p><div class="pp-rows pp-tl">' +
+               sh.rows.join('') + '</div></div>';
+    if (ringsOnLast && i === sheets.length - 1) body += RINGS + ringRows[0] + '</div></div>';
+    pages.push(body);
+  });
+
+  host.innerHTML = pages.map(function (body, i) {
+    return '<section class="pp">' + body +
+           '<footer class="pp-foot"><span>Travel Timeline Visualization</span>' +
+           '<span>' + (i + 1) + ' of ' + pages.length + '</span></footer></section>';
+  }).join('');
+}
+
+function printTrip() {
+  buildPrintPages();
+  window.print();
+}
+$('print-btn').addEventListener('click', printTrip);
+/* The menu closes itself on any item, so this only has to print. */
+$('print-menu').addEventListener('click', printTrip);
+/* Cmd+P and the browser menu print too, so the pages are built for those
+   as well, and dropped afterwards so the page does not carry them. */
+window.addEventListener('beforeprint', buildPrintPages);
+window.addEventListener('afterprint', function () { $('print-pages').innerHTML = ''; });
 
 /* Whether this browser has already been asked. Either answer to the prompt
    counts, and so does sending feedback any other way. Guarded, because
