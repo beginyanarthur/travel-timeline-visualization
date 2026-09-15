@@ -494,25 +494,16 @@ body.canvas-full .stage { height: 100svh; }
   }
   .pp {
     width: 277mm; height: 190mm; box-sizing: border-box;
-    display: flex; flex-direction: column; gap: 5mm;
+    display: flex; flex-direction: column; gap: 4mm;
     break-after: page; page-break-after: always; overflow: hidden;
   }
   .pp:last-child { break-after: auto; page-break-after: auto; }
   .pp svg { display: block; width: 100%; height: auto; }
-  .pp-head h1 { font-family: Inter, system-ui, sans-serif; font-size: 22pt; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .pp-head h1 { font-family: Inter, system-ui, sans-serif; font-size: 20pt; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
   .pp-route { font-size: 10pt; margin: 1.5mm 0 0; color: #333; }
-  .pp-kicker { font-size: 8pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #737373; margin: 0 0 2mm; }
+  .pp-kicker { font-size: 8pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #737373; margin: 0 0 1.5mm; }
   .pp-rows { display: flex; flex-direction: column; gap: 6mm; }
-  .pp-key {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 1.2mm 5.5mm;
-    margin: 0 0 4mm; font-size: 7.5pt; color: #333;
-  }
-  .pp-key .k { display: inline-flex; align-items: center; gap: 1.6mm; white-space: nowrap; }
-  .pp .pp-key svg { display: inline-block; width: auto; height: 2.6mm; flex: 0 0 auto; }
-  .pp .pp-key .k-stay svg, .pp .pp-key .k-transit svg { height: 2.6mm; }
-  .pp-keylabel { font-weight: 700; margin-right: 1.5mm; color: #000; }
-  .pp-ckey { font-size: 7.5pt; line-height: 1.45; color: #333; margin: 3mm 0 0; }
-  .pp-ckey b, .pp-key b { font-weight: 700; color: #000; }
+  .pp-howto { margin-top: 3mm; }
   .pp-foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 7.5pt; color: #737373; }
   .pp-empty { justify-content: center; align-items: center; font-size: 14pt; }
 }
@@ -2264,7 +2255,7 @@ function renderItinerary(data, opts) {
       var PC = 6, PP = 12;
       var pcBottom = drawCards(PC, PP, PP);
       txt(modeLine, PP, pcBottom + 26, TYPE.label, 400, INK.secondary);
-      var pcW = PP * 2 + PC * CARD_W + (PC - 1) * CARD_GAP, pcH = pcBottom + 26 + 24 + PP;
+      var pcW = PP * 2 + PC * CARD_W + (PC - 1) * CARD_GAP, pcH = pcBottom + 26 + 20;
       printCards = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + pcW + ' ' + pcH +
         '" font-family="Inter, system-ui, sans-serif" role="img" aria-label="Insights">' + out.join('') + '</svg>';
     } finally {
@@ -2468,22 +2459,14 @@ function renderItinerary(data, opts) {
       route: routeCities,
       days: numDays,
       cards: printCards,
-      /* The keys as text for paper. Swatches are small inline SVGs in the
-         same greys and reds the screen legend draws, so they print reliably
-         where CSS backgrounds and shadows might not. */
-      keys: {
-        timeline: TIMELINE_KEY.map(function (k) {
-          var sw = {
-            hour:    '<svg viewBox="0 0 16 8"><circle cx="4" cy="4" r="3.5" fill="' + gr(0.02) + '"/><circle cx="12" cy="4" r="3.5" fill="' + gr(0.85) + '"/></svg>',
-            night:   '<svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="' + gr(0.12) + '"/></svg>',
-            day:     '<svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="' + gr(0.75) + '"/></svg>',
-            stay:    '<svg viewBox="0 0 20 8"><rect x="0" y="2" width="20" height="4" rx="2" fill="#E53935"/></svg>',
-            transit: '<svg viewBox="0 0 20 8"><rect x="0" y="2" width="20" height="4" rx="2" fill="#E53935" fill-opacity="0.4"/></svg>'
-          }[k.swatch];
-          return '<span class="k k-' + k.swatch + '">' + sw + '<span>' + keyRun(k, '<b>', '</b>') + '</span></span>';
-        }).join(''),
-        clock: boldRuns(CLOCK_KEY, CLOCK_KEY_BOLDS)
-      },
+      /* The two How to read blocks exactly as the drawing generates them,
+         cropped rather than retyped, so paper shows the same compact key the
+         screen does. Boxes are measured from the rendered legend: the
+         timeline key spans 290 by 142 units, the clock paragraph 351 wide
+         with 116 of text, and a few units are kept spare for fonts that
+         set a touch larger. */
+      timelineKey: { x: PAD_LEFT - 8, y: tlLegY - 6, w: 302, h: 154 },
+      clockKey: { x: PAD_LEFT - 8, y: clLegY - 6, w: 365, h: 160 },
       /* A window onto the screen drawing for the day rings, which do not wrap. */
       clock: function (fromDay, count) {
         return { x: PAD_LEFT + fromDay * (CLOCK_D + CLOCK_GAP) - 44, y: CLOCK_TOP - 62,
@@ -3760,21 +3743,42 @@ function buildPrintPages() {
   var ringRows = [];
   for (var d = 0; d < P.days; d += 10) ringRows.push(crop(P.clock(d, Math.min(10, P.days - d))));
   var RINGS = '<div><p class="pp-kicker">Clock day</p><div class="pp-rows">';
-  var CLOCK_KEY_HTML = '<p class="pp-ckey"><span class="pp-keylabel">How to read</span>' + P.keys.clock + '</p>';
+  /* Keys print at the same scale as the timeline rows, so their text is the
+     size a legend line is next to the drawing it explains. */
+  var PX_MM = 277 / (P.rows.length ? P.rows[0].w : 1406);
+  function howTo(b) {
+    return '<div class="pp-howto" style="width:' + (b.w * PX_MM).toFixed(1) + 'mm">' + crop(b) + '</div>';
+  }
+  var CLOCK_KEY_HTML = howTo(P.clockKey);
 
   /* Every row prints at the same scale, the sheet's width over the row's
      width, so an hour is the same length on every page. Rows are packed onto
      a sheet until the next would not fit under the heading and footer. */
-  var MM_WIDE = 277, MM_FREE = 160, MM_GAP = 6, MM_KICKER = 7, MM_TLKEY = 10, MM_CKEY = 13;
+  /* Measured on printed sheets: about 178mm under the heading and above the
+     footer. The budget keeps 6mm of that spare for browsers that set type a
+     little larger than Chrome does. */
+  var MM_WIDE = 277, MM_FREE = 172, MM_GAP = 6, MM_KICKER = 7;
+  var MM_TLKEY = P.timelineKey.h * PX_MM + 3, MM_CKEY = P.clockKey.h * PX_MM + 3;
   var sheets = [], sheet = null;
   P.rows.forEach(function (row) {
     var mm = row.h * MM_WIDE / row.w;
-    /* The first timeline sheet also carries the one line key. */
-    if (sheet && sheet.used + MM_GAP + mm > (sheets.length === 1 ? MM_FREE - MM_TLKEY : MM_FREE)) sheet = null;
-    if (!sheet) { sheet = { rows: [], used: 0 }; sheets.push(sheet); }
+    if (sheet && sheet.used + MM_GAP + mm > MM_FREE) sheet = null;
+    if (!sheet) { sheet = { rows: [], used: 0, mm: [] }; sheets.push(sheet); }
     sheet.used += (sheet.rows.length ? MM_GAP : 0) + mm;
     sheet.rows.push(row.svg);
+    sheet.mm.push(mm);
   });
+  /* The timeline key closes the timeline, as it does in the drawing. If the
+     last sheet has no room for it, its last row moves over with the key, so
+     the key never sits on a sheet by itself. */
+  var tail = sheets[sheets.length - 1];
+  if (tail && tail.used + MM_GAP + MM_TLKEY > MM_FREE && tail.rows.length > 1) {
+    var moved = { rows: [tail.rows.pop()], mm: [tail.mm.pop()] };
+    tail.used -= MM_GAP + moved.mm[0];
+    moved.used = moved.mm[0];
+    sheets.push(moved);
+  }
+  if (sheets.length) sheets[sheets.length - 1].used += MM_GAP + MM_TLKEY;
 
   /* A trip that runs a few hours past a two day boundary leaves a last sheet
      holding almost nothing, the Stockholm sample's 03:55 landing on a page of
@@ -3804,8 +3808,8 @@ function buildPrintPages() {
   }
   sheets.forEach(function (sh, i) {
     var body = '<div><p class="pp-kicker">Timeline</p>' +
-               (i === 0 ? '<div class="pp-key"><span class="pp-keylabel">How to read</span>' + P.keys.timeline + '</div>' : '') +
-               '<div class="pp-rows pp-tl">' + sh.rows.join('') + '</div></div>';
+               '<div class="pp-rows pp-tl">' + sh.rows.join('') + '</div>' +
+               (i === sheets.length - 1 ? howTo(P.timelineKey) : '') + '</div>';
     if (ringsOnLast && i === sheets.length - 1) body += RINGS + ringRows[0] + '</div>' + CLOCK_KEY_HTML + '</div>';
     pages.push(body);
   });

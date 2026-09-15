@@ -86,9 +86,12 @@ The drawing is never shrunk onto a sheet. Squeezed onto one A4, an eight day
 trip puts a city name at 2pt. Instead:
 
 - **Page one** is the overview: the title, the route, the Insights cards six
-  across, the day rings, and the key that explains them.
-- **The first timeline sheet opens with a one line key** for the dots and bars.
-  Both keys read the same wording the screen legends draw, defined once.
+  across, and the day rings with their How to read block underneath.
+- **The How to read blocks print exactly as the drawing shows them.** They are
+  cut from the generated drawing itself, at the timeline's scale, so the
+  swatches, bold words and spacing match the screen. The clock block sits under
+  the day rings, and the timeline block follows the last timeline row. If it
+  would not fit there, the last row moves to a fresh sheet with it.
 - **Then the timeline, two days per row**, at the same scale on every sheet,
   so an hour always prints 4.9mm long. It wraps onto the next row the way text
   wraps onto the next line.
