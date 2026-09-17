@@ -33,6 +33,13 @@ CLARITY = '''<script>
   t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
   y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
 })(window, document, "clarity", "script", "%s");
+/* Before anything is recorded, tell Clarity what this browser answered.
+   The page asks; until someone allows cookies, Clarity runs without them. */
+(function () {
+  var choice = null;
+  try { choice = localStorage.getItem("ttv.cookies"); } catch (e) {}
+  window.clarity("consentv2", { ad_Storage: "denied", analytics_Storage: choice === "granted" ? "granted" : "denied" });
+})();
 </script>
 
 '''

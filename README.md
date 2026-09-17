@@ -91,6 +91,7 @@ tag on Pages only, from `CLARITY_ID`; leave that empty and no script ships.
   | Drawing | `generated` (first drawing of a visit), `generated-again`, `generate-blocked` |
   | Exploring | `zoomed-in`, `zoomed-out`, `zoomed-by-gesture`, `actual-size`, `fit-width`, `full-screen`, `panned` |
   | Taking it away | `printed`, `json-exported` |
+  | Cookies | `cookies-allowed`, `cookies-declined` |
   | Feedback | `feedback-prompt-shown`, `feedback-prompt-dismissed`, `feedback-opened-header`, `feedback-opened-prompt`, `feedback-opened-footer`, `feedback-sent`, `feedback-failed` |
 
   `panned` and `zoomed-by-gesture` are sent once a visit, since a drag or a
@@ -105,6 +106,15 @@ tag on Pages only, from `CLARITY_ID`; leave that empty and no script ships.
   drawing, the print pages, the status line, the feedback form and the paste
   box carry `data-clarity-mask="True"`, so recordings show clicks and scrolls,
   not destinations.
+
+- **Cookies wait for a yes.** A small card asks once, in the corner opposite
+  the feedback prompt, and **Cookie settings** at the foot of the page asks
+  again. The answer is kept in this browser, and `build.py` passes it to
+  Clarity through its consent API before the tag loads. Until someone allows
+  cookies, Clarity runs without them and counts each page view on its own.
+  On a phone the card and the feedback prompt share a slot, so the prompt
+  waits until the cookie question is answered. The Artifact has no Clarity,
+  so it never asks.
 
 ## Printing
 

@@ -534,6 +534,19 @@ dialog.fb-dialog::backdrop { background: rgba(10, 14, 20, 0.45); }
 .fb-nudge-go:hover { filter: brightness(1.06); }
 .fb-nudge-no { border: 1px solid var(--rule-firm); background: transparent; color: var(--ink-2); }
 .fb-nudge-no:hover { background: var(--surface-2); }
+/* The cookie question wears the feedback prompt's card. On a wide screen it
+   takes the opposite corner, so the two can never land on each other; on a
+   phone they share one slot, and the prompt waits until this is answered. */
+.cookie-card { right: auto; left: 16px; }
+.cookie-card a { color: var(--ink-2); text-underline-offset: 2px; }
+.cookie-card a:hover { color: var(--ink); }
+.cookie-settings {
+  appearance: none; display: block; margin: 14px 0 0; padding: 0; border: 0; background: none;
+  font-family: var(--body); font-size: 13px; color: var(--ink-3);
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.cookie-settings[hidden] { display: none; }
+.cookie-settings:hover { color: var(--ink-2); }
 @keyframes fb-nudge-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .fb-grip { display: none; }
 
@@ -1431,6 +1444,16 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
         <button type="button" class="fb-nudge-no" id="fb-nudge-no">Not now</button>
       </div>
     </div>
+    <!-- Only on the published page, where Clarity runs. Asked once; the
+         answer can be changed from the foot of the page. -->
+    <div class="fb-nudge cookie-card" id="cookie-card" role="region" aria-label="Cookies" hidden>
+      <p class="fb-nudge-q">Allow cookies?</p>
+      <p class="fb-nudge-s">I use Microsoft Clarity to see where people click and scroll, with your trip details hidden. Cookies let it tell a return visit from a new one. <a href="https://github.com/beginyanarthur/travel-timeline-visualization#traffic" target="_blank" rel="noopener">Details</a></p>
+      <div class="fb-nudge-actions">
+        <button type="button" class="fb-nudge-go" id="cookie-yes">Allow</button>
+        <button type="button" class="fb-nudge-no" id="cookie-no">No thanks</button>
+      </div>
+    </div>
     <div class="canvas-wrap" id="canvas-wrap">
       <div class="canvas-pad" id="canvas-pad" hidden>
         <div class="artboard" id="artboard" data-clarity-mask="True"></div>
@@ -1501,6 +1524,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
     <h2>What would help most</h2>
     <p class="fb-invite">Tried it? Tell me what worked and what didn't. It takes a minute and goes straight to my inbox.</p>
     <button type="button" class="fb-send" data-open-feedback="footer" aria-haspopup="dialog">Send feedback</button>
+    <button type="button" class="cookie-settings" id="cookie-settings" hidden>Cookie settings</button>
   </div>
 </section>
 
@@ -3627,6 +3651,18 @@ function trackOnce(name) {
 }
 function tag(key, value) { clarityCall('set', key, String(value)); }
 
+/* Cookies wait for a yes. build.py tells Clarity this browser's stored
+   answer before the tag loads, and until someone allows them Clarity runs
+   without cookies, one page view at a time. No answer is the same as no. */
+var COOKIE_KEY = 'ttv.cookies';
+function cookieChoice() { try { return localStorage.getItem(COOKIE_KEY); } catch (e) { return null; } }
+function setCookies(allow) {
+  try { localStorage.setItem(COOKIE_KEY, allow ? 'granted' : 'denied'); } catch (e) {}
+  clarityCall('consentv2', { ad_Storage: 'denied', analytics_Storage: allow ? 'granted' : 'denied' });
+  track(allow ? 'cookies-allowed' : 'cookies-declined');
+  $('cookie-card').hidden = true;
+}
+
 /* How the trip in the panel began, sent as a tag with every drawing. */
 var tripSource = 'typed';
 
@@ -3921,7 +3957,9 @@ function openFeedback() {
 function maybeAskForFeedback() {
   if (fbAsked() || !$('fb-nudge').hidden) return;
   setTimeout(function () {
-    if (fbAsked()) return;
+    /* Not over the cookie question. Nothing is marked, so the next
+       drawing asks instead. */
+    if (fbAsked() || !$('cookie-card').hidden) return;
     $('fb-nudge').hidden = false;
     track('feedback-prompt-shown');
   }, 900);
@@ -4188,4 +4226,16 @@ function restoreTrip() {
   toast('Picked up where you left off.');
 }
 restoreTrip();
+
+/* The Artifact has no Clarity, so it has nothing to ask about. */
+if (typeof window.clarity === 'function') {
+  $('cookie-settings').hidden = false;
+  if (!cookieChoice()) $('cookie-card').hidden = false;
+}
+$('cookie-yes').addEventListener('click', function () { setCookies(true); });
+$('cookie-no').addEventListener('click', function () { setCookies(false); });
+$('cookie-settings').addEventListener('click', function () {
+  $('cookie-card').hidden = false;
+  $('cookie-yes').focus();
+});
 </script>
