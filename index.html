@@ -483,7 +483,6 @@ body.canvas-full .stage { height: 100svh; }
 .free:focus { outline: none; border-color: var(--accent); }
 .fb-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 
-.tool-print[hidden] { display: none; }
 .tool-print .tool { display: inline-flex; align-items: center; gap: 6px; }
 /* On a phone Print lives on the toolbar too, as a printer alone, because the
    menu it was hidden in opens from the sheet, away from the drawing. It is
@@ -1405,7 +1404,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
         <div class="more-menu" id="more-menu" hidden>
           <button class="more-item export" id="download-btn" type="button">↓ Export JSON</button>
           <button class="more-item" id="file-btn" type="button">↑ Import JSON</button>
-          <button class="more-item" id="print-menu" type="button" disabled>Print or save as PDF</button>
+          <button class="more-item" id="print-menu" type="button">Print or save as PDF</button>
           <div class="more-sep"></div>
           <button class="more-item danger" id="clear-trip" type="button" disabled>Clear trip</button>
         </div>
@@ -1475,7 +1474,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
         <button class="tool" id="view-actual" aria-pressed="true">Actual size</button>
         <button class="tool" id="view-fit" aria-pressed="false">Fit width</button>
       </div>
-      <div class="tool-group tool-print" role="group" aria-label="Print" hidden>
+      <div class="tool-group tool-print" role="group" aria-label="Print">
         <button class="tool" id="print-btn" type="button" title="Print, or save as PDF"
                 aria-label="Print or save as PDF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span class="print-label">Print</span></button>
       </div>
@@ -3457,14 +3456,6 @@ function render() {
   tag('transport', data.legs.map(function (l) { return l.type; })
     .filter(function (t, i, a) { return t && a.indexOf(t) === i; }).sort().join(','));
   tag('trip_source', tripSource);
-  var printGroup = document.querySelector('.tool-print');
-  if (printGroup.hidden) {
-    printGroup.hidden = false;
-    /* The toolbar just got wider. If that wrapped it on a very narrow
-       phone, the measured heights the canvas depends on are now stale. */
-    if (typeof setMastHeight === 'function') setMastHeight();
-  }
-  $('print-menu').disabled = false;
   lastSize = { w: res.w, h: res.h };
   artboard.innerHTML = res.svg;
   applyScale();
@@ -3716,6 +3707,11 @@ var tripSource = 'typed';
 function toast(msg) {
   var t = $('toast');
   t.textContent = msg;
+  /* With the phone sheet up, its footer holds Generate at the very bottom,
+     exactly where a toast lands. Sit above the footer instead. */
+  var foot = document.querySelector('.plugin-footer');
+  var sheetUp = typeof sheetMQ !== 'undefined' && sheetMQ.matches && isOpen();
+  t.style.bottom = sheetUp && foot ? Math.round(foot.getBoundingClientRect().height + 14) + 'px' : '';
   t.classList.add('show');
   clearTimeout(t._timer);
   t._timer = setTimeout(function () { t.classList.remove('show'); }, 2200);
@@ -3839,9 +3835,15 @@ function feedbackPayload() {
    anyone is looking at. Nothing is built until someone prints. */
 var lastDrawnData = null;
 
+/* Print always shows, so people find it before they have drawn anything. It
+   prints only what is on the canvas: after Clear trip, or a sample loaded
+   over a drawing, the last drawing is still in memory but no longer on
+   screen, and printing it would be a surprise. */
+function drawingOnScreen() { return !!lastDrawnData && !$('canvas-pad').hidden; }
+
 function buildPrintPages() {
   var host = $('print-pages');
-  if (!lastDrawnData) {
+  if (!drawingOnScreen()) {
     host.innerHTML = '<section class="pp pp-empty"><p>Generate your trip first, then print it.</p></section>';
     return;
   }
@@ -3939,6 +3941,13 @@ function buildPrintPages() {
 }
 
 function printTrip() {
+  if (!drawingOnScreen()) {
+    track('print-blocked');
+    /* On a phone Generate lives in the sheet, so bring it into reach. */
+    if (sheetMQ.matches) sheetOpen(true);
+    toast('Generate your trip first, then print it.');
+    return;
+  }
   buildPrintPages();
   window.print();
 }
@@ -3947,7 +3956,10 @@ $('print-btn').addEventListener('click', printTrip);
 $('print-menu').addEventListener('click', printTrip);
 /* Cmd+P and the browser menu print too, so the pages are built for those
    as well, and dropped afterwards so the page does not carry them. */
-window.addEventListener('beforeprint', function () { track('printed'); buildPrintPages(); });
+window.addEventListener('beforeprint', function () {
+  track(drawingOnScreen() ? 'printed' : 'print-blocked');
+  buildPrintPages();
+});
 window.addEventListener('afterprint', function () { $('print-pages').innerHTML = ''; });
 
 /* Whether this browser has already been asked. Either answer to the prompt

@@ -90,7 +90,7 @@ tag on Pages only, from `CLARITY_ID`; leave that empty and no script ships.
   | Building a trip | `sample-loaded`, `leg-added`, `leg-removed`, `hotel-added`, `hotel-removed`, `card-reordered`, `trip-imported`, `trip-pasted`, `import-failed`, `trip-cleared` |
   | Drawing | `generated` (first drawing of a visit), `generated-again`, `generate-blocked` |
   | Exploring | `zoomed-in`, `zoomed-out`, `zoomed-by-gesture`, `actual-size`, `fit-width`, `full-screen`, `panned` |
-  | Taking it away | `printed`, `json-exported` |
+  | Taking it away | `printed`, `print-blocked` (pressed before anything was drawn), `json-exported` |
   | Cookies | `cookies-allowed`, `cookies-declined` |
   | Feedback | `feedback-prompt-shown`, `feedback-prompt-dismissed`, `feedback-opened-header`, `feedback-opened-prompt`, `feedback-opened-footer`, `feedback-sent`, `feedback-failed` |
 
