@@ -1326,7 +1326,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
       <p class="mast-sub">See your whole trip on one timeline.</p>
     </div>
   </div>
-  <button class="mast-fb" type="button" data-open-feedback aria-haspopup="dialog"
+  <button class="mast-fb" type="button" data-open-feedback="header" aria-haspopup="dialog"
           aria-label="Send feedback" title="Send feedback"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="mast-fb-label">Send feedback</span></button>
 </header>
 
@@ -1500,7 +1500,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
   <div>
     <h2>What would help most</h2>
     <p class="fb-invite">Tried it? Tell me what worked and what didn't. It takes a minute and goes straight to my inbox.</p>
-    <button type="button" class="fb-send" data-open-feedback aria-haspopup="dialog">Send feedback</button>
+    <button type="button" class="fb-send" data-open-feedback="footer" aria-haspopup="dialog">Send feedback</button>
   </div>
 </section>
 
@@ -2754,6 +2754,7 @@ function createLegCard(skipCompute) {
   });
   card.querySelector('.remove-btn').addEventListener('click', function () {
     card.remove(); renumberLegs(); dirty = true; updateBadges(); updateStatus();
+    track('leg-removed');
     if (!document.querySelectorAll('#legs-list .entry-card').length) {
       var el = $('legs-empty'); if (el) el.style.display = '';
     }
@@ -2848,6 +2849,7 @@ function createHotelCard() {
   });
   card.querySelector('.remove-btn').addEventListener('click', function () {
     card.remove(); renumberHotels(); dirty = true; updateBadges(); updateStatus();
+    track('hotel-removed');
     if (!document.querySelectorAll('#hotels-list .entry-card').length) {
       var el = $('hotels-empty'); if (el) el.style.display = '';
     }
@@ -3070,6 +3072,8 @@ function clearTrip() {
   /* After updateStatus, whose scheduled save would otherwise run next
      and write the panel back out again. */
   forgetTrip();
+  tripSource = 'typed';
+  track('trip-cleared');
   toast('Trip cleared.');
 }
 
@@ -3143,6 +3147,7 @@ function makeSortable(list, renumber) {
       if (!held) return;
       held.classList.remove('dragging');
       held = null;
+      track('card-reordered');
       renumber();
       markDirty();
     });
@@ -3152,8 +3157,8 @@ function makeSortable(list, renumber) {
 makeSortable($('legs-list'), renumberLegs);
 makeSortable($('hotels-list'), renumberHotels);
 
-$('add-leg').addEventListener('click', function () { createLegCard(); });
-$('add-hotel').addEventListener('click', function () { createHotelCard(); });
+$('add-leg').addEventListener('click', function () { createLegCard(); track('leg-added'); });
+$('add-hotel').addEventListener('click', function () { createHotelCard(); track('hotel-added'); });
 
 function loadTripData(data) {
   if (data.startDate) $('tripStart').value = data.startDate;
@@ -3248,6 +3253,7 @@ function fullscreen(on) {
 $('fab-full').addEventListener('click', function () {
   var on = !document.body.classList.contains('canvas-full');
   fullscreen(on);
+  if (on) track('full-screen');
 });
 
 document.addEventListener('keydown', function (e) {
@@ -3328,6 +3334,7 @@ function revealDrawing(span) {
   }, span + 340);
 }
 
+var lastProblemKind = '';
 function render() {
   var wasDrawn = hasDrawn;
   var data = collectData();
@@ -3353,6 +3360,9 @@ function render() {
     }
   }
   if (problem) {
+    lastProblemKind = !data.startDate || !data.endDate || data.endDate < data.startDate ? 'dates'
+      : !data.legs.length ? 'no-legs'
+      : /duration/.test(problem) ? 'leg-duration' : 'hotel-dates';
     if (!data.legs.length) {
       /* Nothing loaded is not an error, and the canvas already says so. */
       stageEmpty(true);
@@ -3370,6 +3380,12 @@ function render() {
 
   var res = renderItinerary(data);
   lastDrawnData = data;
+  tag('legs', data.legs.length);
+  tag('hotels', data.hotels.length);
+  tag('trip_days', Math.round((Date.parse(data.endDate) - Date.parse(data.startDate)) / 86400000) + 1);
+  tag('transport', data.legs.map(function (l) { return l.type; })
+    .filter(function (t, i, a) { return t && a.indexOf(t) === i; }).sort().join(','));
+  tag('trip_source', tripSource);
   var printGroup = document.querySelector('.tool-print');
   if (printGroup.hidden) {
     printGroup.hidden = false;
@@ -3458,11 +3474,12 @@ function fitWidth() {
   zoomTo((wrap.clientWidth - 44) / lastSize.w, true);
 }
 
-$('zoom-in').addEventListener('click', function () { zoomTo(scale * 1.25); });
-$('zoom-out').addEventListener('click', function () { zoomTo(scale / 1.25); });
-$('view-actual').addEventListener('click', function () { zoomTo(1); });
-$('view-fit').addEventListener('click', fitWidth);
+$('zoom-in').addEventListener('click', function () { zoomTo(scale * 1.25); track('zoomed-in'); });
+$('zoom-out').addEventListener('click', function () { zoomTo(scale / 1.25); track('zoomed-out'); });
+$('view-actual').addEventListener('click', function () { zoomTo(1); track('actual-size'); });
+$('view-fit').addEventListener('click', function () { fitWidth(); track('fit-width'); });
 
+var drawCount = 0;
 $('generate').addEventListener('click', function () {
   /* Get out of the way once there is something to look at, but only when
      this press drew. Asking whether a drawing is on screen is not the same
@@ -3470,7 +3487,14 @@ $('generate').addEventListener('click', function () {
      then close the sheet over the footer explaining the failure. */
   var drew = render();
   if (drew && sheetMQ.matches) sheetOpen(false);
-  if (drew) { track('generated'); maybeAskForFeedback(); }
+  if (drew) {
+    drawCount++;
+    track(drawCount === 1 ? 'generated' : 'generated-again');
+    maybeAskForFeedback();
+  } else {
+    track('generate-blocked');
+    tag('blocked_by', lastProblemKind);
+  }
   wrap.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
 });
 
@@ -3488,6 +3512,8 @@ wrap.addEventListener('pointermove', function (e) {
   if (!panning) return;
   wrap.scrollLeft = startL - (e.clientX - panX);
   wrap.scrollTop = startT - (e.clientY - panY);
+  /* A click wobbles a pixel or two; a pan travels. */
+  if (Math.abs(e.clientX - panX) + Math.abs(e.clientY - panY) > 12) trackOnce('panned');
 });
 ['pointerup', 'pointercancel'].forEach(function (ev) {
   wrap.addEventListener(ev, function () { panning = false; wrap.classList.remove('dragging'); });
@@ -3501,6 +3527,7 @@ wrap.addEventListener('wheel', function (e) {
      cursor, rather than a fixed 10% jump per event. A trackpad fires
      these in bursts, which is what made it feel like it lunged. */
   setScale(scale * Math.exp(-e.deltaY * 0.0016), false, pointerAnchor(e));
+  trackOnce('zoomed-by-gesture');
 }, { passive: false });
 
 /* Two finger pinch on touch */
@@ -3512,6 +3539,10 @@ function touchDist(t) {
 wrap.addEventListener('touchstart', function (e) {
   if (e.touches.length === 2) { pinchStart = touchDist(e.touches); pinchScale = scale; }
 }, { passive: true });
+/* One finger scrolls natively, so the move itself is the only sign of it. */
+wrap.addEventListener('touchmove', function (e) {
+  if (e.touches.length === 1) trackOnce('panned');
+}, { passive: true });
 wrap.addEventListener('touchmove', function (e) {
   if (e.touches.length === 2 && pinchStart) {
     e.preventDefault();
@@ -3519,6 +3550,7 @@ wrap.addEventListener('touchmove', function (e) {
     var mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left;
     var my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top;
     setScale(pinchScale * (touchDist(e.touches) / pinchStart), false, anchorAt(mx, my));
+    trackOnce('zoomed-by-gesture');
   }
 }, { passive: false });
 wrap.addEventListener('touchend', function () { pinchStart = 0; }, { passive: true });
@@ -3572,17 +3604,31 @@ var SAMPLE_TRIP = {
 
 
 /* Microsoft Clarity is added by build.py on Pages only. The Artifact has no
-   script to load it, and its CSP would block one, so there this quietly does
-   nothing. Three events mark the presses that matter, so recordings can be
-   filtered to people who drew, printed or wrote back.
+   script to load it, and its CSP would block one, so there these quietly do
+   nothing. The events follow a visit from arriving to writing back, and the
+   README lists them all.
 
    What someone typed never reaches Clarity. The dates, legs, hotels, the
    drawing, the print pages, the status line, the feedback form and the
    paste box all carry data-clarity-mask, so recordings show where people
-   clicked and scrolled but not where they are going. */
-function track(name) {
-  try { if (typeof window.clarity === 'function') window.clarity('event', name); } catch (e) {}
+   clicked and scrolled but not where they are going. Tags carry counts and
+   transport types only, never a city, a hotel or a date. */
+function clarityCall(a, b, c) {
+  try { if (typeof window.clarity === 'function') window.clarity(a, b, c); } catch (e) {}
 }
+function track(name) { clarityCall('event', name); }
+/* For gestures that fire dozens of times a second: one event a visit says
+   someone did it, which is the whole question. */
+var trackedOnce = {};
+function trackOnce(name) {
+  if (trackedOnce[name]) return;
+  trackedOnce[name] = true;
+  track(name);
+}
+function tag(key, value) { clarityCall('set', key, String(value)); }
+
+/* How the trip in the panel began, sent as a tag with every drawing. */
+var tripSource = 'typed';
 
 function toast(msg) {
   var t = $('toast');
@@ -3593,6 +3639,7 @@ function toast(msg) {
 }
 
 $('copy-btn').addEventListener('click', function () {
+  track('json-exported');
   var json = JSON.stringify(collectData(), null, 2);
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(json).then(
@@ -3618,14 +3665,18 @@ $('paste-dialog').addEventListener('close', function () {
   try {
     var parsed = JSON.parse(raw);
     if (!parsed.startDate || !parsed.endDate || !Array.isArray(parsed.legs)) {
+      track('import-failed');
       toast('That JSON is missing startDate, endDate or legs.');
       return;
     }
     loadTripData(parsed);
+    tripSource = 'pasted';
+    track('trip-pasted');
     render();
     wrap.scrollTo({ left: 0, top: 0 });
     toast('Trip loaded.');
   } catch (err) {
+    track('import-failed');
     toast('That is not valid JSON: ' + err.message);
   }
 });
@@ -3638,9 +3689,11 @@ $('import-file').addEventListener('change', function (e) {
   reader.onload = function (ev) {
     try {
       loadTripData(JSON.parse(ev.target.result));
+      tripSource = 'imported';
+      track('trip-imported');
       promptReady();
       toast('Loaded ' + file.name);
-    } catch (err) { toast('Could not read that file: ' + err.message); }
+    } catch (err) { track('import-failed'); toast('Could not read that file: ' + err.message); }
   };
   reader.readAsText(file);
   e.target.value = '';
@@ -3867,14 +3920,18 @@ function openFeedback() {
    finish arriving before anything is laid over it. */
 function maybeAskForFeedback() {
   if (fbAsked() || !$('fb-nudge').hidden) return;
-  setTimeout(function () { if (!fbAsked()) $('fb-nudge').hidden = false; }, 900);
+  setTimeout(function () {
+    if (fbAsked()) return;
+    $('fb-nudge').hidden = false;
+    track('feedback-prompt-shown');
+  }, 900);
 }
 
 document.querySelectorAll('[data-open-feedback]').forEach(function (b) {
-  b.addEventListener('click', openFeedback);
+  b.addEventListener('click', function () { track('feedback-opened-' + b.dataset.openFeedback); openFeedback(); });
 });
-$('fb-nudge-go').addEventListener('click', openFeedback);
-$('fb-nudge-no').addEventListener('click', function () { markFbAsked(); hideNudge(); });
+$('fb-nudge-go').addEventListener('click', function () { track('feedback-opened-prompt'); openFeedback(); });
+$('fb-nudge-no').addEventListener('click', function () { track('feedback-prompt-dismissed'); markFbAsked(); hideNudge(); });
 $('fb-close').addEventListener('click', function () { $('feedback-dialog').close(); });
 /* A click on the dimmed backdrop lands on the dialog element itself. */
 $('feedback-dialog').addEventListener('click', function (e) {
@@ -3926,6 +3983,7 @@ $('fb-send').addEventListener('click', function () {
     if (!r.ok) throw new Error('rejected');
     feedbackDone('Sent. Thank you for actually trying it.');
   }).catch(function () {
+    track('feedback-failed');
     btn.disabled = false;
     /* Nothing is lost: the answer goes to the clipboard, and the note says so
        rather than asking them to copy something already copied. */
@@ -4065,6 +4123,8 @@ $('se-open').addEventListener('click', function () { sheetOpen(true); });
    the trip is there to pull apart afterwards. */
 function useSampleTrip() {
   loadTripData(SAMPLE_TRIP);
+  tripSource = 'sample';
+  track('sample-loaded');
   /* It fills the panel and stops there. Pressing Generate is the step that
      makes the drawing appear, and someone who has never done it once has
      not really learned how the page works. */
@@ -4112,6 +4172,7 @@ function restoreTrip() {
   var saved = readSavedTrip();
   if (!saved) return;
   loadTripData(saved.trip);
+  tripSource = 'restored';
   /* Back exactly where they left off. Someone who had drawn returns to
      their drawing; someone who was still filling the panel returns to a
      panel, not to a picture they never asked for. */
@@ -4123,6 +4184,7 @@ function restoreTrip() {
   setGenerate();
   /* Said once, quietly, because silence here reads as a cache bug rather
      than as a feature. */
+  track('trip-restored');
   toast('Picked up where you left off.');
 }
 restoreTrip();

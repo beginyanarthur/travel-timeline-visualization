@@ -70,6 +70,7 @@ HEAD = '''<!doctype html>
 
 # What the source has, because it works inside the Artifact sandbox.
 COPY_HANDLER = """$('copy-btn').addEventListener('click', function () {
+  track('json-exported');
   var json = JSON.stringify(collectData(), null, 2);
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(json).then(
@@ -81,6 +82,7 @@ COPY_HANDLER = """$('copy-btn').addEventListener('click', function () {
 
 # What Pages gets instead.
 DOWNLOAD_HANDLER = r"""$('download-btn').addEventListener('click', function () {
+  track('json-exported');
   var data = collectData();
   var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   var url = URL.createObjectURL(blob);

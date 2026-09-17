@@ -81,9 +81,26 @@ so there it always falls back to copying.
 Visits, recordings and heatmaps go to Microsoft Clarity. `build.py` adds the
 tag on Pages only, from `CLARITY_ID`; leave that empty and no script ships.
 
-- **Three events** mark the presses that matter: `generated`, `printed` and
-  `feedback-sent`. Filter recordings by them to watch the people who drew a
-  trip rather than everyone who opened the link.
+- **Events follow a visit** from arriving to writing back. Filter recordings
+  by any of them, for example `generated`, to watch only the people who drew.
+
+  | Stage | Events |
+  | --- | --- |
+  | Arriving | `trip-restored` |
+  | Building a trip | `sample-loaded`, `leg-added`, `leg-removed`, `hotel-added`, `hotel-removed`, `card-reordered`, `trip-imported`, `trip-pasted`, `import-failed`, `trip-cleared` |
+  | Drawing | `generated` (first drawing of a visit), `generated-again`, `generate-blocked` |
+  | Exploring | `zoomed-in`, `zoomed-out`, `zoomed-by-gesture`, `actual-size`, `fit-width`, `full-screen`, `panned` |
+  | Taking it away | `printed`, `json-exported` |
+  | Feedback | `feedback-prompt-shown`, `feedback-prompt-dismissed`, `feedback-opened-header`, `feedback-opened-prompt`, `feedback-opened-footer`, `feedback-sent`, `feedback-failed` |
+
+  `panned` and `zoomed-by-gesture` are sent once a visit, since a drag or a
+  pinch fires dozens of times a second.
+- **Tags describe the trip without naming it.** Every drawing sets `legs`,
+  `hotels`, `trip_days`, `transport` (for example `flight,train`) and
+  `trip_source` (`typed`, `sample`, `imported`, `pasted` or `restored`). A
+  blocked press sets `blocked_by`: `dates`, `no-legs`, `leg-duration` or
+  `hotel-dates`, never the message itself, because that can quote a leg's
+  own label.
 - **What people type never reaches Clarity.** The dates, legs, hotels, the
   drawing, the print pages, the status line, the feedback form and the paste
   box carry `data-clarity-mask="True"`, so recordings show clicks and scrolls,
