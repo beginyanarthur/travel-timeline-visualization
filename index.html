@@ -27,6 +27,14 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 
+<script>
+(function(c,l,a,r,i,t,y){
+  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "yjodau769k");
+</script>
+
 <title>Travel Timeline Visualization</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1385,7 +1393,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
     </div>
     <div class="rail-scroll">
       <div id="plugin-root">
-        <div class="trip-dates" style="margin-bottom:8px;">
+        <div class="trip-dates" data-clarity-mask="True" style="margin-bottom:8px;">
           <div class="date-field">
             <div class="date-label">Start</div>
             <input type="date" class="f-input" id="tripStart" aria-label="Trip start date">
@@ -1407,7 +1415,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
         </div>
 
         <div class="tab-panel active" id="tab-legs">
-          <div id="legs-list">
+          <div id="legs-list" data-clarity-mask="True">
             <div class="empty-state" id="legs-empty">
               <div class="empty-icon">&#9992;&#65039;</div>
               Add your first flight or transport
@@ -1417,7 +1425,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
         </div>
 
         <div class="tab-panel" id="tab-hotels">
-          <div id="hotels-list">
+          <div id="hotels-list" data-clarity-mask="True">
             <div class="empty-state" id="hotels-empty">
               <div class="empty-icon">&#127976;</div>
               Add hotel stays
@@ -1431,7 +1439,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
       </div>
     </div>
     <div class="plugin-footer">
-      <p id="status" role="status" aria-live="polite">Add flights to get started</p>
+      <p id="status" data-clarity-mask="True" role="status" aria-live="polite">Add flights to get started</p>
       <button id="generate" type="button" disabled>Generate</button>
     </div>
   </aside>
@@ -1465,7 +1473,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
     </div>
     <div class="canvas-wrap" id="canvas-wrap">
       <div class="canvas-pad" id="canvas-pad" hidden>
-        <div class="artboard" id="artboard"></div>
+        <div class="artboard" id="artboard" data-clarity-mask="True"></div>
       </div>
       <button class="fab" id="fab-full" type="button" hidden
               title="Fill the screen" aria-label="Fill the screen" aria-pressed="false"></button>
@@ -1526,7 +1534,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
 </main>
 
 <!-- Filled only when printing. On screen it stays empty and hidden. -->
-<div id="print-pages" aria-hidden="true"></div>
+<div id="print-pages" aria-hidden="true" data-clarity-mask="True"></div>
 
 <section class="reading">
   <div>
@@ -1547,7 +1555,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
       <button type="button" class="fb-close" id="fb-close" aria-label="Close">&times;</button>
     </div>
     <p class="fb-dialog-sub">Tried it? Tell me what worked and what didn't. It goes straight to my inbox.</p>
-    <form class="feedback" id="feedback" novalidate>
+    <form class="feedback" id="feedback" data-clarity-mask="True" novalidate>
       <div class="ask">
         <span class="ask-q">What do you think?</span>
         <textarea class="free" rows="4" aria-label="What do you think?" placeholder="Anything at all. What worked, what confused you, what you would change."></textarea>
@@ -1587,7 +1595,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
   <form method="dialog" class="paste-in">
     <h3>Paste a trip</h3>
     <p>Drop in JSON exported from the plugin, or anything matching the same shape.</p>
-    <textarea id="paste-text" spellcheck="false" aria-label="Paste trip JSON" placeholder='{ "startDate": "2026-10-03", "endDate": "2026-10-10", "legs": [ ... ], "hotels": [ ... ] }'></textarea>
+    <textarea id="paste-text" data-clarity-mask="True" spellcheck="false" aria-label="Paste trip JSON" placeholder='{ "startDate": "2026-10-03", "endDate": "2026-10-10", "legs": [ ... ], "hotels": [ ... ] }'></textarea>
     <div class="paste-actions">
       <button class="btn" value="cancel" type="submit">Cancel</button>
       <button class="btn primary" id="paste-load" value="load" type="submit">Load trip</button>
@@ -3502,7 +3510,7 @@ $('generate').addEventListener('click', function () {
      then close the sheet over the footer explaining the failure. */
   var drew = render();
   if (drew && sheetMQ.matches) sheetOpen(false);
-  if (drew) maybeAskForFeedback();
+  if (drew) { track('generated'); maybeAskForFeedback(); }
   wrap.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
 });
 
@@ -3602,6 +3610,19 @@ var SAMPLE_TRIP = {
 };
 
 
+
+/* Microsoft Clarity is added by build.py on Pages only. The Artifact has no
+   script to load it, and its CSP would block one, so there this quietly does
+   nothing. Three events mark the presses that matter, so recordings can be
+   filtered to people who drew, printed or wrote back.
+
+   What someone typed never reaches Clarity. The dates, legs, hotels, the
+   drawing, the print pages, the status line, the feedback form and the
+   paste box all carry data-clarity-mask, so recordings show where people
+   clicked and scrolled but not where they are going. */
+function track(name) {
+  try { if (typeof window.clarity === 'function') window.clarity('event', name); } catch (e) {}
+}
 
 function toast(msg) {
   var t = $('toast');
@@ -3830,7 +3851,7 @@ $('print-btn').addEventListener('click', printTrip);
 $('print-menu').addEventListener('click', printTrip);
 /* Cmd+P and the browser menu print too, so the pages are built for those
    as well, and dropped afterwards so the page does not carry them. */
-window.addEventListener('beforeprint', buildPrintPages);
+window.addEventListener('beforeprint', function () { track('printed'); buildPrintPages(); });
 window.addEventListener('afterprint', function () { $('print-pages').innerHTML = ''; });
 
 /* Whether this browser has already been asked. Either answer to the prompt
@@ -3906,6 +3927,7 @@ $('feedback-dialog').addEventListener('click', function (e) {
 });
 
 function feedbackDone(msg) {
+  track('feedback-sent');
   markFbAsked();
   hideNudge();
   var form = $('feedback');

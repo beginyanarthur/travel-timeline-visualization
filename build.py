@@ -22,6 +22,21 @@ OUT = os.path.join(ROOT, "index.html")
 # URL, so LinkedIn cannot resolve a relative one.
 PAGES_URL = "https://beginyanarthur.github.io/travel-timeline-visualization/"
 
+# Microsoft Clarity project ID, from clarity.microsoft.com > Settings > Setup.
+# It is public, it ships in the page like any tag. Leave it empty and no
+# script is added. Pages only: the Artifact CSP would block it anyway.
+CLARITY_ID = "yjodau769k"
+
+CLARITY = '''<script>
+(function(c,l,a,r,i,t,y){
+  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "%s");
+</script>
+
+'''
+
 HEAD = '''<!doctype html>
 <html lang="en">
 <head>
@@ -92,7 +107,12 @@ def main():
     if not s.startswith("<title>"):
         sys.exit("build failed: web/index.html should start with its <title>")
 
-    s = (HEAD % {"url": PAGES_URL}) + s
+    head = HEAD % {"url": PAGES_URL}
+    if CLARITY_ID:
+        head += CLARITY % CLARITY_ID
+    else:
+        print("note: CLARITY_ID is empty, so no Clarity script was added")
+    s = head + s
 
     s = swap(s,
              '</style>\n\n<header class="masthead">',

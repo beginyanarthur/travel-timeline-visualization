@@ -76,6 +76,19 @@ Formspree's free plan allows 50 submissions a month. The Claude Artifact copy
 of the page cannot send at all, because its sandbox blocks outside requests,
 so there it always falls back to copying.
 
+## Traffic
+
+Visits, recordings and heatmaps go to Microsoft Clarity. `build.py` adds the
+tag on Pages only, from `CLARITY_ID`; leave that empty and no script ships.
+
+- **Three events** mark the presses that matter: `generated`, `printed` and
+  `feedback-sent`. Filter recordings by them to watch the people who drew a
+  trip rather than everyone who opened the link.
+- **What people type never reaches Clarity.** The dates, legs, hotels, the
+  drawing, the print pages, the status line, the feedback form and the paste
+  box carry `data-clarity-mask="True"`, so recordings show clicks and scrolls,
+  not destinations.
+
 ## Printing
 
 **Print** in the canvas toolbar (a printer icon on phones), **Print or save as
