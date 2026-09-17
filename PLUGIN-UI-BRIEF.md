@@ -291,8 +291,9 @@ nightHour(h)  ->  h < NIGHT_TO || h >= NIGHT_FROM
 
 The hour dots read it, the clock slices read it, and all four sentences about
 it are built from it: both legend labels and both halves of the clock
-paragraph. `hourLabel()` turns an hour into "9pm", and the ranges fall out of
-the constants, the last night hour being the one before day begins.
+paragraph. `hourLabel()` turns an hour into "9 pm", the ranges read "9 pm to
+5 am", and they fall out of the constants, the last night hour being the one
+before day begins.
 
 Proved by moving it. Setting night to 22:00 and 07:00 and rebuilding changed
 the legend to "Night (10pm - 6am)" and "Day (7am - 9pm)" with nothing else

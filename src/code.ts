@@ -78,13 +78,13 @@ function nightHour(h: number): boolean { return h < NIGHT_TO || h >= NIGHT_FROM 
 function hourLabel(h: number, spaced?: boolean): string {
   let n = h % 12
   if (n === 0) n = 12
-  return `${n}${spaced ? ' ' : ''}${h >= 12 ? 'pm' : 'am'}`
+  // A non breaking space, so a wrapped key never leaves pm alone on a line.
+  return `${n}${spaced ? '\u00a0' : ''}${h >= 12 ? 'pm' : 'am'}`
 }
 // The last night hour is the one before day starts, and the other way round.
-const NIGHT_RANGE = `${hourLabel(NIGHT_FROM)} - ${hourLabel(NIGHT_TO - 1)}`
-const DAY_RANGE = `${hourLabel(NIGHT_TO)} - ${hourLabel(NIGHT_FROM - 1)}`
-const NIGHT_RANGE_SP = `${hourLabel(NIGHT_FROM, true)}\u2013${hourLabel(NIGHT_TO - 1, true)}`
-const DAY_RANGE_SP = `${hourLabel(NIGHT_TO, true)}\u2013${hourLabel(NIGHT_FROM - 1, true)}`
+// One wording everywhere, with "to" rather than a dash: 9 pm to 5 am.
+const NIGHT_RANGE = `${hourLabel(NIGHT_FROM, true)} to ${hourLabel(NIGHT_TO - 1, true)}`
+const DAY_RANGE = `${hourLabel(NIGHT_TO, true)} to ${hourLabel(NIGHT_FROM - 1, true)}`
 
 // ── Type ─────────────────────────────────────────────────────────────────────────
 // Every size and ink in the drawing is named here, so a new label picks a
@@ -1064,7 +1064,7 @@ async function buildItinerary(data: TripData): Promise<FrameNode> {
   await txt('How to read', PAD_LEFT - 1, clLegY, TYPE.label, 'Bold', INK.primary)
 
   // Descriptive paragraph with mixed bold formatting
-  const clockLegendText = `Each of the 24 pie slices is one hour:  Dark slices for nighttime (${NIGHT_RANGE_SP}), light Gray for daytime (${DAY_RANGE_SP}). Colored slices overlay the hours you're staying in a city, so you can see at a glance how much of each day is spent in transit versus on the ground.   Sun-cycle icons (moon → sunrise → sun → sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.`
+  const clockLegendText = `Each of the 24 pie slices is one hour:  Dark slices for nighttime (${NIGHT_RANGE}), light Gray for daytime (${DAY_RANGE}). Colored slices overlay the hours you're staying in a city, so you can see at a glance how much of each day is spent in transit versus on the ground.   Sun-cycle icons (moon → sunrise → sun → sunset) and connecting arcs around the perimeter reinforce the day/night orientation, while a vertical center line divides the AM and PM halves.`
   const clPara = figma.createText()
   clPara.fontName = { family: 'Inter', style: 'Regular' }
   clPara.characters = clockLegendText
