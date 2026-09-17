@@ -4239,7 +4239,21 @@ function restoreTrip() {
 }
 restoreTrip();
 
-/* The Artifact has no Clarity, so it has nothing to ask about. */
+/* build.py reads ?notrack and ?track before anything loads. Here the page
+   only confirms it, and takes the word out of the address so a copied link
+   never switches recording off for someone else. */
+(function () {
+  var m = /[?&](no)?track(=[^&]*)?(&|$)/.exec(location.search);
+  if (!m) return;
+  toast(m[1] ? 'This browser is no longer recorded in Clarity.' : 'This browser is recorded in Clarity again.');
+  try {
+    var rest = location.search.replace(m[0], m[3] ? m[0].charAt(0) : '').replace(/^[?&]$/, '');
+    history.replaceState(null, '', location.pathname + rest + location.hash);
+  } catch (e) {}
+})();
+
+/* The Artifact has no Clarity, so it has nothing to ask about. The same goes
+   for a browser switched off with ?notrack. */
 if (typeof window.clarity === 'function') {
   $('cookie-settings').hidden = false;
   if (!cookieChoice()) $('cookie-card').hidden = false;

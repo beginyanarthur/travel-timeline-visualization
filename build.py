@@ -28,14 +28,26 @@ PAGES_URL = "https://beginyanarthur.github.io/travel-timeline-visualization/"
 CLARITY_ID = "yjodau769k"
 
 CLARITY = '''<script>
-(function(c,l,a,r,i,t,y){
-  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-})(window, document, "clarity", "script", "%s");
-/* Before anything is recorded, tell Clarity what this browser answered.
-   The page asks; until someone allows cookies, Clarity runs without them. */
+/* Arthur's own browsers stay out of the numbers. Opening the page once with
+   ?notrack marks this browser, and Clarity never loads in it again, on any
+   network; ?track undoes it. Nothing loads, so nothing is recorded or asked. */
 (function () {
+  var off = false;
+  try {
+    if (/[?&]notrack(=|&|$)/.test(location.search)) localStorage.setItem("ttv.notrack", "1");
+    if (/[?&]track(=|&|$)/.test(location.search)) localStorage.removeItem("ttv.notrack");
+    off = localStorage.getItem("ttv.notrack") === "1";
+  } catch (e) {}
+  if (off) return;
+
+  (function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "%s");
+
+  /* Before anything is recorded, tell Clarity what this browser answered.
+     The page asks; until someone allows cookies, Clarity runs without them. */
   var choice = null;
   try { choice = localStorage.getItem("ttv.cookies"); } catch (e) {}
   window.clarity("consentv2", { ad_Storage: "denied", analytics_Storage: choice === "granted" ? "granted" : "denied" });

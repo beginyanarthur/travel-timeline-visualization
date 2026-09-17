@@ -107,6 +107,11 @@ tag on Pages only, from `CLARITY_ID`; leave that empty and no script ships.
   box carry `data-clarity-mask="True"`, so recordings show clicks and scrolls,
   not destinations.
 
+- **Arthur's own browsers stay out.** Open the page once with `?notrack`
+  (for example `.../travel-timeline-visualization/?notrack`) and Clarity
+  never loads in that browser again, on any network. `?track` undoes it. The
+  word is taken out of the address after it is read, so a copied link never
+  switches recording off for someone else. Do it once per browser and device.
 - **Cookies wait for a yes.** A small card asks once, in the corner opposite
   the feedback prompt, and **Cookie settings** at the foot of the page asks
   again. The answer is kept in this browser, and `build.py` passes it to
