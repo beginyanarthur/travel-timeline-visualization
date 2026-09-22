@@ -47,7 +47,10 @@ previews need an absolute URL, so a relative one will not resolve.
 The feedback form emails each answer to Arthur through Formspree. It lives
 in one dialog, opened from a button in the header, from a short prompt that
 appears once after someone's first drawing, and from the invitation at the
-foot of the page. On a phone it opens as a bottom sheet. The endpoint is set near the bottom of `web/index.html`:
+foot of the page. On a phone it opens as a bottom sheet. Once someone has
+sent feedback, the invitation at the foot goes away in that browser and the
+workbench fills the window; Cookie settings is also in the ⋯ menu for that
+reason. The endpoint is set near the bottom of `web/index.html`:
 
 ```js
 var FORM_ENDPOINT = 'https://formspree.io/f/xzebnlql';

@@ -245,6 +245,12 @@ h1 {
   min-height: 520px;
   border-bottom: 1px solid var(--rule);
 }
+/* The workbench stops short so the feedback invitation peeks in below it.
+   Once someone has sent feedback that invitation is gone, so the workbench
+   takes the whole window instead of ending above an empty strip. */
+@media (min-width: 901px) {
+  body.fb-sent .workbench { height: calc(100svh - var(--mast-h, 0px)); }
+}
 
 .rail {
   border-right: 1px solid var(--rule);
@@ -1417,6 +1423,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
           <button class="more-item export" id="download-btn" type="button">↓ Export JSON</button>
           <button class="more-item" id="file-btn" type="button">↑ Import JSON</button>
           <button class="more-item" id="print-menu" type="button">Print or save as PDF</button>
+          <button class="more-item" id="cookie-menu" type="button" hidden>Cookie settings</button>
           <div class="more-sep"></div>
           <button class="more-item danger" id="clear-trip" type="button" disabled>Clear trip</button>
         </div>
@@ -1577,7 +1584,7 @@ input[type="time"].f-input::-webkit-calendar-picker-indicator {
 <!-- Filled only when printing. On screen it stays empty and hidden. -->
 <div id="print-pages" aria-hidden="true" data-clarity-mask="True"></div>
 
-<section class="reading">
+<section class="reading" id="fb-foot">
   <div>
     <h2>What would help most</h2>
     <p class="fb-invite">Tried it? Tell me what worked and what didn't. It takes a minute and goes straight to my inbox.</p>
@@ -3980,6 +3987,19 @@ window.addEventListener('afterprint', function () { $('print-pages').innerHTML =
 var FB_ASKED = 'ttv.feedback.asked';
 function fbAsked() { try { return localStorage.getItem(FB_ASKED) === '1'; } catch (e) { return false; } }
 function markFbAsked() { try { localStorage.setItem(FB_ASKED, '1'); } catch (e) {} }
+/* Someone who has already written in does not need the invitation at the
+   foot of the page asking them to. It goes once they send, and stays gone
+   in that browser; the header button still opens the form for more. This
+   came from the first real feedback: the band after sending was annoying. */
+var FB_SENT = 'ttv.feedback.sent';
+function fbSent() { try { return localStorage.getItem(FB_SENT) === '1'; } catch (e) { return false; } }
+function markFbSent() { try { localStorage.setItem(FB_SENT, '1'); } catch (e) {} }
+function hideFbFoot() {
+  $('fb-foot').hidden = true;
+  document.body.classList.add('fb-sent');
+  /* The canvas just grew, so a fitted drawing refits. */
+  if (typeof fitMode !== 'undefined' && fitMode) requestAnimationFrame(fitWidth);
+}
 function hideNudge() { $('fb-nudge').hidden = true; }
 
 function openFeedback() {
@@ -4055,7 +4075,9 @@ $('feedback-dialog').addEventListener('click', function (e) {
 function feedbackDone(msg) {
   track('feedback-sent');
   markFbAsked();
+  markFbSent();
   hideNudge();
+  hideFbFoot();
   var form = $('feedback');
   var p = document.createElement('p');
   p.className = 'fb-done';
@@ -4316,18 +4338,27 @@ restoreTrip();
   } catch (e) {}
 })();
 
+if (fbSent()) hideFbFoot();
+
 /* The Artifact has no Clarity, so it has nothing to ask about. The same goes
-   for a browser switched off with ?notrack. */
+   for a browser switched off with ?notrack. Cookie settings sits at the foot
+   of the page and in the menu, because the foot goes away once someone has
+   sent feedback. */
 if (typeof window.clarity === 'function') {
   $('cookie-settings').hidden = false;
+  $('cookie-menu').hidden = false;
   if (!cookieChoice()) $('cookie-card').hidden = false;
 }
 $('cookie-yes').addEventListener('click', function () { setCookies(true); });
 $('cookie-no').addEventListener('click', function () { setCookies(false); });
-$('cookie-settings').addEventListener('click', function () {
+function showCookieCard() {
+  /* On a phone the card sits on the canvas, under the sheet when it is up. */
+  if (sheetMQ.matches) sheetOpen(false);
   $('cookie-card').hidden = false;
   $('cookie-yes').focus();
-});
+}
+$('cookie-settings').addEventListener('click', showCookieCard);
+$('cookie-menu').addEventListener('click', showCookieCard);
 </script>
 
 </body>
