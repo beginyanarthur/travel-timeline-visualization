@@ -4223,10 +4223,26 @@ function askForSample() {
 $('sample-btn').addEventListener('click', askForSample);
 $('se-sample').addEventListener('click', askForSample);
 
+/* Once a date is picked, not the moment the field is touched: opening the
+   sheet on focus slid the field up and away from under its own picker. */
 ['tripStart', 'tripEnd'].forEach(function (id) {
-  $(id).addEventListener('focus', function () {
+  $(id).addEventListener('change', function () {
     if (sheetMQ.matches && !isOpen()) sheetOpen(true);
   });
+});
+
+/* A date or time field opens its picker from anywhere in the box, not only
+   from the small calendar icon at its end. With a mouse, Chrome and Firefox
+   treat a click on the digits as a wish to type, so nothing opens; a real
+   visitor clicked the start date again and again and never got a calendar.
+   Touch screens already open the picker on any tap, so this is mouse only. */
+var finePointer = window.matchMedia('(pointer: fine)');
+$('plugin-root').addEventListener('click', function (e) {
+  var el = e.target;
+  if (!finePointer.matches || el.tagName !== 'INPUT') return;
+  if (el.type !== 'date' && el.type !== 'time') return;
+  if (typeof el.showPicker !== 'function') return;
+  try { el.showPicker(); } catch (err) {}
 });
 
 /* Open exactly as the plugin opens: today to a week out, nothing added yet. */
